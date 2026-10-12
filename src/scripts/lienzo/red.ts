@@ -21,7 +21,7 @@
  *   lejanos       filamentos tenues al fondo, visibles desde el principio
  */
 import { crearProyector, type Camara, type Proyeccion } from './camara';
-import { anclas, ORBITA, RAMAS, type Vec3 } from './escultura';
+import { RAMAS, type Vec3 } from './escultura';
 import type { EstadoNarrativo } from './narrativa';
 
 export type Densidad = 'completa' | 'media' | 'ligera';
@@ -48,6 +48,8 @@ const BLANCO: [number, number, number] = [235, 250, 255];
 /** Lo que tarda un filamento en crecer entero, en unidades de `red`. */
 const CRECIMIENTO = 0.12;
 const TAU = Math.PI * 2;
+/** Plano inclinado en el que se ordena la red (proyectos, ecosistema). */
+const INCLINACION_ANILLO = 0.32;
 
 type Tipo = 'rama' | 'secundario' | 'lejano';
 
@@ -108,11 +110,11 @@ const suave = (x: number) => {
   return t * t * (3 - 2 * t);
 };
 
-/** Punto del anillo ordenado, en el plano inclinado de la órbita del ecosistema. */
+/** Punto del anillo ordenado, en el plano inclinado de la red. */
 function enAnillo(angulo: number, radio: number, altura = 0): Vec3 {
   const x = Math.cos(angulo) * radio;
-  const c = Math.cos(ORBITA.inclinacion);
-  const s = Math.sin(ORBITA.inclinacion);
+  const c = Math.cos(INCLINACION_ANILLO);
+  const s = Math.sin(INCLINACION_ANILLO);
   return [x * c + altura * s, -x * s + altura * c, Math.sin(angulo) * radio];
 }
 
@@ -150,8 +152,10 @@ export interface MarcoDeRed {
   brilloFoco: number;
   /** Si el foco viene del puntero sobre el nodo: se muestra su nombre. */
   etiquetarFoco: boolean;
-  /** Rectángulo (px del lienzo) del texto que corresponde al foco: un hilo lo une con su ancla en la escultura. */
-  origenFoco: DOMRect | null;
+  /** Anclas de las ramas en el cuerpo del guía (mundo), una por servicio (escultura.ts). */
+  anclas: Vec3[];
+  /** Lo que el guía señala (px del lienzo) y su mano en pantalla: un hilo de luz los une. */
+  senal: { caja: DOMRect; mano: { x: number; y: number }; fuerza: number } | null;
   /** Rectángulos (px del lienzo) de texto: la red se aparta de ellos. */
   zonas: DOMRect[];
   movimiento: boolean;
@@ -207,7 +211,7 @@ export class Red {
       this.nodos.push({
         tipo: 'rama',
         base: [Math.cos(a) * radio, entre(-1.2, 1.2), Math.sin(a) * radio * 0.6 - 0.3],
-        // Ordenada: hacia fuera desde su módulo de la órbita, en el mismo plano.
+        // Ordenada: un anillo alrededor del guía, en un plano inclinado.
         ordenado: enAnillo(angulo, 2.9),
         umbral: 0.1 + i * 0.035,
         color: i % 3,
@@ -459,7 +463,7 @@ export class Red {
     const proyectar = crearProyector(m.camara, this.ancho, this.alto);
     const orden = suave(estado.orden);
     const deriva = m.movimiento ? 1 - orden * 0.7 : 0;
-    this.anclas3d = anclas(estado.forma, m.fase, this.anclas3d);
+    this.anclas3d = m.anclas;
     this.posiciones = this.nodos.map((nodo) => {
       const p = mezcla(nodo.base, nodo.ordenado, orden);
       const t = m.tiempo * 0.3 + nodo.fase;
@@ -574,8 +578,8 @@ export class Red {
     // ---- la red se aparta del texto
     this.despejar(m.zonas);
 
-    // ---- hilo entre el texto activo y la escultura: después del despeje, para que se vea entero
-    this.unirConTexto(m);
+    // ---- el hilo del guía: después del despeje, para que se vea entero
+    this.trazarSenal(m);
   }
 
   private moverParticulas(
@@ -641,32 +645,43 @@ export class Red {
   }
 
   /**
-   * Un hilo une el servicio activo con su ancla en la escultura: la rama
-   * vuelve a la pieza central. El ancla se marca con el verde de lo activo.
+   * El hilo del guía: une lo que el robot señala con su mano. Sale del
+   * punto del elemento más cercano a la mano, hace un codo suave y termina
+   * en la mano con el verde de lo activo.
    */
-  private unirConTexto(m: MarcoDeRed): void {
-    const origen = m.origenFoco;
-    const p = m.foco >= 0 ? this.anclasProyectadas[m.foco] : undefined;
-    if (!origen || !p || m.brilloFoco < 0.02) return;
+  private trazarSenal(m: MarcoDeRed): void {
+    const senal = m.senal;
+    if (!senal || senal.fuerza < 0.02) return;
+    const { caja, mano } = senal;
+    const x0 = Math.min(Math.max(mano.x, caja.left), caja.right);
+    const y0 = Math.min(Math.max(mano.y, caja.top), caja.bottom);
+    const dx = mano.x - x0;
+    const dy = mano.y - y0;
+    const largo = Math.hypot(dx, dy);
+    if (largo < 48) return;
+    // Se detiene un poco antes de tocar la mano.
+    const corte = Math.min(26, largo * 0.25) / largo;
+    const x1 = mano.x - dx * corte;
+    const y1 = mano.y - dy * corte;
+    const horizontal = Math.abs(dx) >= Math.abs(dy);
     const { ctx } = this;
     ctx.globalCompositeOperation = 'lighter';
-    const x0 = origen.right + 12;
-    const y0 = origen.top + origen.height / 2;
-    if (p.x - x0 < 40) return;
-    const codo = x0 + (p.x - x0) * 0.45;
-    const gradiente = ctx.createLinearGradient(x0, y0, p.x, p.y);
-    gradiente.addColorStop(0, rgba(COLORES[0]!, 0));
-    gradiente.addColorStop(0.3, rgba(COLORES[0]!, 0.45 * m.brilloFoco));
-    gradiente.addColorStop(1, rgba(VERDE, 0.8 * m.brilloFoco));
+    const gradiente = ctx.createLinearGradient(x0, y0, x1, y1);
+    gradiente.addColorStop(0, rgba(COLORES[0]!, 0.15 * senal.fuerza));
+    gradiente.addColorStop(0.5, rgba(COLORES[0]!, 0.55 * senal.fuerza));
+    gradiente.addColorStop(1, rgba(VERDE, 0.9 * senal.fuerza));
     ctx.beginPath();
     ctx.moveTo(x0, y0);
-    ctx.bezierCurveTo(codo, y0, codo, p.y, p.x - 8, p.y);
+    if (horizontal) ctx.bezierCurveTo(x0 + dx * 0.55, y0, x0 + dx * 0.55, y1, x1, y1);
+    else ctx.bezierCurveTo(x0, y0 + dy * 0.55, x1, y0 + dy * 0.55, x1, y1);
     ctx.strokeStyle = gradiente;
-    ctx.lineWidth = 1;
+    ctx.lineWidth = 1.1;
     ctx.stroke();
-    const lado = 22;
-    ctx.globalAlpha = m.brilloFoco;
-    ctx.drawImage(this.destelloVerde, p.x - lado / 2, p.y - lado / 2, lado, lado);
+    // Una chispa en el elemento y otra en la punta de los dedos.
+    ctx.globalAlpha = 0.7 * senal.fuerza;
+    ctx.drawImage(this.destellos[0]!, x0 - 9, y0 - 9, 18, 18);
+    ctx.globalAlpha = senal.fuerza;
+    ctx.drawImage(this.destelloVerde, x1 - 11, y1 - 11, 22, 22);
     ctx.globalAlpha = 1;
     ctx.globalCompositeOperation = 'source-over';
   }

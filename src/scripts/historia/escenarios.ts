@@ -1,45 +1,48 @@
 /**
  * escenarios.ts
- * Cómo se ven la escultura y la red en cada escena de la portada (el
+ * Dónde está el guía y cómo se ve la red en cada escena de la portada (el
  * storyboard en datos) y qué tramo de scroll lleva de una a la siguiente.
+ * Entre escenas el robot viaja por la pantalla (escena.ts lo hace fluir con
+ * un muelle); en cada una se coloca junto al contenido y lo señala.
  *
  * La historia: materia → energía → conexiones → sistema → productos →
- * crecimiento. La gota se estira en cinta, de la cinta nace la red, la
- * cinta se pliega alrededor del núcleo, el núcleo enmarca el trabajo y todo
- * se ordena en un ecosistema.
+ * crecimiento. La gota se condensa en el guía, de su cuerpo nace la red,
+ * dentro de él se encienden sus circuitos, presenta los servicios, recorre
+ * el proceso y los proyectos y termina en el centro de un ecosistema ordenado.
  *
- * En pantallas anchas la escultura vive a un lado del texto; en móvil, en
- * la mitad de arriba, más apagada detrás del texto. Por eso los escenarios
- * se calculan al montar la historia (y de nuevo si cambia la orientación).
+ * En pantallas anchas el guía vive a un lado del texto (o encima, cuando
+ * señala hacia abajo); en móvil, en la mitad de arriba, más apagado detrás
+ * del texto. Por eso los escenarios se calculan al montar la historia (y de
+ * nuevo si cambia la orientación).
  */
 import { ESCENARIO_INICIAL, type Escenario } from '@/scripts/lienzo/narrativa';
 
 export interface Escenarios {
-  /** 01 · El vacío: la gota flota; la red duerme al fondo. */
+  /** 01 · El vacío: a la derecha del titular, lo señala. */
   vacio: Escenario;
-  /** 02 · La transformación: la gota empieza a estirarse... */
+  /** 02 · La transformación: la cámara se acerca... */
   transformacionInicio: Escenario;
-  /** 02 · ...y termina en la cinta curva. Los primeros filamentos aparecen cerca. */
+  /** 02 · ...y lo rodea mientras señala el manifiesto. Aparecen los primeros filamentos. */
   transformacion: Escenario;
-  /** 03 · La red viva: la cinta se estabiliza y la red crece a su alrededor. */
+  /** 03 · La red viva: la cámara se aleja y la red crece desde su cuerpo. */
   red: Escenario;
-  /** 04 · El núcleo: la cinta se pliega alrededor de un núcleo oscuro... */
+  /** 04 · El núcleo: de cerca... */
   nucleoInicio: Escenario;
-  /** 04 · ...cuyas grietas se encienden y se abren. */
+  /** 04 · ...se encienden los circuitos dentro de su cuerpo. */
   nucleo: Escenario;
-  /** 05 · Servicios: la escena se aparta; cada servicio enciende su rama. */
+  /** 05 · Servicios: a la derecha de la lista, señala el servicio activo. */
   servicios: Escenario;
-  /** 06 · Proceso: el camino de las fases manda; la escultura queda detrás. */
+  /** 06 · Proceso: arriba a la derecha, señala hacia abajo la fase actual. */
   proceso: Escenario;
-  /** 07 · Proyectos: un aro que enmarca el trabajo; la red se ordena. */
+  /** 07 · Proyectos: junto al titular, presenta los proyectos; la red se ordena. */
   proyectos: Escenario;
-  /** 08 · Ecosistema: núcleo, siete módulos y la red completa, en calma. */
+  /** 08 · Ecosistema: en el centro de la red completa, en calma. */
   ecosistema: Escenario;
-  /** 09 · Hagámoslo real: la firma de la escultura, detrás de la invitación. */
+  /** 09 · Hagámoslo real: arriba y al centro, señala la invitación. */
   llamada: Escenario;
 }
 
-/** Móvil o vertical: la escultura arriba y centrada, el texto debajo. */
+/** Móvil o vertical: el guía arriba y centrado, el texto debajo. */
 function vertical(e: Escenario, atenuacionMinima: number, alto = 0.42): Escenario {
   return {
     ...e,
@@ -49,109 +52,117 @@ function vertical(e: Escenario, atenuacionMinima: number, alto = 0.42): Escenari
   };
 }
 
+/** El robot mira hacia la cámara (su giro sigue al azimut), con un leve desvío. */
+const frente = (e: Omit<Escenario, 'giro'>, desvio = 0): Escenario => ({
+  ...e,
+  giro: e.azimut + desvio
+});
+
 export function crearEscenarios(estrecha: boolean): Escenarios {
   const vacio = ESCENARIO_INICIAL;
-  const transformacionInicio: Escenario = {
+  const transformacionInicio = frente({
     ...vacio,
-    forma: 0.35,
-    azimut: 0.75,
-    elevacion: 0.22,
-    distancia: 5.7,
-    desplazamientoX: 0.4,
+    azimut: 0.7,
+    elevacion: 0.2,
+    distancia: 7.2,
+    desplazamientoX: 0.42,
     desplazamientoY: 0.02,
     flujo: 0.75,
     atenuacion: 0.04,
     red: 0.1
-  };
-  const transformacion: Escenario = {
-    ...transformacionInicio,
-    forma: 1,
-    azimut: 1.2,
-    elevacion: 0.24,
-    distancia: 5,
-    desplazamientoX: 0.42,
-    desplazamientoY: 0,
-    flujo: 0.9,
-    atenuacion: 0.06,
-    red: 0.27
-  };
-  const red: Escenario = {
-    ...transformacion,
-    azimut: 1.55,
-    elevacion: 0.18,
-    distancia: 7.6,
-    desplazamientoX: 0.34,
-    flujo: 0.7,
-    atenuacion: 0.03,
-    red: 0.82
-  };
-  const nucleoInicio: Escenario = {
+  });
+  const transformacion = frente(
+    {
+      ...transformacionInicio,
+      azimut: 1.0,
+      elevacion: 0.2,
+      distancia: 6.8,
+      desplazamientoX: 0.46,
+      desplazamientoY: 0,
+      flujo: 0.9,
+      atenuacion: 0.06,
+      red: 0.27
+    },
+    -0.15
+  );
+  const red = frente(
+    {
+      ...transformacion,
+      azimut: 1.3,
+      elevacion: 0.16,
+      distancia: 9,
+      desplazamientoX: 0.34,
+      flujo: 0.7,
+      atenuacion: 0.03,
+      red: 0.82
+    },
+    -0.2
+  );
+  const nucleoInicio = frente({
     ...red,
-    forma: 2,
     azimut: 0.6,
-    elevacion: 0.26,
-    distancia: 7.4,
-    desplazamientoX: 0.42,
+    elevacion: 0.24,
+    distancia: 7.6,
+    desplazamientoX: 0.44,
     flujo: 0.55,
     grietas: 0
-  };
-  const nucleo: Escenario = { ...nucleoInicio, azimut: 0.95, distancia: 6.6, grietas: 1 };
-  const servicios: Escenario = {
+  });
+  const nucleo = frente({ ...nucleoInicio, azimut: 0.8, distancia: 6.8, grietas: 1 }, -0.1);
+  const servicios = frente({
     ...nucleo,
-    azimut: 0.7,
-    distancia: 10,
-    desplazamientoX: 0.6,
-    desplazamientoY: 0,
-    flujo: 0.5,
-    atenuacion: 0.5,
-    red: 0.86
-  };
-  const proceso: Escenario = {
-    ...servicios,
-    azimut: 0.4,
+    azimut: 0.3,
     elevacion: 0.3,
     distancia: 9,
-    desplazamientoX: 0,
-    desplazamientoY: 0.46,
-    atenuacion: 0.62
-  };
-  const proyectos: Escenario = {
-    ...proceso,
-    forma: 3,
-    azimut: 0.55,
-    elevacion: 0.1,
-    distancia: 7.6,
-    desplazamientoX: 0.48,
-    desplazamientoY: 0.28,
-    flujo: 0.5,
-    atenuacion: 0.45,
-    red: 0.9,
-    orden: 0.55,
+    desplazamientoX: 0.62,
+    desplazamientoY: 0,
+    flujo: 0.55,
+    atenuacion: 0.25,
+    red: 0.86
+  });
+  const proceso = frente({
+    ...servicios,
+    azimut: 0.25,
+    elevacion: 0.18,
+    distancia: 10.5,
+    desplazamientoX: 0.66,
+    desplazamientoY: 0.32,
+    atenuacion: 0.1,
     grietas: 0
-  };
-  const ecosistema: Escenario = {
+  });
+  const proyectos = frente({
+    ...proceso,
+    azimut: 0.55,
+    elevacion: 0.12,
+    distancia: 10.5,
+    desplazamientoX: 0.66,
+    desplazamientoY: 0.32,
+    flujo: 0.5,
+    atenuacion: 0.15,
+    red: 0.9,
+    orden: 0.55
+  });
+  const ecosistema = frente({
     ...proyectos,
-    forma: 4,
     azimut: 0.35,
-    elevacion: 0.34,
-    distancia: 8.2,
-    desplazamientoX: 0.36,
+    elevacion: 0.2,
+    distancia: 8.5,
+    desplazamientoX: 0.38,
     desplazamientoY: 0.02,
-    flujo: 0.38,
+    flujo: 0.45,
     atenuacion: 0,
     red: 1,
     orden: 1
-  };
-  const llamada: Escenario = {
+  });
+  const llamada = frente({
     ...ecosistema,
-    azimut: 0.25,
-    elevacion: 0.4,
-    distancia: 10.5,
+    azimut: 0.3,
+    elevacion: 0.18,
+    distancia: 10,
     desplazamientoX: 0,
-    desplazamientoY: 0.3,
-    flujo: 0.22,
-    atenuacion: 0.3
-  };
+    desplazamientoY: 0.36,
+    flujo: 0.35,
+    atenuacion: 0.1
+  });
 
   const anchos: Escenarios = {
     vacio,
@@ -168,20 +179,20 @@ export function crearEscenarios(estrecha: boolean): Escenarios {
   };
   if (!estrecha) return anchos;
 
-  // En móvil la escultura se queda arriba; en las escenas con mucho texto,
+  // En móvil el guía se queda arriba; en las escenas con mucho texto,
   // detrás y apagada: manda la lectura.
   return {
     vacio: vertical(vacio, 0),
-    transformacionInicio: vertical(transformacionInicio, 0.2),
-    transformacion: vertical(transformacion, 0.35),
-    red: vertical({ ...red, distancia: 8.4 }, 0.35),
-    nucleoInicio: vertical(nucleoInicio, 0.35),
-    nucleo: vertical(nucleo, 0.35),
-    servicios: vertical(servicios, 0.62),
-    proceso: vertical(proceso, 0.68),
-    proyectos: vertical(proyectos, 0.66),
-    ecosistema: vertical(ecosistema, 0.2),
-    llamada: vertical(llamada, 0.35, 0.36)
+    transformacionInicio: vertical(transformacionInicio, 0.15),
+    transformacion: vertical(transformacion, 0.3),
+    red: vertical({ ...red, distancia: 9.4 }, 0.3),
+    nucleoInicio: vertical(nucleoInicio, 0.3),
+    nucleo: vertical(nucleo, 0.3),
+    servicios: vertical(servicios, 0.55),
+    proceso: vertical(proceso, 0.55),
+    proyectos: vertical(proyectos, 0.55),
+    ecosistema: vertical(ecosistema, 0.15),
+    llamada: vertical(llamada, 0.25, 0.4)
   };
 }
 
@@ -195,9 +206,10 @@ export interface Tramo {
 }
 
 /**
- * Tramos de cámara, forma y red, en el orden de la historia. En escritorio
- * las escenas 02, 03 y 04 quedan fijas mientras se transforman (dos tramos:
- * llegada y transformación); en móvil cada escena tiene un solo tramo.
+ * El recorrido del guía, con la cámara y la red, tramo a tramo y en el
+ * orden de la historia. En escritorio las escenas 02, 03 y 04 quedan fijas
+ * mientras avanzan (dos tramos: llegada y recorrido); en móvil cada escena
+ * tiene un solo tramo.
  */
 export function crearTramos(e: Escenarios, movil: boolean): Tramo[] {
   const llegada = (
@@ -240,7 +252,7 @@ export function crearTramos(e: Escenarios, movil: boolean): Tramo[] {
     fija('#nucleo', e.nucleoInicio, e.nucleo),
     llegada('#servicios', e.nucleo, e.servicios, 'top 65%'),
     llegada('#proceso', e.servicios, e.proceso),
-    // Termina antes de que el titular llegue arriba: la escultura ya está en su sitio.
+    // Termina antes de que el titular llegue arriba: el guía ya está en su sitio.
     llegada('#proyectos-destacados', e.proceso, e.proyectos, 'top 55%'),
     llegada('#ecosistema', e.proyectos, e.ecosistema, 'center center'),
     llegada('#llamada', e.ecosistema, e.llamada, 'center center')

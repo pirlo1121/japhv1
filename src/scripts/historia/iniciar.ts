@@ -7,7 +7,7 @@
  *   se desmonta y rehace sola al cambiar de tamaño o de orientación.
  * - En escritorio las escenas 02, 03, 04 y 06 quedan fijas (CSS sticky)
  *   mientras se transforman; en móvil son bloques normales y tramos cortos.
- * - Con "reducir movimiento" no hay tramos: la escultura y la red cambian de
+ * - Con "reducir movimiento" no hay tramos: el guía y la red cambian de
  *   estado, sin animación, al cruzar cada escena. El texto es un documento
  *   normal.
  * - Lenis solo con ratón o trackpad; en táctil, el scroll nativo.
@@ -21,9 +21,9 @@ import { iniciarServicios } from './servicios';
 
 /** Segundos que tarda la escena en alcanzar al scroll: suaviza sin despegarse. */
 const INERCIA = 0.8;
-/** Por debajo de esta proporción ancho/alto la escultura va arriba y el texto debajo. */
+/** Por debajo de esta proporción ancho/alto el guía va arriba y el texto debajo. */
 const ASPECTO_VERTICAL = 0.85;
-/** Escenas que quedan fijas en escritorio mientras la escultura se transforma. */
+/** Escenas que quedan fijas en escritorio mientras el guía las recorre. */
 const ESCENAS_FIJAS = ['#transformacion', '#red', '#nucleo'];
 
 /**
@@ -52,7 +52,7 @@ function iniciarDesplazamiento(suave: boolean): () => void {
   };
 }
 
-/** Mueve la escultura y la red de un escenario al siguiente, tramo a tramo. */
+/** Mueve al guía y la red de un escenario al siguiente, tramo a tramo. */
 function moverEscena(estado: EstadoNarrativo, tramos: Tramo[]): void {
   for (const tramo of tramos) {
     if (!document.querySelector(tramo.disparador)) continue;
@@ -141,7 +141,7 @@ function revelarBloques(): void {
 
 /**
  * Sin movimiento: cada escena fija su estado al cruzar el centro de la
- * pantalla, sin interpolar. La escultura repinta al desplazarse (escena.ts).
+ * pantalla, sin interpolar. El guía repinta al desplazarse (escena.ts).
  */
 function escenasSinMovimiento(
   estado: EstadoNarrativo,
@@ -203,7 +203,7 @@ export function iniciarHistoria(estado: EstadoNarrativo): void {
       movil:
         '((max-width: 47.99rem) or (max-height: 33.99rem)) and (prefers-reduced-motion: no-preference)',
       punteroFino: '(pointer: fine)',
-      // La escultura cambia de sitio (al lado del texto o encima) con la proporción.
+      // El guía cambia de sitio (al lado del texto o encima) con la proporción.
       apaisado: `(min-aspect-ratio: ${ASPECTO_VERTICAL * 100}/100) and (min-width: 48rem)`
     },
     (contexto) => {

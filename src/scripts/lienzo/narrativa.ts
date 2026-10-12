@@ -1,7 +1,8 @@
 /**
  * narrativa.ts
- * El estado que cuenta la historia: qué forma tiene la escultura, desde
- * dónde la mira la cámara, cuánto ha crecido la red y qué pieza se destaca.
+ * El estado que cuenta la historia: dónde está el guía en la pantalla,
+ * desde dónde lo mira la cámara, hacia dónde se gira, cuánto ha crecido la
+ * red y qué servicio se destaca.
  *
  * La historia (scripts/historia) lo anima con el scroll; la escena
  * (escena.ts) lo lee en cada fotograma. Ninguna de las dos conoce a la otra:
@@ -10,8 +11,8 @@
 import type { Orbita } from './camara';
 
 export interface Escenario extends Readonly<Orbita> {
-  /** 0..4: masa, cinta, núcleo, portal, ecosistema (escultura.ts). */
-  readonly forma: number;
+  /** Giro del robot alrededor del eje vertical (radianes). */
+  readonly giro: number;
   /** Velocidad del movimiento interno del líquido (y de la energía de la red). */
   readonly flujo: number;
   /** 0..1: apaga la escena para que mande el contenido. */
@@ -20,7 +21,7 @@ export interface Escenario extends Readonly<Orbita> {
   readonly red: number;
   /** 0..1: de ramas orgánicas a una estructura ordenada (proyectos, ecosistema). */
   readonly orden: number;
-  /** 0..1: grietas encendidas y aperturas del núcleo. */
+  /** 0..1: circuitos de luz encendidos dentro del cuerpo (escena del núcleo). */
   readonly grietas: number;
 }
 
@@ -32,14 +33,15 @@ export type EstadoNarrativo = { -readonly [K in keyof Escenario]: Escenario[K] }
   foco: number;
 };
 
-/** Escena 01 · El vacío: la gota, a la derecha del titular, con la red dormida al fondo. */
+/** Escena 01 · El vacío: el guía, a la derecha del titular, mirando a la cámara. */
 export const ESCENARIO_INICIAL: Escenario = {
-  forma: 0,
+  // Mira a la cámara: su giro coincide con el azimut.
+  giro: 0.5,
   azimut: 0.5,
   elevacion: 0.14,
-  distancia: 6.4,
-  desplazamientoX: 0.38,
-  desplazamientoY: 0.04,
+  distancia: 8,
+  desplazamientoX: 0.4,
+  desplazamientoY: 0.02,
   flujo: 0.6,
   atenuacion: 0,
   red: 0.06,

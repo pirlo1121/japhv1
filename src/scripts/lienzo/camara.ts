@@ -115,3 +115,35 @@ export function crearProyector(c: Camara, ancho: number, alto: number) {
     return destino;
   };
 }
+
+/**
+ * Píxel del lienzo → punto del mundo en el plano perpendicular a la mirada
+ * que pasa por `centro` (por defecto, el centro del robot). Es lo que el
+ * brazo del guía alcanza al señalar un elemento de la página.
+ */
+export function aMundo(
+  x: number,
+  y: number,
+  c: Camara,
+  ancho: number,
+  alto: number,
+  centro: Vec3 = [0, 0, 0]
+): Vec3 {
+  const [f, r, u] = base(c);
+  const aspecto = ancho / alto;
+  const nx = (x / ancho) * 2 - 1 - c.desplazamiento[0];
+  const ny = 1 - (y / alto) * 2 - c.desplazamiento[1];
+  const dir = normalizar([
+    f[0] * c.focal + nx * aspecto * r[0] + ny * u[0],
+    f[1] * c.focal + nx * aspecto * r[1] + ny * u[1],
+    f[2] * c.focal + nx * aspecto * r[2] + ny * u[2]
+  ]);
+  const t = punto(resta(centro, c.posicion), f) / (punto(dir, f) || 1);
+  return [c.posicion[0] + dir[0] * t, c.posicion[1] + dir[1] * t, c.posicion[2] + dir[2] * t];
+}
+
+/** Derecha y arriba de la cámara en el mundo: para llevar un movimiento en pantalla al mundo. */
+export function ejesDePantalla(c: Camara): [Vec3, Vec3] {
+  const [, r, u] = base(c);
+  return [r, u];
+}

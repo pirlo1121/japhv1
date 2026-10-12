@@ -1,47 +1,60 @@
 # front-japh2
 
-Sitio de JAPH con la dirección visual **Liquid Technology × The Living Network**: una
-escultura de metal líquido de la que nace una red viva de filamentos, nodos y energía.
-Las dos cambian con el scroll y cuentan una sola historia: materia → energía →
-conexiones → sistema → productos → crecimiento.
+Sitio de JAPH con la dirección visual **Liquid Technology × The Living Network**: un guía
+de metal líquido, un robot que nace de una gota, recorre la página con el scroll y señala
+el contenido de cada escena. De su cuerpo nace una red viva de filamentos, nodos y
+energía. Materia → energía → conexiones → sistema → productos → crecimiento.
 
-Es una copia de `front-japh` que parte de la escultura de la **gota** (commit `d5fe667`
-del original: gota → cinta curva), no del robot guía que tiene el original hoy. La gota y
-la cinta del shader están intactas; todo lo demás se construye encima.
+El robot es el del original (`front-japh`, commit `4915a4d`), con su cinemática inversa y
+su rebote, llevado al diseño de esta copia (paleta navy y neones, red viva, nueve
+escenas) y con más fluidez y rendimiento.
 
-| Escena               | Componente       | Escultura y red                                                                          |
-| -------------------- | ---------------- | ---------------------------------------------------------------------------------------- |
-| 01 El vacío          | `Vacio`          | La gota flota a la derecha del titular; unos pocos filamentos duermen al fondo.          |
-| 02 La transformación | `Transformacion` | (fija) La gota se estira en una cinta curva; los primeros filamentos salen de ella.      |
-| 03 La red viva       | `RedViva`        | (fija) La cinta se estabiliza; la red crece escalonada y la energía empieza a viajar.    |
-| 04 El núcleo         | `Nucleo`         | (fija) La cinta se pliega alrededor de un núcleo de obsidiana; sus grietas se encienden. |
-| 05 Servicios         | `Servicios`      | La escena se aparta; cada servicio enciende su rama y un hilo lo une con la escultura.   |
-| 06 El proceso        | `Proceso`        | (fija) Un camino orgánico (SVG) se ilumina fase a fase; una partícula viaja.             |
-| 07 Proyectos         | `Proyectos`      | Un aro de cromo enmarca el trabajo; la red empieza a ordenarse.                          |
-| 08 Ecosistema        | `Ecosistema`     | Núcleo y siete módulos en órbita (uno por servicio); la red, completa y en calma.        |
-| 09 Hagámoslo real    | `Llamada`        | La escultura como firma, arriba; la invitación con destinos reales.                      |
+| Escena               | Componente       | El guía y la red                                                                   |
+| -------------------- | ---------------- | ---------------------------------------------------------------------------------- |
+| 01 El vacío          | `Vacio`          | La gota se condensa en el robot, que señala el titular; la red duerme al fondo.    |
+| 02 La transformación | `Transformacion` | (fija) La cámara lo rodea; señala el manifiesto; nacen los primeros filamentos.    |
+| 03 La red viva       | `RedViva`        | (fija) La cámara se aleja y la red crece escalonada desde su cuerpo.               |
+| 04 El núcleo         | `Nucleo`         | (fija) De cerca, se encienden circuitos de luz dentro de su cuerpo.                |
+| 05 Servicios         | `Servicios`      | Señala el servicio activo; un hilo une su mano con el texto y su rama se enciende. |
+| 06 El proceso        | `Proceso`        | (fija) Arriba a la derecha, señala la fase actual del camino orgánico (SVG).       |
+| 07 Proyectos         | `Proyectos`      | Presenta cada proyecto según pasa por el centro; la red empieza a ordenarse.       |
+| 08 Ecosistema        | `Ecosistema`     | En el centro de la red completa y ordenada; el movimiento se calma.                |
+| 09 Hagámoslo real    | `Llamada`        | Arriba y al centro, señala la invitación, que lleva a destinos reales.             |
 
-"(fija)": en escritorio la sección queda pegada a la pantalla (CSS sticky) mientras se
-transforma. En móvil, sin movimiento o sin JavaScript, todas son bloques normales.
+"(fija)": en escritorio la sección queda pegada a la pantalla (CSS sticky) mientras avanza.
+En móvil, sin movimiento o sin JavaScript, todas son bloques normales. Las páginas
+interiores muestran al mismo guía en calma, señalando su título.
 
-Las páginas interiores muestran la misma escultura y la misma red en calma, cada una con
-su forma: gota (contacto, 404), cinta (legales), núcleo (nosotros), portal (proyectos) y
-ecosistema (servicios).
+## Fluidez
+
+Todo en `scripts/lienzo/escena.ts` y `escultura.ts`:
+
+- **Muelle de posición:** su sitio en pantalla sigue a la historia con un muelle algo
+  subamortiguado. Viaja con inercia y se asienta con un leve rebote, sin saltos aunque el
+  scroll vaya a tirones.
+- **Viaje:** la velocidad de ese muelle lo estira como una gota, lo inclina hacia donde va
+  (cizalla del cuerpo, también en el GLSL), agita la cola y suelta una estela de tres gotas
+  que lo siguen y se reabsorben al frenar.
+- **Señalar:** brazo de cinemática inversa de dos huesos; cambia de brazo con histéresis,
+  la mano viaja de un elemento a otro y rebota al cambiar de objetivo.
+- **Formación:** al cargar, la gota se condensa en el robot (unión suave entre las dos
+  formas). Con "reducir movimiento" aparece ya formado.
 
 ## Arquitectura
 
 - **Una sola escena.** `scripts/lienzo/escena.ts` tiene un único bucle y una única
-  cámara (`camara.ts`). La escultura se dibuja en WebGL2 (`sombreador.ts`, en un worker
+  cámara (`camara.ts`). El guía se dibuja en WebGL2 (`sombreador.ts`, en un worker
   con OffscreenCanvas: `pintor.ts`, `trabajador.ts`). La red se dibuja en Canvas 2D
   (`red.ts`) proyectada con la misma cámara. Son unas decenas de curvas y puntos, así que
   un segundo WebGL a pantalla completa no hacía falta.
-- **Las formas y la red comparten datos.** `escultura.ts` define las medidas de cada
-  forma y siete anclas por forma, una por servicio. El sombreador las usa para dibujar y
-  la red para hacer nacer sus filamentos de la superficie.
-- **Estado narrativo.** `narrativa.ts`: forma (0–4), cámara, flujo, atenuación, `red`
-  (cuánto de la red está despierto), `orden` (de ramas orgánicas a estructura) y
-  `grietas`. `historia/escenarios.ts` es el storyboard en datos; `historia/iniciar.ts`
-  lo anima con GSAP ScrollTrigger (`scrub`, reversible) y Lenis con ratón o trackpad.
+- **El guía y la red comparten datos.** `escultura.ts` calcula la pose (articulaciones,
+  estela) una vez por fotograma. El sombreador la recibe como uniforms y la red la usa
+  para anclar sus siete ramas (una por servicio) en antena, cabeza, manos, hombros y la
+  gota de abajo.
+- **Estado narrativo.** `narrativa.ts`: posición, cámara, giro, flujo, atenuación, `red`,
+  `orden` y `grietas` (circuitos). `historia/escenarios.ts` es el storyboard en datos;
+  `historia/iniciar.ts` lo anima con GSAP ScrollTrigger (`scrub`, reversible) y Lenis con
+  ratón o trackpad.
 - **Red determinista.** Se genera con una semilla fija y crece según `red`/`orden`: al
   subir se repliega exactamente igual que creció. Las partículas son pocas (12/8/5 según
   la pantalla) y viajan por filamentos encadenados.
@@ -65,9 +78,15 @@ ecosistema (servicios).
 
 ## Rendimiento
 
-- Escultura: la misma estrategia que el original (worker, marcha solo dentro de la esfera
-  límite, calidad adaptativa en `calidad.ts`, media frecuencia con la escena atenuada,
-  pausa fuera de pantalla).
+- Guía: se pinta en un worker con OffscreenCanvas y solo marcha dentro de la esfera
+  límite. Usa volúmenes envolventes: lejos del robot, una esfera; la cola, los abdominales
+  y cada brazo solo se evalúan cerca de su región. Hay media frecuencia con la escena
+  atenuada y pausa fuera de pantalla.
+- Calidad adaptativa (`calidad.ts`): con tres fotogramas seguidos de más de 50 ms baja al
+  momento (primero el detalle, luego la resolución). Antes ignoraba los fotogramas de más
+  de 200 ms, así que un equipo muy lento nunca bajaba; ahora solo se ignora el primero
+  tras una pausa.
+- Hilo principal: pose, cinemática inversa y red cuestan 1–3 ms por fotograma (medido).
 - Red: resolución con tope (DPR 1.5, o 1.25 en táctil), destellos pre-pintados en lugar
   de degradados por punto, sin `shadowBlur` ni postproceso.
 - Build: unos 78 KB de JS comprimido en total (la mayor parte es GSAP); Lenis se
@@ -95,8 +114,9 @@ servidor de desarrollo, a 1440×900 y a 390×844 táctil:
   tareas largas en el hilo principal.
 - Páginas interiores (servicios, proyectos, nosotros, contacto, privacidad, 404).
 
-**No medido todavía:** FPS con GPU real (SwiftShader no es representativo: el shader va a
-unos pocos fotogramas por segundo), LCP, INP y CLS, ni dispositivos móviles reales.
+**No medido todavía:** FPS con GPU real. SwiftShader no es representativo: pinta el robot
+a pantalla completa en segundos por fotograma, aunque la calidad adaptativa baja hasta
+unos 40–80 ms. Tampoco LCP, INP y CLS ni dispositivos móviles reales.
 
 ## Convenciones para la capa visual
 

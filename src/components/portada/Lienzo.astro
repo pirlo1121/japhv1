@@ -1,14 +1,16 @@
 ---
 /**
  * Lienzo.astro
- * La escena compartida de toda la portada, fija detrás de la historia: la
- * escultura de metal líquido (WebGL2, scripts/lienzo) y, encima, la red viva
- * (Canvas 2D) proyectada con la misma cámara. La arranca pages/index.astro.
+ * La escena compartida de toda la portada, fija detrás de la historia: el
+ * guía, un robot de metal líquido que nace de una gota (WebGL2,
+ * scripts/lienzo), y, encima, la red viva (Canvas 2D) proyectada con la
+ * misma cámara. La arranca pages/index.astro.
  *
  * Mientras carga, si el navegador no puede dibujar la escultura o sin
- * JavaScript, se ve una gota de cromo hecha solo con CSS donde estará la
- * escultura: la primera pantalla nunca queda incompleta. Sin WebGL la
- * escena la mueve a donde iría la escultura (--x, --y, --lado).
+ * JavaScript, se ve una gota de cromo hecha solo con CSS donde estará el
+ * guía (es la gota de la que nace): la primera pantalla nunca queda
+ * incompleta. Sin WebGL la escena la mueve a donde iría el guía (--x, --y,
+ * --lado).
  */
 ---
 

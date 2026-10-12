@@ -1,8 +1,8 @@
 ---
 /**
- * Escena 07 · Proyectos. La escultura se cierra en un aro de cromo que
- * enmarca el trabajo, la red se ordena y la escena se calla para que hablen
- * los proyectos. Cada uno dice qué se creó, qué problema resolvía, qué hizo
+ * Escena 07 · Proyectos. El guía, junto al titular, presenta cada
+ * proyecto según pasa por el centro; la red se ordena y la escena se calla
+ * para que hablen los proyectos. Cada uno dice qué se creó, qué problema resolvía, qué hizo
  * JAPH y, solo si está verificado, qué resultado tuvo.
  *
  * Los casos vienen de datos/proyectos.ts. Mientras sean ejemplos se marcan
@@ -38,7 +38,7 @@ const dos = (n: number) => String(n).padStart(2, '0');
 
   <ol class="lista">
     {destacados.map((proyecto, i) => (
-      <li class="proyecto" data-revelar>
+      <li class="proyecto" data-revelar data-guia>
         <article aria-labelledby={`proyecto-${i}`}>
           <div class="visual" data-reflejo>
             {proyecto.imagen ? (

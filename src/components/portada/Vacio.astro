@@ -1,10 +1,10 @@
 ---
 /**
- * Escena 01 · El vacío. La gota de metal líquido flota en un espacio azul
- * medianoche, a la derecha del titular (en móvil, encima); unos pocos
+ * Escena 01 · El vacío. Una gota de metal líquido flota en un espacio azul
+ * medianoche y se condensa en el guía: un robot líquido que, a la derecha
+ * del titular (en móvil, encima), lo señala. Unos pocos
  * filamentos duermen al fondo. El mensaje, la propuesta y las acciones
- * están en la primera pantalla desde el primer instante: no esperan a la
- * escultura.
+ * están en la primera pantalla desde el primer instante: no esperan al guía.
  */
 import Boton from '@/components/ui/Boton.astro';
 import { sitio } from '@/config/sitio';
@@ -14,7 +14,7 @@ import { servicios } from '@/datos/servicios';
 <section class="vacio" id="inicio" aria-labelledby="titulo-vacio" data-escena="Inicio">
   <div class="contenido" data-zona-lectura>
     <p class="rotulo">Estrategia / Diseño / Tecnología</p>
-    <h1 id="titulo-vacio">
+    <h1 id="titulo-vacio" data-guia>
       Convertimos ideas en <em>ecosistemas digitales.</em>
     </h1>
     <p class="entrada">

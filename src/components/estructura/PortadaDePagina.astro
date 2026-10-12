@@ -1,9 +1,8 @@
 ---
 /**
- * Encabezado de las páginas interiores: la misma escultura y la misma red
- * de la portada, en calma, a la derecha del título (arriba en pantallas
- * estrechas). Cada página muestra la forma que le corresponde en la
- * historia: el ecosistema en servicios, el portal en proyectos...
+ * Encabezado de las páginas interiores: el mismo guía de la portada, en
+ * calma, a la derecha del título (arriba en pantallas estrechas),
+ * señalándolo, con la red viva a medio crecer a su alrededor.
  * El titular admite <em> (texto del equipo, por eso set:html).
  *
  * Slots:
@@ -13,17 +12,15 @@ interface Props {
   id: string;
   rotulo: string;
   titulo: string;
-  /** Forma de la escultura (escultura.ts): 0 gota, 1 cinta, 2 núcleo, 3 portal, 4 ecosistema. */
-  forma?: number;
   /** Más alta, para páginas cuyo encabezado es casi todo el contenido (404). */
   completa?: boolean;
 }
 
-const { id, rotulo, titulo, forma = 1, completa = false } = Astro.props;
+const { id, rotulo, titulo, completa = false } = Astro.props;
 ---
 
 <section class:list={['portada-pagina', { completa }]} aria-labelledby={id}>
-  <div class="banda" data-lienzo data-forma={forma} aria-hidden="true">
+  <div class="banda" data-lienzo aria-hidden="true">
     <div class="respaldo" data-respaldo>
       <span class="gota"></span>
     </div>
@@ -32,7 +29,7 @@ const { id, rotulo, titulo, forma = 1, completa = false } = Astro.props;
   </div>
   <div class="contenido" data-zona-lectura>
     <p class="rotulo">{rotulo}</p>
-    <h1 id={id} set:html={titulo} />
+    <h1 id={id} set:html={titulo} data-guia />
     <slot />
   </div>
 </section>
@@ -41,22 +38,17 @@ const { id, rotulo, titulo, forma = 1, completa = false } = Astro.props;
   import { iniciarLienzo } from '@/scripts/lienzo/escena';
   import { crearEstadoNarrativo } from '@/scripts/lienzo/narrativa';
 
-  // Estado tranquilo: la escultura a la derecha (arriba en pantallas
-  // estrechas) y la red a medio crecer, sin escenas que avanzar.
-  const banda = document.querySelector<HTMLElement>('[data-lienzo]');
-  const forma = Number(banda?.dataset.forma ?? 1);
+  // Estado tranquilo: el guía a la derecha (arriba en pantallas estrechas),
+  // mirando a la cámara, con la red a medio crecer.
   const estrecha = window.innerWidth / window.innerHeight < 0.85 || window.innerWidth < 768;
   const estado = {
     ...crearEstadoNarrativo(),
-    forma,
-    distancia: forma === 4 ? 8.6 : 7.4,
+    distancia: 8.4,
     desplazamientoX: estrecha ? 0 : 0.5,
     desplazamientoY: estrecha ? 0.4 : 0.05,
     atenuacion: estrecha ? 0.35 : 0.08,
     flujo: 0.5,
-    red: 0.62,
-    orden: forma >= 3 ? 0.7 : 0,
-    grietas: forma === 2 ? 1 : 0
+    red: 0.62
   };
   const arrancar = () => iniciarLienzo(estado);
   if ('requestIdleCallback' in window) requestIdleCallback(arrancar, { timeout: 600 });

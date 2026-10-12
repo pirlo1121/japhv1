@@ -1,11 +1,11 @@
 ---
 /**
- * Escena 02 · La transformación. La gota se estira, su centro de masa se
- * desplaza y termina en una cinta curva; los reflejos viajan por la
- * superficie y los primeros filamentos aparecen cerca, siguiendo la curva.
+ * Escena 02 · La transformación. La cámara se acerca y rodea al guía, que
+ * señala el manifiesto; los primeros filamentos de la red nacen de su
+ * cuerpo.
  *
- * Con movimiento en escritorio la escena queda fija mientras la escultura
- * se transforma y cada cláusula del manifiesto se enciende con el progreso
+ * Con movimiento en escritorio la escena queda fija mientras la cámara lo
+ * rodea y cada cláusula del manifiesto se enciende con el progreso
  * (--p). En móvil y sin movimiento es un bloque normal.
  */
 const clausulas = [
@@ -33,7 +33,7 @@ const clausulas = [
       <p class="entrada">
         Convertimos conceptos en experiencias digitales diseñadas para funcionar, conectar y crecer.
       </p>
-      <p class="manifiesto" data-pasos>
+      <p class="manifiesto" data-pasos data-guia>
         {clausulas.map((clausula, i) => (
           <>
             <span data-paso style={{ '--u': 0.12 + (i / clausulas.length) * 0.62 }}>

@@ -6,12 +6,12 @@ Guía rápida para trabajar en este repo. El detalle de diseño, escenas y rendi
 ## Qué es
 
 Front de JAPH (agencia de ecosistemas digitales, Bogotá). Sitio estático con Astro 7 +
-TypeScript. Dirección visual "Liquid Technology × The Living Network": una escultura de
-metal líquido en un shader WebGL2 propio y una red viva en Canvas 2D proyectada con la
-misma cámara (`src/scripts/lienzo/`), que evolucionan con el scroll. GSAP y Lenis animan
-la historia (`src/scripts/historia/`). El backend vive en `../server` (todavía no
-conectado). Esta carpeta (`front-japh2`) es una copia de `front-japh` que parte de la
-escultura de la gota (commit `d5fe667` del original), no del robot guía.
+TypeScript. Dirección visual "Liquid Technology × The Living Network": un guía de metal
+líquido (un robot que nace de una gota, en un shader WebGL2 propio) recorre la página y
+señala el contenido; de su cuerpo nace una red viva en Canvas 2D proyectada con la misma
+cámara (`src/scripts/lienzo/`). GSAP y Lenis animan la historia (`src/scripts/historia/`).
+El backend vive en `../server` (todavía no conectado). Esta carpeta (`front-japh2`) es una
+copia de `front-japh` con el robot del original llevado a este diseño.
 
 ## Comandos
 
@@ -43,8 +43,9 @@ Antes de dar algo por terminado: `npm run check` y `npm run format:check` sin er
   "reducir movimiento" (ver sección Validación del README).
 - La portada: cada escena es una `<section>` con `id` y `data-escena`; el orden de
   `src/pages/index.astro` es el orden de la historia. Las formas de cada escena están en
-  `scripts/historia/escenarios.ts`; las medidas y anclas de cada forma, en
-  `lienzo/escultura.ts` (compartidas con el shader y con la red).
+  `scripts/historia/escenarios.ts`; la pose del robot y las anclas de la red, en
+  `lienzo/escultura.ts` (compartidas con el shader vía uniforms). El guía señala lo
+  marcado con `data-guia` (o el servicio con `data-activa`).
 
 ## Cuidado
 

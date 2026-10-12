@@ -13,14 +13,13 @@ export interface EstadoDeEscena {
   /** 1 = detalle completo; 0 = versión ligera para equipos modestos. */
   detalle: number;
   camara: Camara;
-  forma: number;
   /** Tiempo del movimiento interno: se integra con el flujo para que cambiar de velocidad no dé saltos. */
   fase: number;
   atenuacion: number;
   red: number;
   grietas: number;
-  foco: number;
-  brilloFoco: number;
+  /** Piezas del robot ya colocadas (x, y, z, radio), su pose, viaje y estela (escultura.ts). */
+  piezas: Float32Array;
   /** Rectángulos en coordenadas uv (x0, y0, x1, y1; y hacia arriba). */
   zonas: Float32Array;
   numZonas: number;
@@ -33,13 +32,11 @@ const UNIFORMS = [
   'uCamara',
   'uObjetivo',
   'uDesplazamiento',
-  'uForma',
   'uFase',
   'uAtenuacion',
   'uRed',
   'uGrietas',
-  'uFoco',
-  'uBrilloFoco',
+  'uPiezas',
   'uZonas',
   'uNumZonas'
 ] as const;
@@ -135,13 +132,11 @@ export class Renderizador {
     gl.uniform3f(u.uCamara, ...camara.posicion);
     gl.uniform3f(u.uObjetivo, ...camara.objetivo);
     gl.uniform2f(u.uDesplazamiento, ...camara.desplazamiento);
-    gl.uniform1f(u.uForma, estado.forma);
     gl.uniform1f(u.uFase, estado.fase);
     gl.uniform1f(u.uAtenuacion, estado.atenuacion);
     gl.uniform1f(u.uRed, estado.red);
     gl.uniform1f(u.uGrietas, estado.grietas);
-    gl.uniform1f(u.uFoco, estado.foco);
-    gl.uniform1f(u.uBrilloFoco, estado.brilloFoco);
+    gl.uniform4fv(u.uPiezas, estado.piezas);
     gl.uniform4fv(u.uZonas, estado.zonas);
     gl.uniform1i(u.uNumZonas, Math.min(estado.numZonas, MAX_ZONAS_DE_LECTURA));
     gl.bindVertexArray(this.vao);

@@ -3,7 +3,9 @@
  * Cuánto puede permitirse el dispositivo. Empieza con un tope de píxeles por
  * tipo de pantalla y, en equipos modestos, con el detalle reducido. Si los
  * fotogramas tardan demasiado de media, o demasiados pierden el refresco,
- * primero quita detalle y luego resolución.
+ * primero quita detalle y luego resolución. Si varios fotogramas seguidos
+ * son muy lentos (un equipo que no puede con la escena), no espera a
+ * reunir la muestra: baja enseguida.
  * Nunca vuelve a subir: evita oscilar entre dos calidades.
  */
 
@@ -25,7 +27,11 @@ const MS_TIRON = 22;
 /** Con esta fracción de tirones la muestra también es lenta, aunque la media aguante. */
 const FRACCION_DE_TIRONES = 0.25;
 const PASO_DE_BAJADA = 0.8;
-const ESCALA_MINIMA = 0.45;
+const ESCALA_MINIMA = 0.35;
+/** Un fotograma así de lento es grave; tantos seguidos bajan la calidad al momento. */
+const MS_GRAVE = 50;
+const GRAVES_SEGUIDOS = 3;
+const PASO_DE_EMERGENCIA = 0.7;
 
 export const esTactil = () => window.matchMedia('(pointer: coarse)').matches;
 
@@ -43,6 +49,31 @@ export class Calidad {
   private acumulado = 0;
   private muestras = 0;
   private tirones = 0;
+  private graves = 0;
+  /** Fotogramas que no se miden: el primero tras una pausa abarca la pausa entera. */
+  private ignorar = 1;
+
+  /** El bucle se detuvo (pestaña oculta, fuera de pantalla): el próximo intervalo no cuenta. */
+  pausa(): void {
+    this.ignorar = 1;
+    this.graves = 0;
+  }
+
+  private bajar(paso: number): boolean {
+    this.acumulado = 0;
+    this.muestras = 0;
+    this.tirones = 0;
+    this.graves = 0;
+    if (this.detalle > 0) {
+      this.detalle = 0;
+      return true;
+    }
+    if (this.escala > ESCALA_MINIMA) {
+      this.escala = Math.max(ESCALA_MINIMA, this.escala * paso);
+      return true;
+    }
+    return false;
+  }
 
   /** Tamaño en píxeles reales del lienzo para un tamaño CSS dado. */
   tamano(anchoCss: number, altoCss: number): [number, number] {
@@ -60,8 +91,12 @@ export class Calidad {
 
   /** Registra la duración de un fotograma. Devuelve true si se redujo la calidad. */
   medir(ms: number): boolean {
-    // Saltos enormes son pestañas en segundo plano o pausas, no lentitud.
-    if (ms > 200) return false;
+    if (this.ignorar > 0) {
+      this.ignorar -= 1;
+      return false;
+    }
+    this.graves = ms > MS_GRAVE ? this.graves + 1 : 0;
+    if (this.graves >= GRAVES_SEGUIDOS) return this.bajar(PASO_DE_EMERGENCIA);
     this.acumulado += ms;
     this.muestras += 1;
     if (ms > MS_TIRON) this.tirones += 1;
@@ -73,14 +108,6 @@ export class Calidad {
     this.muestras = 0;
     this.tirones = 0;
     if (media <= MS_LENTO && tirones <= FRACCION_DE_TIRONES) return false;
-    if (this.detalle > 0) {
-      this.detalle = 0;
-      return true;
-    }
-    if (this.escala > ESCALA_MINIMA) {
-      this.escala = Math.max(ESCALA_MINIMA, this.escala * PASO_DE_BAJADA);
-      return true;
-    }
-    return false;
+    return this.bajar(PASO_DE_BAJADA);
   }
 }

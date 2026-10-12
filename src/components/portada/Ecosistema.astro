@@ -1,8 +1,8 @@
 ---
 /**
- * Escena 08 · Ecosistema. La culminación: la escultura se asienta en un
- * núcleo con siete módulos en órbita, uno por servicio; la red termina de
- * conectarse y se ordena alrededor; el movimiento se calma. No aparece nada
+ * Escena 08 · Ecosistema. La culminación: el guía queda en el centro de la
+ * red, que termina de conectarse y se ordena a su alrededor (una rama por
+ * servicio); el movimiento se calma. No aparece nada
  * nuevo: son las mismas piezas de antes, ya funcionando juntas.
  */
 import { servicios } from '@/datos/servicios';
@@ -22,7 +22,7 @@ import { servicios } from '@/datos/servicios';
     <p class="entrada">
       Construimos soluciones digitales donde cada pieza contribuye a un sistema más sólido.
     </p>
-    <ul class="piezas" aria-label="Las piezas del sistema">
+    <ul class="piezas" aria-label="Las piezas del sistema" data-guia>
       {servicios.map((servicio) => (
         <li>
           <a href={`/servicios#${servicio.id}`}>{servicio.nombre}</a>

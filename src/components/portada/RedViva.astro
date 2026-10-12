@@ -1,7 +1,7 @@
 ---
 /**
- * Escena 03 · La red viva. La cinta se estabiliza y se convierte en el
- * ancla de una red que crece: nodos junto a su superficie, filamentos que
+ * Escena 03 · La red viva. La cámara se aleja y el guía se convierte en el
+ * ancla de una red que crece: nodos junto a su cuerpo, filamentos que
  * salen hacia fuera, más nodos que se encienden y energía que empieza a
  * viajar entre ellos (scripts/lienzo/red.ts). Todo con el scroll y de forma
  * escalonada, nunca de golpe.
@@ -35,7 +35,7 @@ const capas = [
       <p class="entrada">
         Conectamos productos, datos y procesos para crear sistemas que trabajan juntos.
       </p>
-      <ol class="capas" data-pasos>
+      <ol class="capas" data-pasos data-guia>
         {capas.map(({ titulo, texto }, i) => (
           <li data-paso style={{ '--u': 0.18 + i * 0.22 }}>
             <span class="nodo" aria-hidden="true" />

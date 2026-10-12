@@ -1,9 +1,8 @@
 ---
 /**
- * Escena 04 · El núcleo. La cinta se pliega alrededor de un núcleo de
- * obsidiana; con el scroll se encienden sus grietas, sus aperturas dejan
- * ver un interior de cromo con luz violeta y los filamentos se conectan a
- * él. Habla de profundidad técnica sin convertirse en un diagrama: el texto
+ * Escena 04 · El núcleo. De cerca, con el scroll se encienden circuitos de
+ * luz cian y violeta dentro del cuerpo del guía: lo que hace que funcione.
+ * Habla de profundidad técnica sin convertirse en un diagrama: el texto
  * son los principios de trabajo reales de JAPH (datos/nosotros.ts).
  */
 import { principios } from '@/datos/nosotros';
@@ -23,7 +22,7 @@ const primeraFrase = (texto: string) => texto.split(/(?<=\.)\s/)[0] ?? texto;
         Diseñamos arquitecturas sólidas para que cada componente tenga sentido y todo funcione en
         conjunto.
       </p>
-      <ul class="principios" aria-label="Principios de trabajo" data-pasos>
+      <ul class="principios" aria-label="Principios de trabajo" data-pasos data-guia>
         {principios.map(({ titulo, descripcion }, i) => (
           <li data-paso style={{ '--u': 0.15 + i * 0.17 }}>
             <span class="ordinal" aria-hidden="true">

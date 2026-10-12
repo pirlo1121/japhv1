@@ -4,7 +4,7 @@
  * SVG que se curva entre ellos). Con el scroll el camino se ilumina hasta
  * la fase actual, que brilla; las anteriores quedan encendidas a medias y
  * una partícula viaja hacia la siguiente. Todo deriva del scroll: es
- * reversible.
+ * reversible. La fase actual lleva data-guia: el robot la señala.
  *
  * En escritorio la escena queda fija mientras avanza. En móvil las fases
  * son una lista vertical y cada una se enciende al pasar por el centro.
@@ -27,8 +27,13 @@ export function iniciarProceso(fija: boolean): () => void {
     fases.forEach((fase, i) => {
       fase.classList.toggle('activa', i === activa);
       fase.classList.toggle('alcanzada', i < activa);
-      if (i === activa) fase.setAttribute('aria-current', 'step');
-      else fase.removeAttribute('aria-current');
+      if (i === activa) {
+        fase.setAttribute('aria-current', 'step');
+        fase.dataset.guia = '';
+      } else {
+        fase.removeAttribute('aria-current');
+        delete fase.dataset.guia;
+      }
     });
     if (actual) actual.textContent = String(Math.max(1, activa + 1));
   };
@@ -72,6 +77,7 @@ export function iniciarProceso(fija: boolean): () => void {
     fases.forEach((fase) => {
       fase.classList.remove('activa', 'alcanzada');
       fase.removeAttribute('aria-current');
+      delete fase.dataset.guia;
     });
   };
 }

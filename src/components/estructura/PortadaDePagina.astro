@@ -29,7 +29,7 @@ const { id, rotulo, titulo, completa = false } = Astro.props;
   </div>
   <div class="contenido" data-zona-lectura>
     <p class="rotulo">{rotulo}</p>
-    <h1 id={id} set:html={titulo} data-guia />
+    <h1 id={id} set:html={titulo} data-guia data-seda="texto" data-seda-inicio />
     <slot />
   </div>
 </section>

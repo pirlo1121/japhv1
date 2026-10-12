@@ -4,10 +4,20 @@
  * señala el manifiesto; los primeros filamentos de la red nacen de su
  * cuerpo.
  *
+ * Los hilos de seda tejen el titular y los tres estados de la materia
+ * (líquido, forma, sólido), que cuentan lo mismo que la escena: de la
+ * idea al producto.
+ *
  * Con movimiento en escritorio la escena queda fija mientras la cámara lo
- * rodea y cada cláusula del manifiesto se enciende con el progreso
- * (--p). En móvil y sin movimiento es un bloque normal.
+ * rodea y cada cláusula del manifiesto y cada estado se encienden con el
+ * progreso (--p). En móvil y sin movimiento es un bloque normal.
  */
+const estados = [
+  { estado: 'Líquido', que: 'la idea', forma: 'liquido' },
+  { estado: 'Forma', que: 'el diseño', forma: 'forma' },
+  { estado: 'Sólido', que: 'el producto', forma: 'solido' }
+];
+
 const clausulas = [
   'Una presencia digital sana funciona como un ecosistema:',
   'el sitio atrae,',
@@ -27,12 +37,21 @@ const clausulas = [
   <div class="marco">
     <div class="bloque" data-zona-lectura>
       <p class="rotulo">02 · La transformación</p>
-      <h2 id="titulo-transformacion">
+      <h2 id="titulo-transformacion" data-seda="texto">
         Las ideas <em>toman forma.</em>
       </h2>
       <p class="entrada">
         Convertimos conceptos en experiencias digitales diseñadas para funcionar, conectar y crecer.
       </p>
+      <ol class="estados" aria-label="De la idea al producto">
+        {estados.map(({ estado, que, forma }, i) => (
+          <li data-paso data-seda="caja" style={{ '--u': 0.08 + i * 0.2 }}>
+            <span class:list={['muestra', forma]} aria-hidden="true" />
+            <span class="estado">{estado}</span>
+            <span class="que">{que}</span>
+          </li>
+        ))}
+      </ol>
       <p class="manifiesto" data-pasos data-guia>
         {clausulas.map((clausula, i) => (
           <>
@@ -63,6 +82,68 @@ const clausulas = [
 
   .entrada {
     font-size: var(--t-1);
+  }
+
+  /* Tres estados de la materia unidos por un filamento: líquido → forma → sólido. */
+  .estados {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .estados li {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    padding: 0.45rem 0.8rem 0.45rem 0.6rem;
+    border: 1px solid var(--linea-fuerte);
+    border-radius: 8px;
+    background: rgb(var(--superficie-rgb) / 0.7);
+    font-size: var(--t--1);
+  }
+
+  .estados li + li::before {
+    content: '';
+    position: absolute;
+    right: 100%;
+    top: 50%;
+    width: 0.5rem;
+    height: 1px;
+    background: linear-gradient(90deg, var(--cian), var(--purpura));
+  }
+
+  /* La muestra pasa de gota a bloque: la misma materia en tres estados. */
+  .muestra {
+    width: 0.85rem;
+    aspect-ratio: 1;
+    background: var(--gota);
+    box-shadow: 0 0 8px rgb(var(--cian-rgb) / 0.45);
+  }
+
+  .liquido {
+    border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+  }
+
+  .forma {
+    border-radius: 35%;
+  }
+
+  .solido {
+    border-radius: 2px;
+    background: linear-gradient(135deg, var(--texto), var(--metadato) 55%, var(--superficie-2));
+  }
+
+  .estado {
+    color: var(--texto);
+    font-weight: 500;
+  }
+
+  .que {
+    color: var(--metadato);
   }
 
   .manifiesto {

@@ -1,17 +1,31 @@
 # CLAUDE.md
 
-Guía rápida para trabajar en este repo. El detalle de diseño, escenas y rendimiento está en
-`README.md`: léelo antes de tocar la portada o la escultura.
+Guía rápida para trabajar en este repo. El detalle de diseño, capas, perillas de ajuste y
+validación está en `README.md`: léelo antes de tocar la portada, el guía o la seda.
 
 ## Qué es
 
 Front de JAPH (agencia de ecosistemas digitales, Bogotá). Sitio estático con Astro 7 +
-TypeScript. Dirección visual "Liquid Technology × The Living Network": un guía de metal
-líquido (un robot que nace de una gota, en un shader WebGL2 propio) recorre la página y
-señala el contenido; de su cuerpo nace una red viva en Canvas 2D proyectada con la misma
-cámara (`src/scripts/lienzo/`). GSAP y Lenis animan la historia (`src/scripts/historia/`).
-El backend vive en `../server` (todavía no conectado). Esta carpeta (`front-japh2`) es una
-copia de `front-japh` con el robot del original llevado a este diseño.
+TypeScript. Es una copia de `front-japh` (carpeta hermana, con su propio git) en la que se
+está explorando la dirección visual "Liquid Technology × The Living Network". El backend
+vive en `../server` (todavía no conectado).
+
+**El diseño sigue en evolución.** El usuario itera sección a sección. Ante un cambio de
+dirección, revisa "Direcciones probadas y descartadas" y "Pendiente de diseño" en el
+README, y actualiza ambas listas cuando algo se pruebe, se descarte o se resuelva.
+
+Cuatro capas visuales (detalle en el README):
+
+| Capa             | Código                                                    | Atributo                    |
+| ---------------- | --------------------------------------------------------- | --------------------------- |
+| Guía (robot)     | `scripts/lienzo/` (`escena`, `escultura`, `sombreador`)   | `data-guia`, `data-rama`    |
+| Red viva         | `scripts/lienzo/red.ts`                                   | estado `red`/`orden`        |
+| Paneles líquidos | `sombreador.ts` (`pintarPaneles`) + `escena.ts` (`PANEL`) | `data-liquido`              |
+| Hilos de seda    | `scripts/seda/` + `components/estructura/Seda.astro`      | `data-seda`, `<Boton seda>` |
+
+La historia de la portada: `src/pages/index.astro` (orden de escenas),
+`scripts/historia/escenarios.ts` (dónde está el guía en cada una) e `iniciar.ts` (GSAP
+ScrollTrigger + Lenis).
 
 ## Comandos
 
@@ -33,22 +47,39 @@ Antes de dar algo por terminado: `npm run check` y `npm run format:check` sin er
 - Alias `@/` → `src/` en los imports.
 - El texto editable vive en `src/datos/` y `src/config/sitio.ts`, no en los componentes.
   Correo, teléfono y redes solo en `sitio.ts`.
-- Contenido de ejemplo marcado con `ejemplo: true` (muestra `[Ejemplo editable]`).
+- Contenido de ejemplo marcado con `ejemplo: true` (muestra `[Ejemplo editable]`). No
+  inventar proyectos, clientes, cifras ni testimonios.
 - Sin scripts en línea, salvo el de `Base.astro` que decide la clase `movimiento`.
-- Estilos: tokens en `src/styles/tokens.css` (azul medianoche, cian, azul, violeta; el
-  verde `--verde` es escaso: solo estados activos; una sola fuente, Instrument Sans). No
-  introducir colores sueltos fuera de los tokens: las transparencias usan los canales
-  `-rgb` (`rgb(var(--fondo-rgb) / 0.8)`). `--texto-apagado` no llega a AA: solo decorativo.
+- Estilos: tokens en `src/styles/tokens.css` (azul medianoche; cian, azul y violeta para
+  la luz; `--verde` escaso, solo estados activos; una sola fuente, Instrument Sans). Nada
+  de colores sueltos: las transparencias usan los canales `-rgb`
+  (`rgb(var(--fondo-rgb) / 0.8)`). `--texto-apagado` no llega a AA: solo decorativo.
+- Las decisiones visuales van en constantes con nombre (`MUELLE_POSICION`, `PANEL`,
+  `TEJIDO`…), no en números sueltos. La tabla "Cómo ajustar el diseño" del README dice
+  cuál toca cada cosa; si añades una perilla, añádela ahí.
 - Accesibilidad y degradación son requisitos: debe funcionar sin WebGL, sin JS y con
-  "reducir movimiento" (ver sección Validación del README).
-- La portada: cada escena es una `<section>` con `id` y `data-escena`; el orden de
-  `src/pages/index.astro` es el orden de la historia. Las formas de cada escena están en
-  `scripts/historia/escenarios.ts`; la pose del robot y las anclas de la red, en
-  `lienzo/escultura.ts` (compartidas con el shader vía uniforms). El guía señala lo
-  marcado con `data-guia` (o el servicio con `data-activa`).
-- Piezas que llegan como metal líquido: atributo `data-liquido` (solo en la portada; ver
-  README, "De líquido a sólido"). No les pongas `transform` ni animaciones de entrada propias:
-  el líquido se dibuja con su caja y debe coincidir al píxel.
+  "reducir movimiento". Cada capa nueva necesita las tres salidas.
+- Rendimiento: un solo bucle por lienzo; lecturas del DOM antes que escrituras en cada
+  fotograma; nada costoso por fotograma que pueda calcularse una vez. Móvil y escritorio
+  son igual de importantes.
+
+## Reglas de las capas
+
+- **Guía:** la pose se calcula en `escultura.ts` y el GLSL deshace exactamente la misma
+  cuenta (`alMundo` ↔ `espacioRobot`); cambia las dos a la vez.
+- **`data-liquido` y `data-seda`:** sin `transform` ni animaciones de entrada propias en
+  esas piezas; su capa se dibuja con su caja y debe coincidir al píxel.
+- **`data-seda`:** lo marcado aparece al terminar de tejerse. Úsalo en titulares y
+  componentes, no en texto largo. `data-seda-inicio` solo para lo que se ve al cargar.
+- **`data-liquido`:** solo en la portada (necesita el lienzo fijo); hasta 4 paneles a la
+  vez (`MAX_PANELES`).
+
+## Verificar
+
+El Chrome headless con SwiftShader pinta el robot en segundos por fotograma: sirve para
+capturas y errores, no para juzgar la fluidez. Para medir el resto (seda, red, hilo
+principal) desactiva WebGL en la prueba. En desarrollo, `window.__estado` y
+`window.__escena` dejan inspeccionar el estado desde la consola.
 
 ## Cuidado
 
@@ -58,6 +89,7 @@ Antes de dar algo por terminado: `npm run check` y `npm run format:check` sin er
 
 ## Pendiente
 
+- Seguir afinando el diseño (lista en "Pendiente de diseño" del README).
 - Sustituir el contenido de ejemplo (proyectos, equipo, precios, contacto, textos legales).
 - Conectar el formulario al backend.
-- Probar en móviles reales.
+- Probar en GPU y móviles reales; medir LCP, INP y CLS.

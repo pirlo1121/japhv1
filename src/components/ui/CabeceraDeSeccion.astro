@@ -17,7 +17,7 @@ const { id, titulo, rotulo, nivel: Etiqueta = 'h2' } = Astro.props;
 
 <header class="cabecera-seccion">
   {rotulo && <p class="rotulo">{rotulo}</p>}
-  <Etiqueta id={id} set:html={titulo} />
+  <Etiqueta id={id} set:html={titulo} data-seda="texto" />
   <slot />
 </header>
 

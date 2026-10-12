@@ -8,6 +8,7 @@ import '@/styles/tokens.css';
 import '@/styles/base.css';
 import Cabecera from '@/components/estructura/Cabecera.astro';
 import PieDePagina from '@/components/estructura/PieDePagina.astro';
+import Seda from '@/components/estructura/Seda.astro';
 import Seo from '@/components/estructura/Seo.astro';
 
 interface Props {
@@ -51,5 +52,6 @@ const { titulo, descripcion, inmersiva = false } = Astro.props;
       <slot />
     </main>
     <PieDePagina />
+    <Seda />
   </body>
 </html>

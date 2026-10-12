@@ -1,157 +1,218 @@
 # front-japh2
 
-Sitio de JAPH con la dirección visual **Liquid Technology × The Living Network**: un guía
-de metal líquido, un robot que nace de una gota, recorre la página con el scroll y señala
-el contenido de cada escena. De su cuerpo nace una red viva de filamentos, nodos y
-energía. Materia → energía → conexiones → sistema → productos → crecimiento.
+Sitio de JAPH con la dirección visual **Liquid Technology × The Living Network**. Una
+copia de `front-japh` en la que se está explorando el diseño.
 
-El robot es el del original (`front-japh`, commit `4915a4d`), con su cinemática inversa y
-su rebote, llevado al diseño de esta copia (paleta navy y neones, red viva, nueve
-escenas) y con más fluidez y rendimiento.
-
-| Escena               | Componente       | El guía y la red                                                                   |
-| -------------------- | ---------------- | ---------------------------------------------------------------------------------- |
-| 01 El vacío          | `Vacio`          | La gota se condensa en el robot, que señala el titular; la red duerme al fondo.    |
-| 02 La transformación | `Transformacion` | (fija) La cámara lo rodea; señala el manifiesto; nacen los primeros filamentos.    |
-| 03 La red viva       | `RedViva`        | (fija) La cámara se aleja y la red crece escalonada desde su cuerpo.               |
-| 04 El núcleo         | `Nucleo`         | (fija) De cerca, se encienden circuitos de luz dentro de su cuerpo.                |
-| 05 Servicios         | `Servicios`      | Señala el servicio activo; un hilo une su mano con el texto y su rama se enciende. |
-| 06 El proceso        | `Proceso`        | (fija) Arriba a la derecha, señala la fase actual del camino orgánico (SVG).       |
-| 07 Proyectos         | `Proyectos`      | Presenta cada proyecto según pasa por el centro; la red empieza a ordenarse.       |
-| 08 Ecosistema        | `Ecosistema`     | En el centro de la red completa y ordenada; el movimiento se calma.                |
-| 09 Hagámoslo real    | `Llamada`        | Arriba y al centro, señala la invitación, que lleva a destinos reales.             |
-
-"(fija)": en escritorio la sección queda pegada a la pantalla (CSS sticky) mientras avanza.
-En móvil, sin movimiento o sin JavaScript, todas son bloques normales. Las páginas
-interiores muestran al mismo guía en calma, señalando su título.
-
-## Fluidez
-
-Todo en `scripts/lienzo/escena.ts` y `escultura.ts`:
-
-- **Muelle de posición:** su sitio en pantalla sigue a la historia con un muelle algo
-  subamortiguado. Viaja con inercia y se asienta con un leve rebote, sin saltos aunque el
-  scroll vaya a tirones.
-- **Viaje:** la velocidad de ese muelle lo estira como una gota, lo inclina hacia donde va
-  (cizalla del cuerpo, también en el GLSL), agita la cola y suelta una estela de tres gotas
-  que lo siguen y se reabsorben al frenar.
-- **Señalar:** brazo de cinemática inversa de dos huesos; cambia de brazo con histéresis,
-  la mano viaja de un elemento a otro y rebota al cambiar de objetivo.
-- **Formación:** al cargar, la gota se condensa en el robot (unión suave entre las dos
-  formas). Con "reducir movimiento" aparece ya formado.
-
-## De líquido a sólido
-
-Algunas piezas de la portada (`data-liquido`: los principios del núcleo, la lista de
-servicios y las tarjetas de proyectos) llegan como metal líquido. Cuando su borde superior
-entra en pantalla:
-
-1. brota una gota de cromo junto a ese borde;
-2. se divide en gotas que bajan, se extienden y se funden;
-3. se solidifica en una placa con la forma exacta del elemento (radio de esquina
-   incluido), con bisel de cromo y cara azul profunda;
-4. aparece el contenido real encima.
-
-La solidez sigue al scroll con un suavizado continuo (sin animaciones que esperar) y es
-reversible: al subir, la pieza vuelve a licuarse.
-
-- **Coste:** no marcha rayos. Es un campo de distancias 2D con relieve, dentro del mismo
-  shader del robot, solo para los paneles visibles que están cambiando (hasta 4) y solo
-  dentro de su caja. Va igual en móvil y en escritorio.
-- **Alineación:** cuando la pieza es sólida la dibuja el HTML, así que el scroll sobre ella
-  no cuesta nada y no puede desalinearse. El contenido solo cambia de opacidad (su caja no
-  se mueve).
-- **Degradación:** sin JavaScript, sin WebGL o con "reducir movimiento", las piezas son
-  sólidas desde el principio. Si recargas a media página, lo que ya está en pantalla no se
-  licúa.
-- **Ámbito:** solo la portada, donde está el lienzo fijo. Las páginas interiores no tienen
-  piezas líquidas.
-
-## Arquitectura
-
-- **Una sola escena.** `scripts/lienzo/escena.ts` tiene un único bucle y una única
-  cámara (`camara.ts`). El guía se dibuja en WebGL2 (`sombreador.ts`, en un worker
-  con OffscreenCanvas: `pintor.ts`, `trabajador.ts`). La red se dibuja en Canvas 2D
-  (`red.ts`) proyectada con la misma cámara. Son unas decenas de curvas y puntos, así que
-  un segundo WebGL a pantalla completa no hacía falta.
-- **El guía y la red comparten datos.** `escultura.ts` calcula la pose (articulaciones,
-  estela) una vez por fotograma. El sombreador la recibe como uniforms y la red la usa
-  para anclar sus siete ramas (una por servicio) en antena, cabeza, manos, hombros y la
-  gota de abajo.
-- **Estado narrativo.** `narrativa.ts`: posición, cámara, giro, flujo, atenuación, `red`,
-  `orden` y `grietas` (circuitos). `historia/escenarios.ts` es el storyboard en datos;
-  `historia/iniciar.ts` lo anima con GSAP ScrollTrigger (`scrub`, reversible) y Lenis con
-  ratón o trackpad.
-- **Red determinista.** Se genera con una semilla fija y crece según `red`/`orden`: al
-  subir se repliega exactamente igual que creció. Las partículas son pocas (12/8/5 según
-  la pantalla) y viajan por filamentos encadenados.
-- **El texto manda.** `[data-zona-lectura]` hace que la escultura baje sus brillos y que
-  la red se borre detrás de esos textos.
-- **Fase integrada.** El tiempo interno del líquido se integra con su velocidad
-  (`uFase`). Antes era `tiempo × flujo` y la forma daba saltos al cambiar de escena.
-
-## Degradación y accesibilidad
-
-- **Sin WebGL:** queda una gota de cromo en CSS, colocada donde estaría la escultura, y
-  la red sigue viva.
-- **Sin JavaScript:** documento completo y legible con la gota en CSS; todos los enlaces
-  funcionan.
-- **"Reducir movimiento":** no hay tramos ni partículas. La escultura y la red cambian de
-  estado, sin animación, al cruzar cada escena, y hay un velo detrás de cada escena.
-- **Servicios:** se activan con el puntero, con el foco del teclado o al cruzar el centro
-  de la pantalla en táctil. El contenido nunca depende del hover. Los nodos de la red
-  muestran su nombre al pasar el puntero, pero eso es un extra.
-- **Contraste sobre `--fondo`:** texto 18.8:1, texto secundario 9.5:1, metadatos 5.1:1.
-
-## Rendimiento
-
-- Guía: se pinta en un worker con OffscreenCanvas y solo marcha dentro de la esfera
-  límite. Usa volúmenes envolventes: lejos del robot, una esfera; la cola, los abdominales
-  y cada brazo solo se evalúan cerca de su región. Hay media frecuencia con la escena
-  atenuada y pausa fuera de pantalla.
-- Calidad adaptativa (`calidad.ts`): con tres fotogramas seguidos de más de 50 ms baja al
-  momento (primero el detalle, luego la resolución). Antes ignoraba los fotogramas de más
-  de 200 ms, así que un equipo muy lento nunca bajaba; ahora solo se ignora el primero
-  tras una pausa.
-- Hilo principal: pose, cinemática inversa y red cuestan 1–3 ms por fotograma (medido).
-- Red: resolución con tope (DPR 1.5, o 1.25 en táctil), destellos pre-pintados en lugar
-  de degradados por punto, sin `shadowBlur` ni postproceso.
-- Build: unos 78 KB de JS comprimido en total (la mayor parte es GSAP); Lenis se
-  descarga bajo demanda.
+> **Estado: diseño en evolución.** Lo que hay funciona y está probado, pero la dirección
+> visual se sigue afinando. Antes de cambiar algo, lee "Cómo ajustar el diseño" y
+> "Direcciones probadas y descartadas" para no repetir caminos ya recorridos.
 
 ```bash
 npm install
-npm run dev     # http://localhost:5173
+npm run dev     # http://localhost:5173 (si front-japh ocupa ese puerto: npx astro dev --port 5174)
 npm run build   # astro check + build estático en dist/
 ```
 
+## Las cuatro capas visuales
+
+La página se cuenta con cuatro capas que conviven. Cada una tiene su sitio, su atributo y
+sus perillas:
+
+| Capa                 | Qué es                                                                                  | Dónde                                          | Se activa con                     |
+| -------------------- | --------------------------------------------------------------------------------------- | ---------------------------------------------- | --------------------------------- |
+| **Guía**             | Robot de metal líquido (WebGL2) que nace de una gota, recorre la página y señala.       | `scripts/lienzo/` (escena, escultura, shader)  | `data-guia`, `data-rama`          |
+| **Red viva**         | Filamentos, nodos y energía (Canvas 2D) que nacen del cuerpo del guía.                  | `scripts/lienzo/red.ts`                        | estado `red` / `orden` por escena |
+| **Paneles líquidos** | Piezas que llegan como metal líquido y se solidifican en su forma (en el mismo shader). | `sombreador.ts` (`pintarPaneles`), `escena.ts` | `data-liquido`                    |
+| **Hilos de seda**    | Hebras que navegan sobre la página y cosen el contorno de titulares y componentes.      | `scripts/seda/`, `Seda.astro`                  | `data-seda`, `<Boton seda>`       |
+
+El guía, la red y los paneles comparten un solo bucle y una sola cámara (`escena.ts`), en
+un lienzo fijo detrás del contenido (solo en la portada; las interiores lo tienen en su
+encabezado). La seda tiene su propio lienzo, por encima del contenido y en todas las
+páginas, y su propio bucle.
+
+## La historia (portada)
+
+| Escena               | Componente       | Guía y red                                                                         | Otras capas                           |
+| -------------------- | ---------------- | ---------------------------------------------------------------------------------- | ------------------------------------- |
+| 01 El vacío          | `Vacio`          | La gota se condensa en el robot, que señala el titular; la red duerme al fondo.    | Seda: titular y botones (al cargar)   |
+| 02 La transformación | `Transformacion` | (fija) La cámara lo rodea; señala el manifiesto; nacen los primeros filamentos.    | Seda: titular y estados de la materia |
+| 03 La red viva       | `RedViva`        | (fija) La cámara se aleja y la red crece escalonada desde su cuerpo.               | Seda: titular                         |
+| 04 El núcleo         | `Nucleo`         | (fija) De cerca, se encienden circuitos de luz dentro de su cuerpo.                | Líquido: principios. Seda: titular    |
+| 05 Servicios         | `Servicios`      | Señala el servicio activo; un hilo une su mano con el texto y su rama se enciende. | Líquido: la lista. Seda: titular      |
+| 06 El proceso        | `Proceso`        | (fija) Arriba a la derecha, señala la fase actual del camino orgánico (SVG).       | Seda: titular                         |
+| 07 Proyectos         | `Proyectos`      | Presenta cada proyecto según pasa por el centro; la red empieza a ordenarse.       | Líquido: tarjetas. Seda: titular      |
+| 08 Ecosistema        | `Ecosistema`     | En el centro de la red completa y ordenada; el movimiento se calma.                | Seda: titular                         |
+| 09 Hagámoslo real    | `Llamada`        | Arriba y al centro, señala la invitación, que lleva a destinos reales.             | Seda: titular y botones               |
+
+"(fija)": en escritorio la sección queda pegada a la pantalla (CSS sticky) mientras avanza.
+En móvil, sin movimiento o sin JavaScript, todas son bloques normales. Las páginas
+interiores muestran al guía en calma señalando su título, y la seda teje su título y sus
+encabezados de sección.
+
+## Cómo ajustar el diseño
+
+Las decisiones visuales están en constantes con nombre, no repartidas por el código:
+
+| Quiero cambiar…                                | Dónde                                                                                 |
+| ---------------------------------------------- | ------------------------------------------------------------------------------------- |
+| Colores, degradados, tipografía, espacios      | `styles/tokens.css` (nunca colores sueltos fuera de ahí)                              |
+| Dónde está el guía en cada escena, cámara, red | `scripts/historia/escenarios.ts` (un `Escenario` por escena; `vertical()` para móvil) |
+| Qué tramo de scroll lleva de una escena a otra | `crearTramos` en `escenarios.ts`; inercia del scroll: `INERCIA` en `iniciar.ts`       |
+| Cómo viaja y fluye el guía                     | `escena.ts`: `MUELLE_POSICION`, `VIAJE`, `REBOTE`, `FORMACION`                        |
+| Cómo señala                                    | `escena.ts`: `RAPIDEZ_DEL_BRAZO`, `RAPIDEZ_DE_LA_MANO`, `GIRO_AL_SENALAR`             |
+| Forma del robot (cuerpo, cabeza, cola, estela) | `robot()` en `sombreador.ts` y `escultura.ts` (las dos cuentas deben coincidir)       |
+| Luz y reflejos del cromo                       | `estudio()` en `sombreador.ts`                                                        |
+| Cuánta red hay y cómo crece                    | `CANTIDADES` y `generar()` en `red.ts`                                                |
+| Cuándo y qué tan rápido se solidifica un panel | `PANEL` en `escena.ts`; aspecto: `campoPanel` y `pintarPaneles` en `sombreador.ts`    |
+| Cuántas hebras de seda, cuánto dura el tejido  | `seda.ts`: `cuantas` (en el constructor), `TEJIDO`, `AGUJAS_POR_PIEZA`                |
+| Color y grosor de la seda                      | `COLORES`, `trazarHebra` y `trazarParcial` en `seda.ts`                               |
+| Qué piezas se tejen o se licúan                | Atributos `data-seda` y `data-liquido` en los componentes                             |
+| Qué señala el guía                             | Atributo `data-guia` (o un servicio con `data-activa`)                                |
+| Calidad en equipos lentos                      | `calidad.ts` (topes de píxeles, umbrales de bajada)                                   |
+
+Para ver un cambio en el estado del guía sin hacer scroll, en desarrollo están
+`window.__estado` (estado narrativo) y `window.__escena` (escena) en la consola.
+
+## Las capas en detalle
+
+### Guía (robot)
+
+- **Formación:** al cargar, la gota se condensa en el robot (unión suave entre las dos
+  formas). Con "reducir movimiento" aparece ya formado.
+- **Viaje:** su posición en pantalla sigue a la historia con un muelle algo
+  subamortiguado. La velocidad de ese muelle lo estira, lo inclina hacia donde va (una
+  cizalla que también aplica el GLSL), agita la cola y suelta una estela de tres gotas que
+  se reabsorben al frenar.
+- **Señalar:** brazo de cinemática inversa de dos huesos. Cambia de brazo con histéresis,
+  la mano viaja de un elemento a otro, rebota al cambiar de objetivo, y un hilo de luz une
+  la mano con lo que señala.
+- **Detalles:** el visor brilla cian; en el núcleo se encienden circuitos (`grietas`).
+  Las siete ramas de la red (una por servicio) nacen de la antena, la cabeza, las manos,
+  los hombros y la gota de abajo.
+
+### Red viva
+
+Determinista: se genera con una semilla fija y crece según `red` y `orden`, así que al
+subir se repliega igual que creció. Las partículas son pocas (12, 8 o 5 según la
+pantalla) y viajan por filamentos encadenados. Se borra detrás de `[data-zona-lectura]`.
+
+### Paneles líquidos (`data-liquido`)
+
+Cuando el borde superior de la pieza entra en pantalla: brota una gota de cromo junto a
+ese borde, se divide en gotas que se extienden y se funden, se solidifica en una placa con
+la forma exacta del elemento (radio de esquina incluido), con bisel de cromo y cara azul
+profunda, y aparece el contenido real. La solidez sigue al scroll con suavizado y es
+reversible.
+
+- **Coste:** no marcha rayos. Es un campo de distancias 2D con relieve, solo para los
+  paneles visibles que están cambiando (hasta 4) y solo dentro de su caja.
+- **Alineación:** ya sólida, la pieza la dibuja el HTML, así que el scroll sobre ella no
+  cuesta nada y no puede desalinearse. El contenido solo cambia de opacidad.
+- **Ámbito:** solo la portada, donde está el lienzo fijo.
+
+### Hilos de seda (`data-seda`)
+
+Hebras finas (cian, púrpura, turquesa, blanco frío): cinco en táctil o en pantallas de
+menos de 768 px, nueve en el resto. Su cabeza sigue un campo de flujo y la cola la sigue
+con retraso. Cuando una pieza entra en pantalla, su contorno se cose de izquierda a
+derecha con las hebras más cercanas como agujas; al final aparece el contenido y el hilo
+se desvanece. Si sale por abajo y vuelve, se teje otra vez. El tejido termina aunque la
+pieza salga de pantalla, así que nada queda oculto.
+
+- `data-seda="texto"`: contorno exacto de las letras. Cada carácter se dibuja en su
+  posición real (`Range`) con su fuente y se sigue el borde (`forma.ts`).
+- `data-seda="caja"`: rectángulo redondeado del componente (en botones, `<Boton seda>`).
+- `data-seda-inicio`: se teje al cargar; se oculta antes de la primera pintura y, si el
+  script no llegara, aparece a los 3 s.
+
+## Arquitectura
+
+- **Una sola escena** para guía, red y paneles (`escena.ts`). El robot y los paneles se
+  pintan en un worker con OffscreenCanvas (`pintor.ts`, `trabajador.ts`); la red, en
+  Canvas 2D con la misma cámara (`camara.ts`).
+- **Estado narrativo** (`narrativa.ts`): posición, cámara, giro, flujo, atenuación, `red`,
+  `orden` y `grietas`. `escenarios.ts` es el storyboard; `iniciar.ts` lo anima con GSAP
+  ScrollTrigger (`scrub`, reversible) y Lenis con ratón o trackpad.
+- **Datos compartidos:** `escultura.ts` calcula la pose una vez por fotograma; el shader la
+  recibe como uniforms y la red ancla en ella sus ramas.
+- **Fase integrada:** el tiempo interno del líquido se integra con su velocidad (`uFase`),
+  así que cambiar de escena no hace saltar la forma.
+- **El texto manda:** `[data-zona-lectura]` baja los brillos del guía y borra la red detrás.
+
+## Rendimiento
+
+- **Guía:** marcha solo dentro de la esfera límite, con volúmenes envolventes (lejos del
+  robot, una esfera; cola, abdominales y cada brazo solo cerca de su región). Va a media
+  frecuencia con la escena atenuada y se pausa fuera de pantalla.
+- **Calidad adaptativa** (`calidad.ts`): con tres fotogramas seguidos de más de 50 ms baja
+  al momento (primero el detalle, luego la resolución); con muestras lentas, baja poco a
+  poco. Nunca vuelve a subir.
+- **Hilo principal** (medido): pose, red y paneles cuestan 1–3 ms por fotograma. Seda: 60
+  fps en escritorio y en móvil, con una o dos tareas de unos 55 ms en escritorio al medir
+  el contorno del titular grande.
+- **Build:** unos 80 KB de JS comprimido (la mayor parte es GSAP); Lenis se descarga bajo
+  demanda.
+
+## Degradación y accesibilidad
+
+- **Sin WebGL:** gota de cromo en CSS donde estaría el guía; la red y la seda siguen vivas.
+- **Sin JavaScript:** documento completo y legible; todos los enlaces funcionan.
+- **"Reducir movimiento":** sin tramos, partículas, líquido ni seda. El guía y la red
+  cambian de estado por saltos al cruzar cada escena.
+- **Servicios:** se activan con el puntero, con el foco del teclado o al cruzar el centro
+  de la pantalla. El contenido nunca depende del hover.
+- **Contraste sobre `--fondo`:** texto 18.8:1, texto secundario 9.5:1, metadatos 5.1:1.
+
 ## Validación
 
-Probado con Chrome headless (Playwright, WebGL por software con SwiftShader) sobre el
-servidor de desarrollo, a 1440×900 y a 390×844 táctil:
+Probado con Chrome headless (Playwright) a 1440×900 y a 390×844 táctil. La portada se
+probó con WebGL por software (SwiftShader) y también sin WebGL.
 
-- `astro check` y `prettier --check` sin errores; `astro build` correcto.
-- Recorrido completo de las nueve escenas en escritorio y móvil, sin errores de consola y
-  sin desborde horizontal.
-- Scroll de vuelta arriba: el estado vuelve exactamente al inicial.
-- Entrada directa por ancla (`/#proceso`): escena correcta.
-- Servicios: el foco cambia con el puntero y con el teclado.
-- "Reducir movimiento": la escena cambia por saltos, escena a escena.
-- Sin WebGL: gota CSS en su sitio, red viva y aviso en consola; el bucle va a 60 fps sin
-  tareas largas en el hilo principal.
-- Páginas interiores (servicios, proyectos, nosotros, contacto, privacidad, 404).
+- `astro check`, `prettier --check` y `astro build` sin errores.
+- Recorrido completo de la portada, de bajada y de vuelta arriba, sin errores de consola;
+  el estado vuelve al inicial.
+- Entrada directa por ancla, foco de servicios con puntero y teclado, "reducir
+  movimiento", sin WebGL, páginas interiores.
+- Paneles líquidos y seda, fotograma a fotograma, en escritorio y móvil.
 
-**No medido todavía:** FPS con GPU real. SwiftShader no es representativo: pinta el robot
-a pantalla completa en segundos por fotograma, aunque la calidad adaptativa baja hasta
-unos 40–80 ms. Tampoco LCP, INP y CLS ni dispositivos móviles reales.
+**No medido todavía:** fluidez con GPU real. SwiftShader no es representativo: pinta el
+robot en segundos por fotograma. Tampoco LCP, INP y CLS, ni móviles reales.
+
+## Direcciones probadas y descartadas
+
+Para no volver a recorrerlas sin motivo:
+
+- **Escultura que cambia de forma** (gota → cinta → núcleo de obsidiana → portal →
+  ecosistema): se sustituyó por el robot guía. El núcleo vive ahora como circuitos de luz
+  dentro del robot.
+- **Siete gotas-neurona unidas por sinapsis de luz** en el héroe: se revirtió.
+- **Palabras de metal líquido** (filtro SVG de gotas que se solidifican en letras): se
+  sustituyeron por los hilos de seda.
+
+## Pendiente de diseño
+
+Ideas y huecos conocidos para la siguiente iteración:
+
+- Probar en GPU y móviles reales, medir LCP, INP y CLS y ajustar `calidad.ts` si hace
+  falta. El titular del héroe aparece al terminar de tejerse; vigilar su efecto en el LCP.
+- Mover el cálculo del contorno de los titulares grandes a un momento ocioso (evitaría
+  las tareas de unos 55 ms) o precalcularlo.
+- Comprobar que las cuatro capas conviven bien: que la seda no compita con el guía y la red
+  en escenas cargadas (servicios, ecosistema).
+- Paneles líquidos y seda en las páginas interiores (hoy solo tienen el guía en su
+  encabezado y la seda en los títulos).
+- La gota de respaldo CSS es una sola gota; podría anticipar mejor al robot.
+- Afinar composición en tablet (entre 768 y 1100 px) y en móvil apaisado.
 
 ## Convenciones para la capa visual
 
-- Cada escena de la portada es una `<section>` con `id` propio y `data-escena`. Son los
+- Cada escena de la portada es una `<section>` con `id` propio y `data-escena`: son los
   anclajes del scrollytelling y del índice `Recorrido`.
 - Los textos que aparecen por pasos llevan `data-paso` y un umbral `--u`; el CSS lee el
   progreso de su escena (`--p`). Sin JavaScript se ven enteros.
-- Las piezas marcadas como `ejemplo: true` en `src/datos/` muestran un aviso.
-  Desaparecen al poner contenido real. Ningún proyecto, cliente ni cifra es inventado.
+- A las piezas `data-liquido` y `data-seda` no les pongas `transform` ni animaciones de
+  entrada propias: su capa se dibuja con su caja y debe coincidir al píxel.
+- Las piezas `ejemplo: true` en `src/datos/` muestran un aviso; desaparecen al poner
+  contenido real. Ningún proyecto, cliente ni cifra es inventado.
 - El formulario de contacto tiene el marcado completo, pero aún no envía: falta conectar
   `POST /api/contact` (ver `../server`).

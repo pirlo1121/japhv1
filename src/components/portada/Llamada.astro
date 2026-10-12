@@ -13,15 +13,17 @@ import { contacto } from '@/config/sitio';
 <section class="llamada" id="llamada" aria-labelledby="titulo-llamada" data-escena="Contacto">
   <div class="contenido" data-zona-lectura>
     <p class="rotulo">09 · Hagámoslo real</p>
-    <h2 id="titulo-llamada">
+    <h2 id="titulo-llamada" data-seda="texto">
       ¿Qué podemos <em>construir juntos?</em>
     </h2>
     <p class="entrada">Cuéntanos tu idea. Exploremos cómo convertirla en una solución digital.</p>
     <p class="acciones" data-guia>
-      <Boton href="/contacto" variante="solido">
+      <Boton href="/contacto" variante="solido" seda>
         Empezar un proyecto
       </Boton>
-      <Boton href={`mailto:${contacto.correo}`}>Contactar</Boton>
+      <Boton href={`mailto:${contacto.correo}`} seda>
+        Contactar
+      </Boton>
     </p>
     <p class="canales">
       <a href={`mailto:${contacto.correo}`}>{contacto.correo}</a>

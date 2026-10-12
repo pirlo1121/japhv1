@@ -3,8 +3,10 @@
  * Escena 01 · El vacío. Una gota de metal líquido flota en un espacio azul
  * medianoche y se condensa en el guía: un robot líquido que, a la derecha
  * del titular (en móvil, encima), lo señala. Unos pocos
- * filamentos duermen al fondo. El mensaje, la propuesta y las acciones
- * están en la primera pantalla desde el primer instante: no esperan al guía.
+ * filamentos duermen al fondo. Los hilos de seda (Seda.astro) tejen el
+ * titular y los botones al cargar; la entradilla y los datos entran justo
+ * detrás, escalonados (solo con movimiento). Una gota que cae por un
+ * filamento invita a bajar.
  */
 import Boton from '@/components/ui/Boton.astro';
 import { sitio } from '@/config/sitio';
@@ -14,7 +16,7 @@ import { servicios } from '@/datos/servicios';
 <section class="vacio" id="inicio" aria-labelledby="titulo-vacio" data-escena="Inicio">
   <div class="contenido" data-zona-lectura>
     <p class="rotulo">Estrategia / Diseño / Tecnología</p>
-    <h1 id="titulo-vacio" data-guia>
+    <h1 id="titulo-vacio" data-guia data-seda="texto" data-seda-inicio>
       Convertimos ideas en <em>ecosistemas digitales.</em>
     </h1>
     <p class="entrada">
@@ -22,10 +24,12 @@ import { servicios } from '@/datos/servicios';
       reales.
     </p>
     <p class="acciones">
-      <Boton href="/contacto" variante="solido">
+      <Boton href="/contacto" variante="solido" seda="inicio">
         Empezar un proyecto
       </Boton>
-      <Boton href="#proyectos-destacados">Explorar nuestro trabajo</Boton>
+      <Boton href="#proyectos-destacados" seda="inicio">
+        Explorar nuestro trabajo
+      </Boton>
     </p>
   </div>
 
@@ -40,7 +44,9 @@ import { servicios } from '@/datos/servicios';
     </div>
     <div class="descenso" aria-hidden="true">
       <dt>Recorrido</dt>
-      <dd>Desliza</dd>
+      <dd>
+        <span class="hilo"></span>Desliza
+      </dd>
     </div>
   </dl>
 </section>
@@ -112,23 +118,69 @@ import { servicios } from '@/datos/servicios';
     text-align: right;
   }
 
-  /* Un pulso verde muy pequeño: el sistema está vivo. */
-  .descenso dd::before {
-    content: '';
+  /* Una gota de cromo que cae por un filamento y se desvanece al llegar abajo. */
+  .hilo {
+    position: relative;
     display: inline-block;
-    width: 5px;
-    aspect-ratio: 1;
-    margin-right: 0.5rem;
-    border-radius: 50%;
+    width: 1px;
+    height: 2.4rem;
+    margin-right: 0.75rem;
     vertical-align: middle;
-    background: var(--verde);
-    box-shadow: 0 0 8px rgb(var(--verde-rgb) / 0.8);
-    animation: latido 2.4s ease-in-out infinite;
+    background: linear-gradient(to bottom, transparent, rgb(var(--cian-rgb) / 0.5), transparent);
   }
 
-  @keyframes latido {
-    50% {
-      opacity: 0.35;
+  .hilo::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 0;
+    width: 5px;
+    height: 7px;
+    border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+    background: var(--gota);
+    box-shadow: 0 0 8px rgb(var(--cian-rgb) / 0.6);
+    translate: -50% 0;
+    animation: caer 2.2s cubic-bezier(0.55, 0, 0.75, 0.4) infinite;
+  }
+
+  @keyframes caer {
+    0% {
+      top: -4px;
+      opacity: 0;
+      scale: 0.6;
+    }
+    15% {
+      opacity: 1;
+      scale: 1;
+    }
+    80% {
+      opacity: 1;
+    }
+    100% {
+      top: calc(100% - 3px);
+      opacity: 0;
+      scale: 1 0.6;
+    }
+  }
+
+  /* Entrada escalonada, justo detrás del titular (solo con movimiento). */
+  :global(.movimiento) .entrada,
+  :global(.movimiento) .meta {
+    animation: aparecer 0.65s var(--suave) both;
+  }
+
+  :global(.movimiento) .entrada {
+    animation-delay: 0.45s;
+  }
+
+  :global(.movimiento) .meta {
+    animation-delay: 0.8s;
+  }
+
+  @keyframes aparecer {
+    from {
+      opacity: 0;
+      translate: 0 0.9rem;
     }
   }
 
@@ -151,7 +203,7 @@ import { servicios } from '@/datos/servicios';
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .descenso dd::before {
+    .hilo::after {
       animation: none;
     }
   }

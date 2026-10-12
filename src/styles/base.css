@@ -412,6 +412,26 @@ main > :first-child:not(.vacio, .portada-pagina) {
   opacity: clamp(0, calc((var(--solidez, 1) - 0.8) * 5), 1);
 }
 
+/* Hilos de seda (scripts/seda): lo que aún no se ha tejido está oculto y
+   aparece con --tejido al final del tejido. La clase `seda` la pone el
+   script; sin él (o con "reducir movimiento") todo se ve normal. Lo que se
+   teje al cargar ([data-seda-inicio]) se oculta antes de la primera pintura
+   (clase `movimiento`) y, si el script no llegara, aparece a los 3 s. */
+.seda [data-seda]:not([data-tejido]) {
+  opacity: var(--tejido, 0);
+}
+
+.movimiento [data-seda-inicio]:not([data-tejido]) {
+  opacity: var(--tejido, 0);
+  animation: seda-seguro 0s 3s forwards;
+}
+
+@keyframes seda-seguro {
+  to {
+    opacity: 1;
+  }
+}
+
 /* Índice pequeño de una pieza ("01"): metadato, no titular. */
 .ordinal {
   font-size: 0.75rem;

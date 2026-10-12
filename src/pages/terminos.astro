@@ -1,0 +1,130 @@
+---
+/**
+ * PLANTILLA LEGAL: este texto no sustituye la revisión de un abogado.
+ * Completa los campos entre corchetes y la fecha antes de publicar.
+ */
+import Legal, { type EntradaDeIndice } from '@/layouts/Legal.astro';
+import { contacto } from '@/config/sitio';
+
+const indice: EntradaDeIndice[] = [
+  { id: 'alcance', etiqueta: '1. Qué cubre este documento' },
+  { id: 'uso', etiqueta: '2. Uso del sitio' },
+  { id: 'propuestas', etiqueta: '3. Cotizaciones y propuestas' },
+  { id: 'entregables', etiqueta: '4. Entregables y propiedad' },
+  { id: 'pagos', etiqueta: '5. Pagos' },
+  { id: 'responsabilidad', etiqueta: '6. Límites de responsabilidad' },
+  { id: 'ley', etiqueta: '7. Ley aplicable' },
+  { id: 'contacto-legal', etiqueta: '8. Contacto' }
+];
+---
+
+<Legal
+  titulo="Términos · JAPH"
+  descripcion="Términos y condiciones de uso del sitio y de los servicios de JAPH."
+  encabezado="Términos y condiciones"
+  actualizacion="1 de marzo de 2026"
+  fechaDeEjemplo
+  indice={indice}
+>
+  <Fragment slot="aviso">
+    <strong>Aviso importante antes de publicar este documento.</strong> Este texto es una plantilla
+    en español, escrita para que el equipo de JAPH la revise, complete y adapte a su operación real.
+    No constituye asesoría legal ni garantiza por sí sola su validez o exigibilidad en ninguna
+    jurisdicción. Antes de publicarlo, pide a un abogado o abogada habilitado en tu país que lo
+    revise y lo ajuste a la normativa que te aplique.
+  </Fragment>
+
+  <section id="alcance">
+    <h2>1. Qué cubre este documento</h2>
+    <p>
+      Estos términos regulan el uso del sitio <strong>[dominio del sitio]</strong>y la relación
+      previa a la firma de un contrato de servicios con
+      <strong>[nombre legal de la empresa]</strong>. Cada proyecto se rige además por su propia
+      propuesta y contrato firmado, que prevalecen sobre este texto en caso de contradicción.
+    </p>
+  </section>
+
+  <section id="uso">
+    <h2>2. Uso del sitio</h2>
+    <p>
+      Puedes navegar, leer y compartir el contenido de este sitio libremente. No está permitido
+      copiar el código, los textos o las piezas gráficas para reproducirlos como propios, ni
+      intentar acceder a partes no públicas del servicio.
+    </p>
+    <p>
+      El formulario de contacto es para consultas reales de proyecto. Los envíos automatizados,
+      masivos o que no incluyan el consentimiento requerido se bloquean y se descartan, tal como se
+      explica en nuestra
+      <a href="/privacidad">política de privacidad</a>.
+    </p>
+  </section>
+
+  <section id="propuestas">
+    <h2>3. Cotizaciones y propuestas</h2>
+    <p>
+      Los precios que puedan publicarse en el sitio son de referencia y no constituyen una oferta en
+      firme. Una cotización solo es vinculante cuando se entrega por escrito, con alcance y plazo
+      definidos, y tiene la vigencia que se indique en ese documento (
+      <strong>[por ejemplo, 30 días calendario]</strong>).
+    </p>
+  </section>
+
+  <section id="entregables">
+    <h2>4. Entregables y propiedad</h2>
+    <p>
+      Salvo que el contrato de un proyecto indique otra cosa, al recibir el pago completo acordado,
+      los derechos sobre los entregables finales (código fuente, archivos de diseño y piezas
+      audiovisuales producidas para ese proyecto) se transfieren al cliente.
+    </p>
+    <ul>
+      <li>Las librerías y componentes de terceros conservan su propia licencia.</li>
+      <li>
+        Las herramientas internas, plantillas y metodologías propias de JAPH no se transfieren; el
+        cliente recibe una licencia de uso sobre lo entregado.
+      </li>
+      <li>
+        Salvo que el cliente lo pida por escrito, JAPH podrá mostrar el trabajo realizado como parte
+        de su portafolio.
+      </li>
+    </ul>
+  </section>
+
+  <section id="pagos">
+    <h2>5. Pagos</h2>
+    <p>
+      Cada proyecto define su propia forma de pago en la propuesta firmada. Como referencia general:
+      los proyectos pueden facturarse en tramos, con un anticipo al inicio y el resto contra
+      entregas acordadas. Un retraso prolongado en el pago (
+      <strong>[por ejemplo, más de 30 días]</strong>) puede dar lugar a la suspensión del trabajo
+      hasta ponerse al día.
+    </p>
+  </section>
+
+  <section id="responsabilidad">
+    <h2>6. Límites de responsabilidad</h2>
+    <p>
+      JAPH responde por los defectos del trabajo que entrega dentro del periodo de garantía que se
+      pacte en cada contrato. Salvo que se acuerde expresamente lo contrario, JAPH no responde por
+      caídas de servicios de terceros, cambios en las políticas de plataformas externas, ni por
+      modificaciones realizadas al código después de su entrega por personas ajenas al equipo.
+    </p>
+  </section>
+
+  <section id="ley">
+    <h2>7. Ley aplicable</h2>
+    <p>
+      Esta sección debe completarse con la legislación y la jurisdicción que correspondan al
+      domicilio real de la empresa (
+      <strong>[por ejemplo: legislación colombiana, tribunales de Bogotá]</strong>). Antes de
+      definirla, conviene resolver cualquier controversia primero de buena fe entre las partes.
+    </p>
+  </section>
+
+  <section id="contacto-legal">
+    <h2>8. Contacto</h2>
+    <p>
+      Para asuntos legales o contractuales, escribe a
+      <a href={`mailto:${contacto.correoLegal}`}>{contacto.correoLegal}</a>.
+    </p>
+  </section>
+</Legal>

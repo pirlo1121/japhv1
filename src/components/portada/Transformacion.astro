@@ -1,0 +1,88 @@
+---
+/**
+ * Escena 02 · La transformación. La gota se estira, su centro de masa se
+ * desplaza y termina en una cinta curva; los reflejos viajan por la
+ * superficie y los primeros filamentos aparecen cerca, siguiendo la curva.
+ *
+ * Con movimiento en escritorio la escena queda fija mientras la escultura
+ * se transforma y cada cláusula del manifiesto se enciende con el progreso
+ * (--p). En móvil y sin movimiento es un bloque normal.
+ */
+const clausulas = [
+  'Una presencia digital sana funciona como un ecosistema:',
+  'el sitio atrae,',
+  'la automatización responde,',
+  'el producto retiene,',
+  'el contenido sostiene',
+  'y la marca le da sentido a todo lo demás.'
+];
+---
+
+<section
+  class="transformacion"
+  id="transformacion"
+  aria-labelledby="titulo-transformacion"
+  data-escena="Transformación"
+>
+  <div class="marco">
+    <div class="bloque" data-zona-lectura>
+      <p class="rotulo">02 · La transformación</p>
+      <h2 id="titulo-transformacion">
+        Las ideas <em>toman forma.</em>
+      </h2>
+      <p class="entrada">
+        Convertimos conceptos en experiencias digitales diseñadas para funcionar, conectar y crecer.
+      </p>
+      <p class="manifiesto" data-pasos>
+        {clausulas.map((clausula, i) => (
+          <>
+            <span data-paso style={{ '--u': 0.12 + (i / clausulas.length) * 0.62 }}>
+              {clausula}
+            </span>{' '}
+          </>
+        ))}
+      </p>
+    </div>
+  </div>
+</section>
+
+<style>
+  .transformacion {
+    --recorrido: 230vh;
+  }
+
+  .bloque {
+    display: grid;
+    gap: 1.4rem;
+    max-width: 36rem;
+  }
+
+  .bloque > * {
+    margin: 0;
+  }
+
+  .entrada {
+    font-size: var(--t-1);
+  }
+
+  .manifiesto {
+    padding-left: 1.25rem;
+    border-left: 1px solid rgb(var(--cian-rgb) / 0.3);
+    font-size: var(--t-2);
+    line-height: 1.3;
+    letter-spacing: -0.015em;
+    color: var(--texto);
+  }
+
+  .manifiesto span {
+    display: inline;
+    transition: opacity 0.3s linear;
+  }
+
+  /* Móvil: la escultura arriba, el texto debajo con espacio para verla. */
+  @media (max-aspect-ratio: 85/100), (max-width: 47.99rem) {
+    .marco {
+      padding-top: 40svh;
+    }
+  }
+</style>

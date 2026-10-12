@@ -1,0 +1,29 @@
+{
+  "name": "front-japh2",
+  "type": "module",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Front de JAPH: Liquid Technology × The Living Network. Escultura de metal líquido (WebGL2) y red viva, contada con el scroll. Construido con Astro.",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro check && astro build",
+    "preview": "astro preview",
+    "check": "astro check",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "dependencies": {
+    "astro": "^7.3.4",
+    "gsap": "^3.15.0",
+    "lenis": "^1.3.26"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.10",
+    "prettier": "^3.9.9",
+    "prettier-plugin-astro": "^1.0.1",
+    "typescript": "^6.0.3"
+  }
+}

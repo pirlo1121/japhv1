@@ -1,0 +1,52 @@
+---
+/** Métricas del estudio (datos/cifras.ts → cifrasEstudio). */
+import SelloEjemplo from '@/components/ui/SelloEjemplo.astro';
+import { cifrasEstudio } from '@/datos/cifras';
+---
+
+<dl class="metricas">
+  {cifrasEstudio.map((cifra) => (
+    <div class="metrica">
+      <dt>
+        {cifra.valor}
+        {cifra.sufijo}
+      </dt>
+      <dd>
+        {cifra.descripcion} {cifra.ejemplo && <SelloEjemplo>Ejemplo</SelloEjemplo>}
+      </dd>
+    </div>
+  ))}
+</dl>
+
+<style>
+  .metricas {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+    gap: 1px;
+    margin: 0;
+    border: 1px solid var(--linea);
+    border-radius: 22px;
+    overflow: hidden;
+    background: var(--linea);
+  }
+
+  .metrica {
+    display: grid;
+    gap: 0.6rem;
+    padding: 1.75rem 1.5rem;
+    background: rgb(var(--superficie-rgb) / 0.86);
+  }
+
+  dt {
+    font-family: var(--fuente-display);
+    font-size: clamp(2.6rem, 5vw, 3.6rem);
+    line-height: 1;
+    color: var(--metadato);
+  }
+
+  dd {
+    margin: 0;
+    font-size: var(--t--1);
+    color: var(--texto-suave);
+  }
+</style>

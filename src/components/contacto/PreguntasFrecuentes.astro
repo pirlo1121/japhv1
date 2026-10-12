@@ -1,0 +1,51 @@
+---
+/** Lista de preguntas con su respuesta siempre visible. */
+import type { Pregunta } from '@/datos/preguntas';
+
+interface Props {
+  preguntas: Pregunta[];
+}
+
+const { preguntas } = Astro.props;
+---
+
+<dl class="preguntas">
+  {preguntas.map(({ pregunta, respuesta }) => (
+    <div class="pregunta lamina">
+      <dt>{pregunta}</dt>
+      <dd>{respuesta}</dd>
+    </div>
+  ))}
+</dl>
+
+<style>
+  .preguntas {
+    display: grid;
+    gap: 1.25rem;
+    margin: 0;
+  }
+
+  @media (min-width: 56rem) {
+    .preguntas {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  .pregunta {
+    display: grid;
+    gap: 0.75rem;
+    align-content: start;
+    padding: 1.75rem;
+  }
+
+  dt {
+    font-family: var(--fuente-display);
+    font-size: var(--t-2);
+    line-height: 1.2;
+  }
+
+  dd {
+    margin: 0;
+    color: var(--texto-suave);
+  }
+</style>

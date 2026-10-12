@@ -1,0 +1,188 @@
+---
+/**
+ * Pie de página común: marca, navegación, contacto y enlaces legales.
+ * En la portada (body.inmersiva) no es un bloque aparte: la escena final se
+ * funde en negro y el pie descansa sobre ella.
+ */
+import SelloEjemplo from '@/components/ui/SelloEjemplo.astro';
+import { contacto, enlacesLegales, navegacion, sitio } from '@/config/sitio';
+
+const anio = new Date().getFullYear();
+---
+
+<footer class="pie">
+  <div class="marca">
+    <p class="nombre">
+      <span class="semilla" aria-hidden="true"></span>
+      {sitio.nombre}
+    </p>
+    <p class="resumen">{sitio.resumen}</p>
+    <a class="boton boton--solido" href="/contacto">
+      Empezar un proyecto
+    </a>
+  </div>
+
+  <nav class="columna" aria-labelledby="pie-navegacion">
+    <h2 id="pie-navegacion">Navegación</h2>
+    <ul>
+      {navegacion.map(({ etiqueta, href }) => (
+        <li>
+          <a href={href}>{etiqueta}</a>
+        </li>
+      ))}
+    </ul>
+  </nav>
+
+  <section class="columna" aria-labelledby="pie-contacto">
+    <h2 id="pie-contacto">Contacto</h2>
+    <ul>
+      <li>
+        <a href={`mailto:${contacto.correo}`}>{contacto.correo}</a>
+      </li>
+      <li>
+        <a href={contacto.whatsapp.href}>{contacto.whatsapp.etiqueta}</a>
+      </li>
+      {contacto.redes.map(({ etiqueta, href }) => (
+        <li>
+          <a href={href}>{etiqueta}</a>
+        </li>
+      ))}
+    </ul>
+    {contacto.ejemplo && <SelloEjemplo>Datos de contacto de ejemplo</SelloEjemplo>}
+  </section>
+
+  <div class="base">
+    <p>
+      © {anio} {sitio.nombre}. {sitio.ciudad}.
+    </p>
+    <nav aria-label="Enlaces legales">
+      <ul>
+        {enlacesLegales.map(({ etiqueta, href }) => (
+          <li>
+            <a href={href}>{etiqueta}</a>
+          </li>
+        ))}
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+<style>
+  .pie {
+    position: relative;
+    display: grid;
+    gap: 3rem 2rem;
+    padding: var(--bloque) max(var(--margen), (100% - var(--ancho)) / 2) 2rem;
+    border-top: 1px solid var(--linea);
+    background:
+      radial-gradient(ellipse at 15% 0%, rgb(var(--azul-rgb) / 0.08), transparent 55%), var(--fondo);
+  }
+
+  @media (min-width: 52rem) {
+    .pie {
+      grid-template-columns: 1.6fr 1fr 1fr;
+    }
+  }
+
+  /* Portada: la escena sigue visible arriba y se funde en negro hacia la base. */
+  :global(body.inmersiva) .pie {
+    padding-top: clamp(4rem, 12vh, 8rem);
+    border-top: 0;
+    background: linear-gradient(
+      to bottom,
+      transparent,
+      rgb(var(--fondo-rgb) / 0.72) 22%,
+      rgb(var(--fondo-rgb) / 0.94) 60%
+    );
+  }
+
+  /* El nombre ya preside la escena final: aquí basta en pequeño. */
+  :global(body.inmersiva) .nombre {
+    font-size: clamp(2.2rem, 4vw, 3rem);
+  }
+
+  p,
+  ul,
+  h2 {
+    margin: 0;
+  }
+
+  .marca {
+    display: grid;
+    gap: 1.25rem;
+    justify-items: start;
+    max-width: 30rem;
+  }
+
+  .nombre {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-family: var(--fuente-display);
+    font-size: clamp(3rem, 7vw, 5rem);
+    line-height: 1;
+  }
+
+  .semilla {
+    width: 0.8rem;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: var(--gota);
+  }
+
+  .resumen {
+    color: var(--texto-suave);
+  }
+
+  .columna {
+    display: grid;
+    gap: 1rem;
+    align-content: start;
+    justify-items: start;
+  }
+
+  h2 {
+    font-family: var(--fuente-texto);
+    font-size: var(--t--1);
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--metadato);
+  }
+
+  ul {
+    display: grid;
+    gap: 0.55rem;
+    padding: 0;
+    list-style: none;
+  }
+
+  .columna a,
+  .base a {
+    color: var(--texto-suave);
+    text-decoration: none;
+    transition: color var(--rapido);
+  }
+
+  .columna a:hover,
+  .base a:hover {
+    color: var(--metadato);
+  }
+
+  .base {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 1rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--linea);
+    font-size: var(--t--1);
+    color: var(--metadato);
+  }
+
+  .base ul {
+    display: flex;
+    gap: 1.5rem;
+  }
+</style>

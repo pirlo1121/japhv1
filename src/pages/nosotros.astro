@@ -1,0 +1,88 @@
+---
+import PortadaDePagina from '@/components/estructura/PortadaDePagina.astro';
+import Equipo from '@/components/nosotros/Equipo.astro';
+import LineaDeTiempo from '@/components/nosotros/LineaDeTiempo.astro';
+import Metricas from '@/components/nosotros/Metricas.astro';
+import Principios from '@/components/nosotros/Principios.astro';
+import Boton from '@/components/ui/Boton.astro';
+import CabeceraDeSeccion from '@/components/ui/CabeceraDeSeccion.astro';
+import NotaEjemplo from '@/components/ui/NotaEjemplo.astro';
+import Base from '@/layouts/Base.astro';
+import { cifrasEstudio } from '@/datos/cifras';
+import { equipo, hitosEjemplo } from '@/datos/nosotros';
+
+const cifrasDeEjemplo = cifrasEstudio.some((cifra) => cifra.ejemplo);
+const equipoDeEjemplo = equipo.some((persona) => persona.ejemplo);
+---
+
+<Base
+  titulo="Nosotros · JAPH"
+  descripcion="El equipo, la historia y los principios de JAPH, agencia de ecosistemas digitales."
+>
+  <PortadaDePagina
+    forma={2}
+    id="titulo-nosotros"
+    rotulo="Nosotros"
+    titulo="Un equipo pequeño con <em>obsesiones grandes</em>."
+  >
+    <p>
+      JAPH es un estudio de diseño y desarrollo que trabaja por sistemas completos. Preferimos
+      entender un negocio a fondo antes de proponer una sola pantalla.
+    </p>
+  </PortadaDePagina>
+
+  <section aria-labelledby="titulo-cifras">
+    <CabeceraDeSeccion id="titulo-cifras" titulo="JAPH en <em>cifras</em>">
+      {cifrasDeEjemplo && (
+        <NotaEjemplo titulo="Cifras de ejemplo.">
+          Completa cada dato con información real y verificable, o elimina este bloque si todavía no
+          tienes métricas que publicar.
+        </NotaEjemplo>
+      )}
+    </CabeceraDeSeccion>
+    <Metricas />
+  </section>
+
+  <section aria-labelledby="titulo-principios">
+    <CabeceraDeSeccion id="titulo-principios" titulo="En qué <em>creemos</em>" />
+    <Principios />
+  </section>
+
+  <section class="historia" aria-labelledby="titulo-historia">
+    <CabeceraDeSeccion id="titulo-historia" titulo="Nuestra <em>historia</em>">
+      {hitosEjemplo && (
+        <NotaEjemplo titulo="Línea de tiempo de ejemplo.">
+          Reemplaza cada hito por fechas y acontecimientos reales del estudio.
+        </NotaEjemplo>
+      )}
+    </CabeceraDeSeccion>
+    <LineaDeTiempo />
+  </section>
+
+  <section aria-labelledby="titulo-equipo">
+    <CabeceraDeSeccion id="titulo-equipo" titulo="Quién estará en <em>tu proyecto</em>">
+      {equipoDeEjemplo && (
+        <NotaEjemplo titulo="Perfiles de ejemplo.">
+          Sustituye nombres, cargos y descripciones por los del equipo real antes de publicar.
+        </NotaEjemplo>
+      )}
+    </CabeceraDeSeccion>
+    <Equipo />
+    <p class="accion-final">
+      <Boton href="/contacto" variante="solido">
+        Hablar con el equipo
+      </Boton>
+    </p>
+  </section>
+</Base>
+
+<style>
+  @media (min-width: 60rem) {
+    .historia {
+      display: grid;
+      grid-template-columns: 0.9fr 1.1fr;
+      gap: 4rem;
+      align-items: start;
+    }
+  }
+</style>

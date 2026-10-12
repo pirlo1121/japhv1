@@ -1,0 +1,74 @@
+---
+/** Perfiles del equipo (datos/nosotros.ts → equipo). */
+import SelloEjemplo from '@/components/ui/SelloEjemplo.astro';
+import { equipo } from '@/datos/nosotros';
+
+// Iniciales sin conectores de una letra ("y", "e"): "Ana y Luis" → "AL".
+const iniciales = (nombre: string) =>
+  nombre
+    .split(' ')
+    .filter((parte) => parte.length > 1)
+    .map((parte) => parte[0]?.toUpperCase())
+    .slice(0, 2)
+    .join('');
+---
+
+<ul class="equipo">
+  {equipo.map(({ nombre, rol, ejemplo }, i) => (
+    <li class="persona lamina">
+      <span class:list={['retrato', 'pintura', `tono-${(i % 6) + 1}`]} aria-hidden="true">
+        {iniciales(nombre)}
+      </span>
+      <h3>{nombre}</h3>
+      <p>{rol}</p>
+      {ejemplo && <SelloEjemplo>Perfil de ejemplo</SelloEjemplo>}
+    </li>
+  ))}
+</ul>
+
+<style>
+  .equipo {
+    display: grid;
+    gap: 1.25rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  @media (min-width: 48rem) {
+    .equipo {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  .persona {
+    display: grid;
+    gap: 0.75rem;
+    align-content: start;
+    justify-items: start;
+    padding: 1.75rem;
+  }
+
+  .persona > * {
+    margin: 0;
+  }
+
+  .retrato {
+    display: grid;
+    place-items: center;
+    width: 4.5rem;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    font-family: var(--fuente-display);
+    font-size: 1.6rem;
+    color: var(--texto);
+  }
+
+  h3 {
+    font-size: var(--t-2);
+  }
+
+  p {
+    color: var(--texto-suave);
+  }
+</style>

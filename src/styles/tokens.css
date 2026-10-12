@@ -1,0 +1,96 @@
+/**
+ * tokens.css
+ * Liquid Technology × The Living Network. Un azul medianoche casi negro da la
+ * profundidad; el cromo y la red ponen la luz. Los neones (cian, azul,
+ * violeta) iluminan reflejos, filamentos y detalles concretos, nunca grandes
+ * superficies; el verde eléctrico es escaso a propósito: nodos activos,
+ * estados e indicadores pequeños.
+ *
+ * Contraste sobre --fondo: --texto 18.8:1, --texto-suave 9.5:1,
+ * --metadato 5.1:1. --texto-apagado (4.3:1) solo para texto grande o
+ * piezas decorativas.
+ * Los canales "-rgb" permiten transparencias sin colores sueltos:
+ * rgb(var(--fondo-rgb) / 0.8).
+ */
+
+:root {
+  /* Profundidad */
+  --fondo: #030711;
+  --fondo-2: #050a16;
+  --superficie: #081121;
+  --superficie-2: #0b1528;
+  --fondo-rgb: 3 7 17;
+  --superficie-rgb: 8 17 33;
+
+  /* Luz de la red */
+  --cian: #00e5ff;
+  --turquesa: #00f5d4;
+  --azul: #1677ff;
+  --violeta: #7c3aed;
+  --purpura: #b15cff;
+  --verde: #39ff88;
+  --cian-rgb: 0 229 255;
+  --azul-rgb: 22 119 255;
+  --violeta-rgb: 124 58 237;
+  --purpura-rgb: 177 92 255;
+  --verde-rgb: 57 255 136;
+
+  /* Texto */
+  --texto: #f5f7ff;
+  --texto-suave: #a8b3c9;
+  --metadato: #71819c;
+  --texto-apagado: #68758d;
+  --texto-rgb: 245 247 255;
+  --metadato-rgb: 113 129 156;
+
+  /* Estados del formulario */
+  --error: #ff7a8a;
+  --error-claro: #ffd0d6;
+  --error-rgb: 255 122 138;
+  --exito-claro: #c8ffdc;
+
+  --linea: rgb(var(--texto-rgb) / 0.09);
+  --linea-fuerte: rgb(var(--texto-rgb) / 0.2);
+
+  /* Degradados: siempre en el mismo sentido y solo en fragmentos cortos. */
+  --degradado-cian: linear-gradient(100deg, var(--cian), var(--azul));
+  --degradado-violeta: linear-gradient(100deg, var(--azul), var(--violeta));
+  --degradado-red: linear-gradient(100deg, var(--turquesa), var(--cian) 40%, var(--purpura));
+  /* Cromo para textos: bandas de luz fría, como los reflejos de la escultura. */
+  --cromo: linear-gradient(
+    100deg,
+    #8a96ad 0%,
+    #f5f7ff 22%,
+    #9aa6bd 40%,
+    #e3ecff 58%,
+    #7f8aa1 78%,
+    #d6e4ff 100%
+  );
+  /* Gota de cromo de la marca, con un reflejo cian. */
+  --gota: radial-gradient(circle at 35% 30%, #ffffff 0 18%, #8fa0bd 42%, #0b1528 70%, #66f0ff 100%);
+  /* Atmósfera: luz azul muy contenida, para que el fondo tenga profundidad. */
+  --atmosfera:
+    radial-gradient(ellipse 70% 55% at 72% 40%, rgb(var(--azul-rgb) / 0.09), transparent 70%),
+    radial-gradient(ellipse 50% 40% at 15% 85%, rgb(var(--violeta-rgb) / 0.06), transparent 70%);
+
+  /* Tipografía: una sola familia. */
+  --fuente-display: var(--fuente-texto);
+  --t--1: 0.875rem;
+  --t-0: 1rem;
+  --t-1: clamp(1.06rem, 0.98rem + 0.35vw, 1.25rem);
+  --t-2: clamp(1.35rem, 1.15rem + 0.85vw, 1.8rem);
+  --t-3: clamp(1.8rem, 1.4rem + 1.7vw, 2.75rem);
+  --t-4: clamp(2.3rem, 1.6rem + 2.9vw, 4.2rem);
+  --t-6: clamp(2.8rem, 1.4rem + 5.8vw, 7rem);
+  --rastreo-titular: -0.035em;
+
+  /* Espacio */
+  --margen: clamp(1rem, 5vw, 4.5rem);
+  --ancho: 78rem;
+  --bloque: clamp(5rem, 12vh, 9rem);
+  --radio: 10px;
+
+  /* Movimiento */
+  --suave: cubic-bezier(0.22, 1, 0.36, 1);
+  --rapido: 0.25s;
+}

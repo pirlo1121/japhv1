@@ -1,0 +1,112 @@
+---
+/**
+ * Ficha de un proyecto del portafolio. Con imagen real usa <Image> (AVIF/WebP,
+ * varios tamaños, carga diferida); sin ella, una pintura provisional.
+ */
+import { Image } from 'astro:assets';
+import SelloEjemplo from '@/components/ui/SelloEjemplo.astro';
+import type { Proyecto } from '@/datos/proyectos';
+
+interface Props {
+  proyecto: Proyecto;
+}
+
+const { proyecto } = Astro.props;
+---
+
+<article class="proyecto" data-categorias={proyecto.categorias.join(' ')}>
+  <div class="visual">
+    {proyecto.imagen ? (
+      <Image
+        class="medio"
+        src={proyecto.imagen}
+        alt={proyecto.alt ?? ''}
+        widths={[480, 800, 1200]}
+        sizes="(min-width: 48rem) 38rem, 100vw"
+      />
+    ) : (
+      <div class:list={['medio', 'pintura', `tono-${proyecto.tono}`]} aria-hidden="true" />
+    )}
+    <span class="sello">{proyecto.sello}</span>
+  </div>
+  <div class="pie">
+    <div class="titulo">
+      <h2>{proyecto.titulo}</h2>
+      <span class="anio">{proyecto.anio}</span>
+    </div>
+    <p>{proyecto.descripcion}</p>
+    {proyecto.ejemplo && <SelloEjemplo />}
+  </div>
+</article>
+
+<style>
+  .proyecto {
+    display: grid;
+    gap: 1.1rem;
+    align-content: start;
+  }
+
+  .proyecto[hidden] {
+    display: none;
+  }
+
+  .visual {
+    position: relative;
+    aspect-ratio: 4 / 3;
+    border-radius: 18px;
+    overflow: hidden;
+  }
+
+  .medio {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: scale 1.2s var(--suave);
+  }
+
+  .proyecto:hover .medio {
+    scale: 1.04;
+  }
+
+  .sello {
+    position: absolute;
+    top: 1rem;
+    left: 1rem;
+    padding: 0.3rem 0.8rem;
+    border-radius: 999px;
+    background: rgb(var(--fondo-rgb) / 0.75);
+    font-size: 0.78rem;
+    color: var(--texto);
+  }
+
+  .pie {
+    display: grid;
+    gap: 0.5rem;
+    justify-items: start;
+  }
+
+  .pie > * {
+    margin: 0;
+  }
+
+  .titulo {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    align-items: baseline;
+    width: 100%;
+  }
+
+  h2 {
+    font-size: var(--t-2);
+  }
+
+  .anio {
+    font-size: var(--t--1);
+    color: var(--metadato);
+  }
+
+  .pie p {
+    color: var(--texto-suave);
+  }
+</style>

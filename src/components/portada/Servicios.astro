@@ -1,0 +1,200 @@
+---
+/**
+ * Escena 05 · Servicios. Aquí manda la claridad: qué hace JAPH, en una
+ * lista editorial con los siete servicios reales (datos/servicios.ts).
+ *
+ * Cada servicio es una rama de la red: al pasar el puntero, enfocarlo con
+ * el teclado o cruzar el centro de la pantalla, su nodo se enciende y un
+ * hilo lo une con su texto (scripts/historia/servicios.ts). La escultura
+ * queda a la derecha, atenuada: acompaña, no compite con la lectura.
+ */
+import IconoServicio from '@/components/ui/IconoServicio.astro';
+import { servicios } from '@/datos/servicios';
+
+const dos = (n: number) => String(n).padStart(2, '0');
+---
+
+<section
+  class="servicios"
+  id="servicios"
+  aria-labelledby="titulo-servicios"
+  data-servicios
+  data-escena="Servicios"
+>
+  <header class="cabecera" data-revelar data-zona-lectura>
+    <p class="rotulo">05 · Servicios</p>
+    <h2 id="titulo-servicios">
+      Tecnología que conecta <em>las piezas.</em>
+    </h2>
+    <p>
+      Siete capacidades que funcionan por separado y rinden más juntas. Cada una es una rama del
+      mismo sistema.
+    </p>
+  </header>
+
+  <ol class="lista" data-zona-lectura>
+    {servicios.map((servicio, i) => (
+      <li class="servicio" id={`servicio-${servicio.id}`} data-rama>
+        <span class="icono">
+          <IconoServicio id={servicio.id} />
+        </span>
+        <span class="ordinal" aria-hidden="true">
+          {dos(i + 1)}
+        </span>
+        <h3>{servicio.nombre}</h3>
+        <p>{servicio.resumen}</p>
+        <a href={`/servicios#${servicio.id}`}>
+          Qué incluye <span class="solo-lectores">{servicio.nombre}</span>
+          <span aria-hidden="true">→</span>
+        </a>
+      </li>
+    ))}
+  </ol>
+</section>
+
+<style>
+  .servicios {
+    display: grid;
+    gap: 1rem;
+  }
+
+  .cabecera,
+  .lista {
+    max-width: 40rem;
+  }
+
+  .lista {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    border-top: 1px solid var(--linea);
+  }
+
+  .servicio {
+    position: relative;
+    display: grid;
+    grid-template-columns: 2.5rem 2rem 1fr auto;
+    grid-template-areas:
+      'icono ordinal nombre enlace'
+      'icono ordinal texto texto';
+    column-gap: 0.75rem;
+    row-gap: 0.25rem;
+    align-items: baseline;
+    padding: 1.15rem 0.9rem;
+    border-bottom: 1px solid var(--linea);
+    background: rgb(var(--fondo-rgb) / 0.55);
+    transition:
+      background-color var(--rapido),
+      border-color var(--rapido);
+  }
+
+  /* El filamento que se enciende en el borde del servicio activo. */
+  .servicio::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0.75rem;
+    bottom: 0.75rem;
+    width: 2px;
+    border-radius: 2px;
+    background: var(--degradado-cian);
+    opacity: 0;
+    transition: opacity var(--rapido);
+  }
+
+  .servicio[data-activa] {
+    background: rgb(var(--superficie-rgb) / 0.85);
+  }
+
+  .servicio[data-activa]::before {
+    opacity: 1;
+  }
+
+  .icono {
+    grid-area: icono;
+    align-self: center;
+    display: grid;
+    place-items: center;
+    width: 2.5rem;
+    aspect-ratio: 1;
+    border: 1px solid var(--linea);
+    border-radius: 8px;
+    color: var(--metadato);
+    transition:
+      color var(--rapido),
+      border-color var(--rapido);
+  }
+
+  .servicio[data-activa] .icono {
+    border-color: rgb(var(--cian-rgb) / 0.45);
+    color: var(--cian);
+  }
+
+  .ordinal {
+    grid-area: ordinal;
+  }
+
+  h3 {
+    grid-area: nombre;
+    font-size: var(--t-1);
+    letter-spacing: -0.01em;
+  }
+
+  .servicio p {
+    grid-area: texto;
+    margin: 0;
+    font-size: var(--t--1);
+  }
+
+  .servicio a {
+    grid-area: enlace;
+    font-size: var(--t--1);
+    color: var(--texto-suave);
+    text-decoration: none;
+    white-space: nowrap;
+    transition: color var(--rapido);
+  }
+
+  .servicio a:hover,
+  .servicio[data-activa] a {
+    color: var(--texto);
+  }
+
+  .servicio[data-activa] a span[aria-hidden] {
+    color: var(--verde);
+  }
+
+  /* Todo el servicio es clicable sin anidar enlaces: el enlace se estira. */
+  .servicio a::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+  }
+
+  .servicio a:focus-visible {
+    outline: none;
+  }
+
+  .servicio:has(a:focus-visible) {
+    outline: 2px solid var(--cian);
+    outline-offset: -2px;
+  }
+
+  @media (max-width: 40rem) {
+    .servicio {
+      grid-template-columns: 2.5rem 1fr;
+      grid-template-areas:
+        'icono nombre'
+        'icono texto'
+        'icono enlace';
+    }
+
+    .ordinal {
+      display: none;
+    }
+
+    .servicio a {
+      margin-top: 0.35rem;
+    }
+  }
+</style>

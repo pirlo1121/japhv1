@@ -1,0 +1,133 @@
+---
+/**
+ * Escena 03 · La red viva. La cinta se estabiliza y se convierte en el
+ * ancla de una red que crece: nodos junto a su superficie, filamentos que
+ * salen hacia fuera, más nodos que se encienden y energía que empieza a
+ * viajar entre ellos (scripts/lienzo/red.ts). Todo con el scroll y de forma
+ * escalonada, nunca de golpe.
+ *
+ * El texto se queda en su columna; la red ocupa el centro y la derecha y
+ * se aparta de los párrafos ([data-zona-lectura]).
+ */
+const capas = [
+  {
+    titulo: 'Productos',
+    texto: 'Webs, apps y herramientas que comparten la información en lugar de duplicarla.'
+  },
+  {
+    titulo: 'Datos',
+    texto: 'Lo que entra por un canal llega a donde se necesita, sin copiarlo a mano.'
+  },
+  {
+    titulo: 'Procesos',
+    texto: 'Tareas que se encadenan solas entre las herramientas que tu equipo ya usa.'
+  }
+];
+---
+
+<section class="red-viva" id="red" aria-labelledby="titulo-red" data-escena="Red">
+  <div class="marco">
+    <div class="bloque" data-zona-lectura>
+      <p class="rotulo">03 · La red viva</p>
+      <h2 id="titulo-red">
+        Nada funciona <em>de forma aislada.</em>
+      </h2>
+      <p class="entrada">
+        Conectamos productos, datos y procesos para crear sistemas que trabajan juntos.
+      </p>
+      <ol class="capas" data-pasos>
+        {capas.map(({ titulo, texto }, i) => (
+          <li data-paso style={{ '--u': 0.18 + i * 0.22 }}>
+            <span class="nodo" aria-hidden="true" />
+            <h3>{titulo}</h3>
+            <p>{texto}</p>
+          </li>
+        ))}
+      </ol>
+    </div>
+  </div>
+</section>
+
+<style>
+  .red-viva {
+    --recorrido: 260vh;
+  }
+
+  .bloque {
+    display: grid;
+    gap: 1.4rem;
+    max-width: 34rem;
+  }
+
+  .bloque > * {
+    margin: 0;
+  }
+
+  .entrada {
+    font-size: var(--t-1);
+  }
+
+  .capas {
+    position: relative;
+    display: grid;
+    gap: 1.25rem;
+    margin: 0.5rem 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  /* Un filamento une las tres capas, como en la red. */
+  .capas::before {
+    content: '';
+    position: absolute;
+    top: 0.6rem;
+    bottom: 0.6rem;
+    left: 3px;
+    width: 1px;
+    background: linear-gradient(to bottom, var(--cian), var(--azul), var(--purpura));
+    opacity: 0.45;
+  }
+
+  .capas li {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    column-gap: 1.1rem;
+    align-items: baseline;
+  }
+
+  .nodo {
+    grid-row: span 2;
+    width: 7px;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    align-self: start;
+    margin-top: 0.55rem;
+    background: var(--cian);
+    box-shadow: 0 0 10px rgb(var(--cian-rgb) / 0.7);
+  }
+
+  .capas li:nth-child(2) .nodo {
+    background: var(--azul);
+    box-shadow: 0 0 10px rgb(var(--azul-rgb) / 0.7);
+  }
+
+  .capas li:nth-child(3) .nodo {
+    background: var(--purpura);
+    box-shadow: 0 0 10px rgb(var(--purpura-rgb) / 0.7);
+  }
+
+  h3 {
+    font-size: var(--t-1);
+    letter-spacing: -0.01em;
+  }
+
+  .capas p {
+    margin: 0.2rem 0 0;
+  }
+
+  @media (max-aspect-ratio: 85/100), (max-width: 47.99rem) {
+    .marco {
+      padding-top: 40svh;
+    }
+  }
+</style>

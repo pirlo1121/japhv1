@@ -1,0 +1,56 @@
+---
+/** Canales directos de contacto (config/sitio.ts). */
+import NotaEjemplo from '@/components/ui/NotaEjemplo.astro';
+import { contacto, sitio } from '@/config/sitio';
+---
+
+<dl class="canales">
+  <div>
+    <dt>Correo</dt>
+    <dd>
+      <a href={`mailto:${contacto.correo}`}>{contacto.correo}</a>
+    </dd>
+  </div>
+  <div>
+    <dt>WhatsApp</dt>
+    <dd>
+      <a href={contacto.whatsapp.href}>{contacto.whatsapp.etiqueta}</a>
+    </dd>
+  </div>
+  <div>
+    <dt>Dónde estamos</dt>
+    <dd>{sitio.ciudad} · trabajo remoto</dd>
+  </div>
+</dl>
+
+{contacto.ejemplo && (
+  <NotaEjemplo titulo="Datos de contacto de ejemplo.">
+    Reemplaza el correo y el número por los reales de JAPH antes de publicar.
+  </NotaEjemplo>
+)}
+
+<style>
+  .canales {
+    display: grid;
+    gap: 1.25rem;
+    margin: 0;
+  }
+
+  dt {
+    font-size: var(--t--1);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--metadato);
+  }
+
+  dd {
+    margin: 0.25rem 0 0;
+    font-family: var(--fuente-display);
+    font-size: var(--t-2);
+  }
+
+  dd a {
+    text-decoration-color: rgb(var(--metadato-rgb) / 0.5);
+    text-underline-offset: 0.2em;
+  }
+</style>

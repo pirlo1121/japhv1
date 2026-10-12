@@ -1,0 +1,155 @@
+---
+/**
+ * Legal.astro
+ * Estructura de las páginas legales: encabezado con la pintura, índice
+ * lateral fijo, aviso de plantilla y cuerpo de lectura larga.
+ *
+ * Slots:
+ *   aviso    el aviso de "plantilla, revisar con un abogado"
+ *   default  las secciones del documento (<section id="…">)
+ */
+import PortadaDePagina from '@/components/estructura/PortadaDePagina.astro';
+import SelloEjemplo from '@/components/ui/SelloEjemplo.astro';
+import Base from './Base.astro';
+
+export interface EntradaDeIndice {
+  id: string;
+  etiqueta: string;
+}
+
+interface Props {
+  titulo: string;
+  descripcion: string;
+  encabezado: string;
+  actualizacion: string;
+  fechaDeEjemplo?: boolean;
+  indice: EntradaDeIndice[];
+}
+
+const {
+  titulo,
+  descripcion,
+  encabezado,
+  actualizacion,
+  fechaDeEjemplo = false,
+  indice
+} = Astro.props;
+---
+
+<Base titulo={titulo} descripcion={descripcion}>
+  <PortadaDePagina id="titulo-legal" rotulo="Legal" titulo={encabezado}>
+    <p>
+      Última actualización: {actualizacion}
+      {fechaDeEjemplo && <SelloEjemplo>Fecha de ejemplo</SelloEjemplo>}
+    </p>
+  </PortadaDePagina>
+
+  <article class="documento" aria-labelledby="titulo-legal">
+    <nav class="indice" aria-label="Índice del documento">
+      <ol>
+        {indice.map(({ id, etiqueta }) => (
+          <li>
+            <a href={`#${id}`}>{etiqueta}</a>
+          </li>
+        ))}
+      </ol>
+    </nav>
+
+    <div class="cuerpo">
+      <aside class="aviso" role="note">
+        <slot name="aviso" />
+      </aside>
+      <slot />
+    </div>
+  </article>
+</Base>
+
+<style>
+  .documento {
+    display: grid;
+    gap: 3rem;
+  }
+
+  @media (min-width: 62rem) {
+    .documento {
+      grid-template-columns: 16rem 1fr;
+      gap: 4.5rem;
+      align-items: start;
+    }
+
+    .indice {
+      position: sticky;
+      top: 7rem;
+    }
+  }
+
+  .indice ol {
+    display: grid;
+    gap: 0.6rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .indice a {
+    font-size: var(--t--1);
+    color: var(--texto-suave);
+    text-decoration: none;
+    transition: color var(--rapido);
+  }
+
+  .indice a:hover {
+    color: var(--metadato);
+  }
+
+  .cuerpo {
+    max-width: 68ch;
+  }
+
+  .aviso {
+    display: grid;
+    gap: 0.4rem;
+    margin-bottom: 2.5rem;
+    padding: 1.1rem 1.25rem;
+    border: 1px dashed rgb(var(--metadato-rgb) / 0.5);
+    border-radius: 14px;
+    background: rgb(var(--metadato-rgb) / 0.06);
+    font-size: var(--t--1);
+    line-height: 1.6;
+    color: var(--texto-suave);
+  }
+
+  .aviso :global(strong) {
+    color: var(--metadato);
+  }
+
+  .cuerpo :global(section) {
+    padding-block: 2rem;
+    border-top: 1px solid var(--linea);
+    scroll-margin-top: 6rem;
+  }
+
+  .cuerpo :global(section:first-of-type) {
+    border-top: 0;
+    padding-top: 0;
+  }
+
+  .cuerpo :global(h2) {
+    margin-bottom: 1rem;
+    font-size: var(--t-2);
+  }
+
+  .cuerpo :global(section p),
+  .cuerpo :global(section li) {
+    line-height: 1.75;
+    color: var(--texto-suave);
+  }
+
+  .cuerpo :global(section a) {
+    color: var(--metadato);
+  }
+
+  .cuerpo :global(strong) {
+    color: var(--texto);
+  }
+</style>

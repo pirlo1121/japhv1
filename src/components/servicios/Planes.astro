@@ -1,0 +1,122 @@
+---
+/** Tres formas de trabajar juntos (precios de ejemplo en datos/planes.ts). */
+import SelloEjemplo from '@/components/ui/SelloEjemplo.astro';
+import type { Plan } from '@/datos/planes';
+
+interface Props {
+  planes: Plan[];
+}
+
+const { planes } = Astro.props;
+---
+
+<ul class="planes">
+  {planes.map((plan) => (
+    <li class:list={['plan', 'lamina', { destacado: plan.destacado }]}>
+      <article>
+        {plan.destacado && <p class="marca">Recomendado</p>}
+        <h3>{plan.nombre}</h3>
+        <p class="precio">
+          {plan.precio}
+          {plan.ejemplo && <SelloEjemplo>Precio de ejemplo</SelloEjemplo>}
+        </p>
+        <p class="resumen">{plan.resumen}</p>
+        <ul class="incluye">
+          {plan.incluye.map((punto) => (
+            <li>{punto}</li>
+          ))}
+        </ul>
+      </article>
+    </li>
+  ))}
+</ul>
+
+<style>
+  .planes {
+    display: grid;
+    gap: 1.25rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  @media (min-width: 56rem) {
+    .planes {
+      grid-template-columns: repeat(3, 1fr);
+      align-items: stretch;
+    }
+  }
+
+  .plan article {
+    display: grid;
+    gap: 1rem;
+    align-content: start;
+    height: 100%;
+    padding: 2rem 1.75rem;
+  }
+
+  .plan article > * {
+    margin: 0;
+  }
+
+  .destacado {
+    border-color: rgb(var(--metadato-rgb) / 0.6);
+    box-shadow: 0 0 50px rgb(var(--metadato-rgb) / 0.1);
+  }
+
+  .marca {
+    justify-self: start;
+    padding: 0.2rem 0.75rem;
+    border-radius: 999px;
+    background: var(--metadato);
+    color: var(--fondo);
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+
+  h3 {
+    font-size: var(--t-3);
+  }
+
+  .precio {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    align-items: center;
+    font-family: var(--fuente-display);
+    font-size: var(--t-2);
+    color: var(--metadato);
+  }
+
+  .resumen {
+    color: var(--texto-suave);
+  }
+
+  .incluye {
+    display: grid;
+    gap: 0.6rem;
+    padding: 1rem 0 0;
+    border-top: 1px solid var(--linea);
+    list-style: none;
+  }
+
+  .incluye li {
+    position: relative;
+    padding-left: 1.4rem;
+    font-size: var(--t--1);
+    color: var(--texto-suave);
+  }
+
+  /* Pequeña estrella como viñeta. */
+  .incluye li::before {
+    content: '';
+    position: absolute;
+    left: 0.2rem;
+    top: 0.5em;
+    width: 0.45rem;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: var(--metadato);
+    box-shadow: 0 0 8px rgb(var(--metadato-rgb) / 0.6);
+  }
+</style>

@@ -1,0 +1,86 @@
+---
+/** Un caso contado en detalle (datos/proyectos.ts → casoDestacado). */
+import SelloEjemplo from '@/components/ui/SelloEjemplo.astro';
+import { casoDestacado as caso } from '@/datos/proyectos';
+---
+
+<article class="caso lamina">
+  <div class="texto">
+    <h3>{caso.titulo}</h3>
+    {caso.ejemplo && <SelloEjemplo>Caso de ejemplo</SelloEjemplo>}
+    <p>{caso.relato}</p>
+    <dl class="indicadores">
+      {caso.indicadores.map(({ cifra, etiqueta }) => (
+        <div>
+          <dt>{cifra}</dt>
+          <dd>
+            {etiqueta} {caso.ejemplo && <SelloEjemplo>Ejemplo</SelloEjemplo>}
+          </dd>
+        </div>
+      ))}
+    </dl>
+  </div>
+  <div class="visual pintura tono-6" aria-hidden="true"></div>
+</article>
+
+<style>
+  .caso {
+    display: grid;
+    gap: 2rem;
+    padding: clamp(1.5rem, 3vw, 2.5rem);
+    overflow: hidden;
+  }
+
+  @media (min-width: 56rem) {
+    .caso {
+      grid-template-columns: 1.1fr 0.9fr;
+      align-items: stretch;
+    }
+  }
+
+  .texto {
+    display: grid;
+    gap: 1rem;
+    justify-items: start;
+    align-content: start;
+  }
+
+  .texto > * {
+    margin: 0;
+  }
+
+  h3 {
+    font-size: var(--t-3);
+  }
+
+  .texto p {
+    color: var(--texto-suave);
+  }
+
+  .indicadores {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+    gap: 1.25rem;
+    width: 100%;
+    margin: 1rem 0 0;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--linea);
+  }
+
+  dt {
+    font-family: var(--fuente-display);
+    font-size: var(--t-3);
+    color: var(--metadato);
+  }
+
+  dd {
+    margin: 0;
+    font-size: var(--t--1);
+    color: var(--texto-suave);
+  }
+
+  .visual {
+    min-height: 16rem;
+    border-radius: 16px;
+  }
+</style>

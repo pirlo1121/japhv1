@@ -1,0 +1,78 @@
+---
+/** Historia del estudio (datos/nosotros.ts → hitos), como una línea con estrellas. */
+import { hitos } from '@/datos/nosotros';
+---
+
+<ol class="linea">
+  {hitos.map(({ cuando, titulo, descripcion }) => (
+    <li class="hito">
+      <span class="estrella" aria-hidden="true" />
+      <p class="cuando">{cuando}</p>
+      <h3>{titulo}</h3>
+      <p>{descripcion}</p>
+    </li>
+  ))}
+</ol>
+
+<style>
+  .linea {
+    position: relative;
+    display: grid;
+    gap: 2.75rem;
+    margin: 0;
+    padding: 0 0 0 2.5rem;
+    list-style: none;
+  }
+
+  .linea::before {
+    content: '';
+    position: absolute;
+    top: 0.6rem;
+    bottom: 0.6rem;
+    left: 0.55rem;
+    width: 1.5px;
+    background: linear-gradient(var(--metadato), rgb(var(--metadato-rgb) / 0.15));
+  }
+
+  .hito {
+    position: relative;
+    display: grid;
+    gap: 0.5rem;
+  }
+
+  .hito > * {
+    margin: 0;
+  }
+
+  .estrella {
+    position: absolute;
+    top: 0.1rem;
+    left: -2.5rem;
+    width: 1.2rem;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: radial-gradient(
+      circle,
+      var(--texto) 0 18%,
+      rgb(var(--texto-rgb) / 0.85) 35%,
+      transparent 72%
+    );
+    box-shadow: 0 0 14px rgb(var(--metadato-rgb) / 0.5);
+  }
+
+  .cuando {
+    font-size: var(--t--1);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--metadato);
+  }
+
+  h3 {
+    font-size: var(--t-2);
+  }
+
+  .hito p:last-child {
+    max-width: 52ch;
+    color: var(--texto-suave);
+  }
+</style>

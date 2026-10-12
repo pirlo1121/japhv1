@@ -1,0 +1,127 @@
+---
+/**
+ * Lienzo.astro
+ * La escena compartida de toda la portada, fija detrás de la historia: la
+ * escultura de metal líquido (WebGL2, scripts/lienzo) y, encima, la red viva
+ * (Canvas 2D) proyectada con la misma cámara. La arranca pages/index.astro.
+ *
+ * Mientras carga, si el navegador no puede dibujar la escultura o sin
+ * JavaScript, se ve una gota de cromo hecha solo con CSS donde estará la
+ * escultura: la primera pantalla nunca queda incompleta. Sin WebGL la
+ * escena la mueve a donde iría la escultura (--x, --y, --lado).
+ */
+---
+
+<div class="lienzo" data-lienzo>
+  <div class="respaldo" data-respaldo aria-hidden="true">
+    <span class="gota"></span>
+    <span class="gota menor"></span>
+  </div>
+  <canvas class="escultura" data-escultura aria-hidden="true"></canvas>
+  <canvas class="red" data-red aria-hidden="true"></canvas>
+</div>
+
+<style>
+  /* Alto "lvh": no cambia cuando la barra del navegador móvil aparece o se esconde. */
+  .lienzo {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100lvh;
+    z-index: -1;
+    overflow: hidden;
+    background: var(--atmosfera), var(--fondo);
+    pointer-events: none;
+  }
+
+  canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  .escultura {
+    opacity: 0;
+    transition: opacity 1.2s var(--suave);
+  }
+
+  .lienzo[data-listo] .escultura {
+    opacity: 1;
+  }
+
+  .lienzo[data-listo] .respaldo {
+    opacity: 0;
+    transition: opacity 1.2s var(--suave);
+  }
+
+  /* Gota de cromo en CSS: base azul profunda, una caja de luz arriba, un filo
+     cian a la izquierda, contraluz violeta y el horizonte reflejado. */
+  .respaldo {
+    position: absolute;
+    left: var(--x, 69%);
+    top: var(--y, 48%);
+    width: var(--lado, min(56vh, 40vw));
+    aspect-ratio: 1;
+    translate: -50% -50%;
+    opacity: calc(1 - var(--apagado, 0) * 0.75);
+  }
+
+  .gota {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background:
+      radial-gradient(ellipse 46% 22% at 50% 16%, rgb(var(--texto-rgb) / 0.95), transparent 70%),
+      radial-gradient(
+        ellipse 95% 120% at 92% 50%,
+        transparent 74%,
+        rgb(var(--purpura-rgb) / 0.6) 76%,
+        transparent 79%
+      ),
+      radial-gradient(
+        ellipse 95% 120% at 8% 50%,
+        transparent 76%,
+        rgb(var(--cian-rgb) / 0.55) 78%,
+        transparent 81%
+      ),
+      radial-gradient(
+        ellipse 140% 70% at 50% 108%,
+        transparent 60%,
+        rgb(var(--texto-rgb) / 0.5) 62%,
+        transparent 65%
+      ),
+      radial-gradient(
+        circle at 62% 70%,
+        var(--superficie-2),
+        var(--fondo) 58%,
+        var(--superficie) 100%
+      );
+    box-shadow:
+      inset -18px -24px 60px rgb(var(--fondo-rgb) / 0.8),
+      inset 10px 10px 40px rgb(var(--cian-rgb) / 0.1);
+  }
+
+  .menor {
+    inset: auto -4% 78% 74%;
+    width: 30%;
+    aspect-ratio: 1;
+  }
+
+  /* Pantallas estrechas: la escultura vive arriba y centrada. */
+  @media (max-aspect-ratio: 85/100), (max-width: 47.99rem) {
+    .respaldo {
+      left: var(--x, 50%);
+      top: var(--y, 29%);
+      width: var(--lado, min(70vw, 40vh));
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .escultura,
+    .lienzo[data-listo] .respaldo {
+      transition: none;
+    }
+  }
+</style>

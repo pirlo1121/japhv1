@@ -1,0 +1,10 @@
+node_modules
+
+# Variables de entorno: nunca versionar secretos
+.env
+.env.*
+!.env.example
+
+# Generados por Astro: se rehacen con npm run dev / npm run build
+dist/
+.astro/

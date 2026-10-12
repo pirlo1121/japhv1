@@ -1,0 +1,55 @@
+---
+import PortadaDePagina from '@/components/estructura/PortadaDePagina.astro';
+import DetalleDeServicios from '@/components/servicios/DetalleDeServicios.astro';
+import Planes from '@/components/servicios/Planes.astro';
+import Acordeon from '@/components/ui/Acordeon.astro';
+import Boton from '@/components/ui/Boton.astro';
+import CabeceraDeSeccion from '@/components/ui/CabeceraDeSeccion.astro';
+import NotaEjemplo from '@/components/ui/NotaEjemplo.astro';
+import Base from '@/layouts/Base.astro';
+import { planes } from '@/datos/planes';
+import { preguntasServicios } from '@/datos/preguntas';
+
+const hayPreciosDeEjemplo = planes.some((plan) => plan.ejemplo);
+---
+
+<Base
+  titulo="Servicios · JAPH"
+  descripcion="Páginas web, apps web y móviles, automatización, marketing digital, producción de video y branding."
+>
+  <PortadaDePagina
+    forma={4}
+    id="titulo-servicios"
+    rotulo="Servicios"
+    titulo="Siete servicios que se necesitan <em>entre sí</em>."
+  >
+    <p>
+      Cada uno funciona por separado. Juntos forman un sistema donde lo que aprende el marketing
+      cambia el producto, y lo que mide el producto cambia la campaña.
+    </p>
+  </PortadaDePagina>
+
+  <DetalleDeServicios />
+
+  <section aria-labelledby="titulo-preguntas">
+    <CabeceraDeSeccion id="titulo-preguntas" titulo="Preguntas antes de <em>contratar</em>" />
+    <Acordeon preguntas={preguntasServicios} />
+  </section>
+
+  <section aria-labelledby="titulo-modelos">
+    <CabeceraDeSeccion id="titulo-modelos" titulo="Tres formas de <em>trabajar juntos</em>">
+      {hayPreciosDeEjemplo && (
+        <NotaEjemplo titulo="Precios de ejemplo.">
+          Los valores de esta sección son marcadores de posición. Define tus tarifas reales antes de
+          publicar, o sustituye la cifra por el texto “Según alcance”.
+        </NotaEjemplo>
+      )}
+    </CabeceraDeSeccion>
+    <Planes planes={planes} />
+    <p class="accion-final">
+      <Boton href="/contacto" variante="solido">
+        Pedir una cotización
+      </Boton>
+    </p>
+  </section>
+</Base>

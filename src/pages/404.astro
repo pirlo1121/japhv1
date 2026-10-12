@@ -1,0 +1,26 @@
+---
+/** Página no encontrada. Los hostings estáticos la sirven para cualquier ruta inexistente. */
+import PortadaDePagina from '@/components/estructura/PortadaDePagina.astro';
+import Boton from '@/components/ui/Boton.astro';
+import Base from '@/layouts/Base.astro';
+---
+
+<Base
+  titulo="Página no encontrada · JAPH"
+  descripcion="La página que buscas no existe o cambió de dirección."
+>
+  <PortadaDePagina
+    forma={0}
+    id="titulo-404"
+    rotulo="Error 404"
+    titulo="Esta página <em>no existe</em>."
+    completa
+  >
+    <p>Puede que el enlace esté roto o que la página haya cambiado de dirección.</p>
+    <p>
+      <Boton href="/" variante="solido">
+        Volver a la portada
+      </Boton>
+    </p>
+  </PortadaDePagina>
+</Base>

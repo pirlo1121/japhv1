@@ -1,0 +1,158 @@
+---
+/**
+ * Escena 01 · El vacío. La gota de metal líquido flota en un espacio azul
+ * medianoche, a la derecha del titular (en móvil, encima); unos pocos
+ * filamentos duermen al fondo. El mensaje, la propuesta y las acciones
+ * están en la primera pantalla desde el primer instante: no esperan a la
+ * escultura.
+ */
+import Boton from '@/components/ui/Boton.astro';
+import { sitio } from '@/config/sitio';
+import { servicios } from '@/datos/servicios';
+---
+
+<section class="vacio" id="inicio" aria-labelledby="titulo-vacio" data-escena="Inicio">
+  <div class="contenido" data-zona-lectura>
+    <p class="rotulo">Estrategia / Diseño / Tecnología</p>
+    <h1 id="titulo-vacio">
+      Convertimos ideas en <em>ecosistemas digitales.</em>
+    </h1>
+    <p class="entrada">
+      Diseñamos, construimos y conectamos productos digitales que transforman ideas en soluciones
+      reales.
+    </p>
+    <p class="acciones">
+      <Boton href="/contacto" variante="solido">
+        Empezar un proyecto
+      </Boton>
+      <Boton href="#proyectos-destacados">Explorar nuestro trabajo</Boton>
+    </p>
+  </div>
+
+  <dl class="meta">
+    <div>
+      <dt>Servicios</dt>
+      <dd>{servicios.length} capacidades conectadas</dd>
+    </div>
+    <div>
+      <dt>Base</dt>
+      <dd>{sitio.ciudad}</dd>
+    </div>
+    <div class="descenso" aria-hidden="true">
+      <dt>Recorrido</dt>
+      <dd>Desliza</dd>
+    </div>
+  </dl>
+</section>
+
+<style>
+  .vacio {
+    position: relative;
+    display: grid;
+    align-content: center;
+    min-height: 100svh;
+    padding-top: 7rem;
+    padding-bottom: 7rem;
+  }
+
+  .contenido {
+    display: grid;
+    gap: 1.5rem;
+    max-width: 40rem;
+  }
+
+  .contenido > * {
+    margin: 0;
+  }
+
+  h1 {
+    font-size: var(--t-6);
+    line-height: 0.96;
+    max-width: 11ch;
+  }
+
+  .entrada {
+    max-width: 44ch;
+    font-size: var(--t-1);
+    color: var(--texto-suave);
+  }
+
+  .acciones {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 0.5rem;
+  }
+
+  .meta {
+    position: absolute;
+    left: max(var(--margen), (100% - var(--ancho)) / 2);
+    right: max(var(--margen), (100% - var(--ancho)) / 2);
+    bottom: 2rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem 3rem;
+    margin: 0;
+    font-size: var(--t--1);
+  }
+
+  .meta dt {
+    font-size: 0.7rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--metadato);
+  }
+
+  .meta dd {
+    color: var(--texto-suave);
+  }
+
+  .descenso {
+    margin-left: auto;
+    text-align: right;
+  }
+
+  /* Un pulso verde muy pequeño: el sistema está vivo. */
+  .descenso dd::before {
+    content: '';
+    display: inline-block;
+    width: 5px;
+    aspect-ratio: 1;
+    margin-right: 0.5rem;
+    border-radius: 50%;
+    vertical-align: middle;
+    background: var(--verde);
+    box-shadow: 0 0 8px rgb(var(--verde-rgb) / 0.8);
+    animation: latido 2.4s ease-in-out infinite;
+  }
+
+  @keyframes latido {
+    50% {
+      opacity: 0.35;
+    }
+  }
+
+  /* Móvil o vertical: la escultura ocupa la mitad de arriba y el texto va debajo. */
+  @media (max-aspect-ratio: 85/100), (max-width: 47.99rem) {
+    .vacio {
+      align-content: end;
+      padding-top: 48svh;
+      padding-bottom: 6rem;
+    }
+
+    .meta {
+      bottom: 1.25rem;
+      gap: 0.5rem 1.5rem;
+    }
+
+    .descenso {
+      display: none;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .descenso dd::before {
+      animation: none;
+    }
+  }
+</style>

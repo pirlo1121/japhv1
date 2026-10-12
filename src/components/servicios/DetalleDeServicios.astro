@@ -1,0 +1,116 @@
+---
+/** Detalle de los siete servicios: qué es cada uno y qué incluye. */
+import { servicios } from '@/datos/servicios';
+
+const dos = (n: number) => String(n).padStart(2, '0');
+---
+
+<section class="detalle" aria-label="Servicios de JAPH">
+  <ol class="lista">
+    {servicios.map((servicio, i) => (
+      <li class="servicio lamina" id={servicio.id}>
+        <p class="numero" aria-hidden="true">
+          {dos(i + 1)}
+        </p>
+        <div class="texto">
+          <h2>{servicio.nombre}</h2>
+          <p>{servicio.descripcion}</p>
+        </div>
+        <div class="incluye">
+          <h3>Incluye</h3>
+          <ul>
+            {servicio.incluye.map((punto) => (
+              <li>{punto}</li>
+            ))}
+          </ul>
+        </div>
+      </li>
+    ))}
+  </ol>
+</section>
+
+<style>
+  .lista {
+    display: grid;
+    gap: 1.25rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .servicio {
+    display: grid;
+    gap: 1.25rem 2.5rem;
+    padding: clamp(1.5rem, 3vw, 2.25rem);
+    scroll-margin-top: 7rem;
+  }
+
+  @media (min-width: 56rem) {
+    .servicio {
+      grid-template-columns: 4rem 1.2fr 1fr;
+      align-items: start;
+    }
+  }
+
+  .servicio:target {
+    border-color: rgb(var(--metadato-rgb) / 0.6);
+    box-shadow: 0 0 40px rgb(var(--metadato-rgb) / 0.12);
+  }
+
+  .numero {
+    margin: 0;
+    font-family: var(--fuente-display);
+    font-size: 2.5rem;
+    line-height: 1;
+    color: var(--metadato);
+  }
+
+  .texto {
+    display: grid;
+    gap: 0.75rem;
+  }
+
+  .texto > *,
+  .incluye > * {
+    margin: 0;
+  }
+
+  h2 {
+    font-size: var(--t-3);
+  }
+
+  .texto p {
+    color: var(--texto-suave);
+  }
+
+  .incluye {
+    display: grid;
+    gap: 0.75rem;
+  }
+
+  h3 {
+    font-family: var(--fuente-texto);
+    font-size: var(--t--1);
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--metadato);
+  }
+
+  ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding: 0;
+    list-style: none;
+  }
+
+  ul li {
+    padding: 0.4rem 0.85rem;
+    border: 1px solid var(--linea);
+    border-radius: 999px;
+    background: rgb(var(--fondo-rgb) / 0.5);
+    font-size: var(--t--1);
+    color: var(--texto-suave);
+  }
+</style>

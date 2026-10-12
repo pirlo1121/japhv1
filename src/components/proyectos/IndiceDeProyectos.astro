@@ -1,0 +1,94 @@
+---
+/**
+ * Portafolio filtrable. Los botones de filtro son la única parte interactiva
+ * (scripts/funciones/filtros.ts); sin JavaScript se ven todos los proyectos
+ * y los filtros no aparecen.
+ */
+import TarjetaDeProyecto from './TarjetaDeProyecto.astro';
+import { filtros, proyectos } from '@/datos/proyectos';
+---
+
+<div class="filtros" data-filtros role="group" aria-label="Filtrar proyectos por servicio" hidden>
+  {filtros.map(({ id, etiqueta }) => (
+    <button
+      class="filtro"
+      type="button"
+      data-filtro={id}
+      aria-pressed={id === 'todo' ? 'true' : 'false'}
+    >
+      {etiqueta}
+    </button>
+  ))}
+</div>
+<p class="solo-lectores" data-anuncio-filtro aria-live="polite"></p>
+
+<div class="indice" data-indice-proyectos>
+  {proyectos.map((proyecto) => (
+    <TarjetaDeProyecto proyecto={proyecto} />
+  ))}
+</div>
+
+<p class="vacio" data-vacio hidden>
+  No hay proyectos de ese tipo publicados todavía. Prueba con otro filtro.
+</p>
+
+<script>
+  import { iniciarFiltros } from '@/scripts/funciones/filtros';
+  document.querySelector<HTMLElement>('[data-filtros]')?.removeAttribute('hidden');
+  iniciarFiltros();
+</script>
+
+<style>
+  .filtros {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 2.5rem;
+  }
+
+  .filtros[hidden] {
+    display: none;
+  }
+
+  .filtro {
+    padding: 0.55rem 1.1rem;
+    border: 1px solid var(--linea);
+    border-radius: 999px;
+    background: rgb(var(--fondo-rgb) / 0.5);
+    color: var(--texto-suave);
+    font: inherit;
+    font-size: var(--t--1);
+    cursor: pointer;
+    transition:
+      background-color var(--rapido),
+      color var(--rapido),
+      border-color var(--rapido);
+  }
+
+  .filtro:hover {
+    border-color: rgb(var(--texto-rgb) / 0.35);
+    color: var(--texto);
+  }
+
+  .filtro[aria-pressed='true'] {
+    border-color: var(--metadato);
+    background: var(--metadato);
+    color: var(--fondo);
+  }
+
+  .indice {
+    display: grid;
+    gap: clamp(1.5rem, 4vw, 2.5rem);
+  }
+
+  @media (min-width: 48rem) {
+    .indice {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  .vacio {
+    padding: 2rem 0;
+    color: var(--texto-suave);
+  }
+</style>

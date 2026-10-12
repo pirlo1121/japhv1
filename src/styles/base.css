@@ -1,0 +1,448 @@
+/**
+ * base.css
+ * Estilos globales: reset ligero, tipografía editorial (una sans precisa),
+ * enlaces, botones, foco visible y el ritmo general de las secciones.
+ * Colores, degradados y transparencias salen siempre de tokens.css.
+ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  color-scheme: dark;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--fondo);
+  color: var(--texto);
+  font-family: var(--fuente-texto);
+  font-size: var(--t-0);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3 {
+  margin: 0;
+  font-family: var(--fuente-display);
+  font-weight: 500;
+  line-height: 1.05;
+  letter-spacing: var(--rastreo-titular);
+  text-wrap: balance;
+}
+
+h2 {
+  font-size: var(--t-4);
+}
+
+h3 {
+  font-size: var(--t-2);
+  letter-spacing: -0.02em;
+}
+
+em {
+  font-style: normal;
+}
+
+/* El énfasis de los titulares es de cromo frío: bandas de luz, no color. El
+   titular principal reserva el degradado de la red para su fragmento clave. */
+:is(h1, h2) em {
+  background: var(--cromo);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  /* Sin soporte de background-clip: texto plateado legible. */
+  -webkit-text-fill-color: transparent;
+}
+
+h1 em,
+em.neon {
+  background: var(--degradado-red);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+@supports not (background-clip: text) {
+  :is(h1, h2) em {
+    color: var(--cian);
+    -webkit-text-fill-color: currentColor;
+  }
+}
+
+::selection {
+  background: var(--cian);
+  color: var(--fondo);
+}
+
+p {
+  text-wrap: pretty;
+}
+
+a {
+  color: inherit;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+:focus-visible {
+  outline: 2px solid var(--cian);
+  outline-offset: 3px;
+}
+
+/* Salto al contenido: visible solo con teclado. */
+.salta {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 100;
+  padding: 0.75rem 1.25rem;
+  background: var(--texto);
+  color: var(--fondo);
+  translate: -110% 0;
+}
+
+.salta:focus {
+  translate: 0 0;
+}
+
+/* Rótulo de escena: pequeño, en mayúsculas y precedido por un trazo fino. */
+.rotulo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--metadato);
+}
+
+/* Un filamento que nace en cian y se apaga: la red también firma los rótulos. */
+.rotulo::before {
+  content: '';
+  width: 1.75rem;
+  height: 1px;
+  background: linear-gradient(90deg, var(--cian), transparent);
+}
+
+/* ---------------------------------------------------------------- botones */
+
+/* Contorno sobrio y esquinas contenidas: precisión técnica, no píldoras. */
+.boton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  min-height: 3rem;
+  padding: 0.7rem 1.35rem;
+  border: 1px solid var(--linea-fuerte);
+  border-radius: 8px;
+  background: rgb(var(--fondo-rgb) / 0.45);
+  color: var(--texto);
+  font: inherit;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background-color var(--rapido),
+    border-color var(--rapido),
+    color var(--rapido),
+    box-shadow var(--rapido);
+}
+
+.boton:hover {
+  border-color: rgb(var(--cian-rgb) / 0.55);
+  background: rgb(var(--cian-rgb) / 0.06);
+}
+
+.boton:active {
+  background: rgb(var(--cian-rgb) / 0.12);
+}
+
+.boton:disabled,
+.boton[aria-disabled='true'] {
+  border-color: var(--linea);
+  background: transparent;
+  color: var(--texto-apagado);
+  cursor: not-allowed;
+}
+
+/* Acción principal: borde de cian a turquesa sobre azul profundo y una
+   flecha verde, el único verde de la interfaz en reposo. */
+.boton--solido {
+  border-color: transparent;
+  background:
+    linear-gradient(var(--superficie), var(--superficie)) padding-box,
+    linear-gradient(100deg, var(--cian), var(--turquesa)) border-box;
+  box-shadow: 0 0 24px -8px rgb(var(--cian-rgb) / 0.45);
+}
+
+.boton--solido:hover {
+  border-color: transparent;
+  background:
+    linear-gradient(var(--superficie-2), var(--superficie-2)) padding-box,
+    linear-gradient(100deg, var(--cian), var(--turquesa)) border-box;
+  box-shadow: 0 0 32px -6px rgb(var(--cian-rgb) / 0.6);
+}
+
+.boton--solido:active {
+  background:
+    linear-gradient(var(--fondo-2), var(--fondo-2)) padding-box,
+    linear-gradient(100deg, var(--cian), var(--turquesa)) border-box;
+}
+
+.boton .flecha {
+  color: var(--verde);
+  transition: translate var(--rapido) var(--suave);
+}
+
+.boton:hover .flecha {
+  translate: 0.2rem 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .boton .flecha {
+    transition: none;
+  }
+}
+
+/* ---------------------------------------------------------------- secciones */
+
+/* Ningún adorno puede ensanchar la página en móvil. "clip" (y no "hidden")
+   no crea un contenedor de scroll, así que position: sticky sigue funcionando. */
+main {
+  overflow-x: clip;
+}
+
+/* Ritmo y lectura comunes de las secciones. */
+main > section,
+main > article {
+  padding: var(--bloque) max(var(--margen), (100% - var(--ancho)) / 2);
+}
+
+/* En la portada no hay separadores: es un solo espacio. */
+body:not(.inmersiva) main > section + section {
+  border-top: 1px solid var(--linea);
+}
+
+/* Sin movimiento (o sin JavaScript) la escultura es un fotograma fijo y no
+   se atenúa con la historia: un velo oscuro detrás de cada escena mantiene
+   el texto legible. */
+html:not(.movimiento) body.inmersiva main > section:not(.vacio) {
+  background: rgb(var(--fondo-rgb) / 0.74);
+}
+
+main ul,
+main ol {
+  padding-left: 1.2rem;
+}
+
+main dl {
+  display: grid;
+  gap: 1rem;
+}
+
+main dd {
+  margin: 0;
+  color: var(--texto-suave);
+}
+
+main p {
+  max-width: 68ch;
+  color: var(--texto-suave);
+}
+
+main header {
+  display: grid;
+  gap: 1rem;
+  margin-bottom: 2.5rem;
+}
+
+main [role='note'] {
+  padding: 0.9rem 1.1rem;
+  border: 1px dashed rgb(var(--metadato-rgb) / 0.5);
+  border-radius: var(--radio);
+  background: rgb(var(--metadato-rgb) / 0.06);
+  font-size: var(--t--1);
+}
+
+main small {
+  color: var(--metadato);
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+}
+
+/* Las páginas interiores dejan sitio a la cabecera flotante. */
+main > :first-child:not(.vacio, .portada-pagina) {
+  padding-top: calc(var(--bloque) + 6rem);
+}
+
+/* ---------------------------------------------------------------- imágenes provisionales */
+
+/* Mientras no hay imagen real, cada proyecto muestra una superficie de
+   cromo oscuro: bandas de luz fría sobre azul profundo y un reflejo de la
+   red, en un ángulo distinto según el tono. Se sustituye por <Image> al
+   tener fotos reales. */
+.pintura {
+  background-color: var(--superficie);
+  background-image:
+    linear-gradient(
+      var(--giro, 100deg),
+      transparent 0 var(--a, 30%),
+      rgb(var(--texto-rgb) / 0.5) calc(var(--a, 30%) + 2%),
+      transparent calc(var(--a, 30%) + 9%),
+      transparent var(--b, 62%),
+      rgb(var(--cian-rgb) / 0.16) calc(var(--b, 62%) + 6%),
+      transparent calc(var(--b, 62%) + 18%)
+    ),
+    radial-gradient(ellipse at var(--luz, 70% 30%), rgb(var(--azul-rgb) / 0.22), transparent 65%),
+    linear-gradient(160deg, var(--superficie-2), var(--fondo));
+}
+
+.tono-1 {
+  --giro: 100deg;
+  --luz: 72% 28%;
+}
+.tono-2 {
+  --giro: 70deg;
+  --luz: 28% 30%;
+  --a: 44%;
+  --b: 74%;
+}
+.tono-3 {
+  --giro: 125deg;
+  --luz: 60% 60%;
+  --a: 20%;
+  --b: 55%;
+}
+.tono-4 {
+  --giro: 85deg;
+  --luz: 80% 70%;
+  --a: 52%;
+}
+.tono-5 {
+  --giro: 140deg;
+  --luz: 35% 35%;
+  --b: 70%;
+}
+.tono-6 {
+  --giro: 60deg;
+  --luz: 50% 25%;
+  --a: 36%;
+}
+
+/* Revelado: la imagen se descubre de izquierda a derecha (scripts/historia anima --revelado). */
+[data-reflejo] {
+  clip-path: inset(0 calc((1 - var(--revelado, 1)) * 100%) 0 0);
+}
+
+/* Tarjeta base sobre la escena. */
+.lamina {
+  border: 1px solid var(--linea);
+  border-radius: var(--radio);
+  background: rgb(var(--superficie-rgb) / 0.72);
+}
+
+.sello-ejemplo {
+  display: inline-block;
+  padding: 0.15rem 0.6rem;
+  border: 1px dashed rgb(var(--metadato-rgb) / 0.6);
+  border-radius: 999px;
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  color: var(--metadato);
+}
+
+.accion-final {
+  margin: 3rem 0 0;
+}
+
+.solo-lectores {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* ---------------------------------------------------------------- escenas de la portada */
+
+/* Escena fija (escritorio con movimiento, ver scripts/historia/iniciar.ts):
+   la sección se alarga (--recorrido) y su marco queda pegado a la pantalla
+   mientras la escultura se transforma. Sin JavaScript, sin movimiento o en
+   móvil, es un bloque normal. */
+.fija {
+  min-height: var(--recorrido, 240vh);
+  padding-block: 0;
+}
+
+.fija > .marco {
+  position: sticky;
+  top: 0;
+  display: grid;
+  align-content: center;
+  min-height: 100svh;
+  padding-block: 6rem 3rem;
+}
+
+/* Pasos: cada uno se enciende con el progreso de su escena (--p, 0..1) a
+   partir de su umbral (--u). Sin JavaScript --p no existe y todo se ve. */
+.en-escena [data-paso] {
+  opacity: clamp(0.2, calc((var(--p, 1) - var(--u, 0)) * 7 + 0.2), 1);
+  translate: 0 calc(clamp(0, (var(--u, 0) - var(--p, 1)) * 7 + 1, 1) * 0.5rem);
+}
+
+/* Índice pequeño de una pieza ("01"): metadato, no titular. */
+.ordinal {
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.08em;
+  color: var(--metadato);
+}
+
+/* ---------------------------------------------------------------- Lenis */
+
+/* Reglas de lenis/dist/lenis.css (v1.3). Están aquí porque Lenis se carga
+   bajo demanda y el CSS del sitio va incrustado en el HTML. */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+
+.lenis:not(.lenis-autoToggle).lenis-stopped {
+  overflow: clip;
+}
+
+.lenis [data-lenis-prevent],
+.lenis [data-lenis-prevent-wheel],
+.lenis [data-lenis-prevent-touch],
+.lenis [data-lenis-prevent-vertical],
+.lenis [data-lenis-prevent-horizontal] {
+  overscroll-behavior: contain;
+}
+
+.lenis.lenis-smooth iframe {
+  pointer-events: none;
+}
+
+.lenis.lenis-autoToggle {
+  transition-property: overflow;
+  transition-duration: 1ms;
+  transition-behavior: allow-discrete;
+}
+
+/* Los saltos a un ancla (#servicio-web, #privacidad...) no quedan bajo la cabecera fija. */
+html {
+  scroll-padding-top: 7rem;
+}

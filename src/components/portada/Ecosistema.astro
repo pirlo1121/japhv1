@@ -1,0 +1,97 @@
+---
+/**
+ * Escena 08 · Ecosistema. La culminación: la escultura se asienta en un
+ * núcleo con siete módulos en órbita, uno por servicio; la red termina de
+ * conectarse y se ordena alrededor; el movimiento se calma. No aparece nada
+ * nuevo: son las mismas piezas de antes, ya funcionando juntas.
+ */
+import { servicios } from '@/datos/servicios';
+---
+
+<section
+  class="ecosistema"
+  id="ecosistema"
+  aria-labelledby="titulo-ecosistema"
+  data-escena="Ecosistema"
+>
+  <div class="contenido" data-zona-lectura>
+    <p class="rotulo">08 · Ecosistema</p>
+    <h2 id="titulo-ecosistema">
+      Todo conectado. <em>Todo con propósito.</em>
+    </h2>
+    <p class="entrada">
+      Construimos soluciones digitales donde cada pieza contribuye a un sistema más sólido.
+    </p>
+    <ul class="piezas" aria-label="Las piezas del sistema">
+      {servicios.map((servicio) => (
+        <li>
+          <a href={`/servicios#${servicio.id}`}>{servicio.nombre}</a>
+        </li>
+      ))}
+    </ul>
+  </div>
+</section>
+
+<style>
+  .ecosistema {
+    display: grid;
+    align-content: center;
+    min-height: 130svh;
+  }
+
+  .contenido {
+    display: grid;
+    gap: 1.4rem;
+    max-width: 36rem;
+  }
+
+  .contenido > * {
+    margin: 0;
+  }
+
+  .entrada {
+    font-size: var(--t-1);
+  }
+
+  /* Las siete piezas, unidas por nodos como en la órbita. */
+  .piezas {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 0;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: var(--t--1);
+  }
+
+  .piezas li {
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .piezas li + li::before {
+    content: '';
+    width: 1.4rem;
+    height: 1px;
+    margin-inline: 0.5rem;
+    background: linear-gradient(90deg, rgb(var(--cian-rgb) / 0.5), rgb(var(--purpura-rgb) / 0.5));
+  }
+
+  .piezas a {
+    color: var(--texto-suave);
+    text-decoration: none;
+    transition: color var(--rapido);
+  }
+
+  .piezas a:hover {
+    color: var(--cian);
+  }
+
+  @media (max-aspect-ratio: 85/100), (max-width: 47.99rem) {
+    .ecosistema {
+      align-content: end;
+      padding-top: 46svh;
+      min-height: 110svh;
+    }
+  }
+</style>

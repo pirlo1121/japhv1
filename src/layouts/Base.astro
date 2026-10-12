@@ -1,0 +1,55 @@
+---
+/**
+ * Base.astro
+ * Estructura común de todas las páginas: <head>, cabecera, contenido y pie.
+ */
+import { Font } from 'astro:assets';
+import '@/styles/tokens.css';
+import '@/styles/base.css';
+import Cabecera from '@/components/estructura/Cabecera.astro';
+import PieDePagina from '@/components/estructura/PieDePagina.astro';
+import Seo from '@/components/estructura/Seo.astro';
+
+interface Props {
+  titulo: string;
+  descripcion: string;
+  /**
+   * La portada: la pintura está detrás de toda la página, así que las
+   * secciones no llevan separadores y el pie se funde con el paisaje.
+   */
+  inmersiva?: boolean;
+}
+
+const { titulo, descripcion, inmersiva = false } = Astro.props;
+---
+
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <Seo titulo={titulo} descripcion={descripcion} />
+    <Font cssVariable="--fuente-texto" preload={[{ weight: 400 }, { weight: 500 }]} />
+
+    <!--
+      Única excepción a "sin scripts en línea": decide antes de la primera
+      pintura si hay movimiento, para que el diseño no salte. Sin JavaScript
+      o con "reducir movimiento" la página es un documento estático.
+    -->
+    <script is:inline>
+      if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        document.documentElement.classList.add('movimiento');
+      }
+    </script>
+  </head>
+  <body class:list={{ inmersiva }}>
+    <a class="salta" href="#contenido">
+      Saltar al contenido
+    </a>
+    <Cabecera />
+    <main id="contenido">
+      <slot />
+    </main>
+    <PieDePagina />
+  </body>
+</html>

@@ -1,0 +1,185 @@
+---
+/**
+ * Encabezado de las páginas interiores: la misma escultura y la misma red
+ * de la portada, en calma, a la derecha del título (arriba en pantallas
+ * estrechas). Cada página muestra la forma que le corresponde en la
+ * historia: el ecosistema en servicios, el portal en proyectos...
+ * El titular admite <em> (texto del equipo, por eso set:html).
+ *
+ * Slots:
+ *   default  la entradilla y lo que vaya bajo el título
+ */
+interface Props {
+  id: string;
+  rotulo: string;
+  titulo: string;
+  /** Forma de la escultura (escultura.ts): 0 gota, 1 cinta, 2 núcleo, 3 portal, 4 ecosistema. */
+  forma?: number;
+  /** Más alta, para páginas cuyo encabezado es casi todo el contenido (404). */
+  completa?: boolean;
+}
+
+const { id, rotulo, titulo, forma = 1, completa = false } = Astro.props;
+---
+
+<section class:list={['portada-pagina', { completa }]} aria-labelledby={id}>
+  <div class="banda" data-lienzo data-forma={forma} aria-hidden="true">
+    <div class="respaldo" data-respaldo>
+      <span class="gota"></span>
+    </div>
+    <canvas class="escultura" data-escultura></canvas>
+    <canvas class="red" data-red></canvas>
+  </div>
+  <div class="contenido" data-zona-lectura>
+    <p class="rotulo">{rotulo}</p>
+    <h1 id={id} set:html={titulo} />
+    <slot />
+  </div>
+</section>
+
+<script>
+  import { iniciarLienzo } from '@/scripts/lienzo/escena';
+  import { crearEstadoNarrativo } from '@/scripts/lienzo/narrativa';
+
+  // Estado tranquilo: la escultura a la derecha (arriba en pantallas
+  // estrechas) y la red a medio crecer, sin escenas que avanzar.
+  const banda = document.querySelector<HTMLElement>('[data-lienzo]');
+  const forma = Number(banda?.dataset.forma ?? 1);
+  const estrecha = window.innerWidth / window.innerHeight < 0.85 || window.innerWidth < 768;
+  const estado = {
+    ...crearEstadoNarrativo(),
+    forma,
+    distancia: forma === 4 ? 8.6 : 7.4,
+    desplazamientoX: estrecha ? 0 : 0.5,
+    desplazamientoY: estrecha ? 0.4 : 0.05,
+    atenuacion: estrecha ? 0.35 : 0.08,
+    flujo: 0.5,
+    red: 0.62,
+    orden: forma >= 3 ? 0.7 : 0,
+    grietas: forma === 2 ? 1 : 0
+  };
+  const arrancar = () => iniciarLienzo(estado);
+  if ('requestIdleCallback' in window) requestIdleCallback(arrancar, { timeout: 600 });
+  else setTimeout(arrancar, 200);
+</script>
+
+<style>
+  .portada-pagina {
+    position: relative;
+    display: grid;
+    align-items: end;
+    min-height: min(80svh, 48rem);
+    padding: 9rem max(var(--margen), (100% - var(--ancho)) / 2) clamp(3rem, 8vh, 5rem);
+    overflow: hidden;
+    isolation: isolate;
+  }
+
+  .completa {
+    min-height: 100svh;
+  }
+
+  .banda {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: var(--atmosfera), var(--fondo);
+  }
+
+  /* La banda se funde con el fondo de la página. */
+  .banda::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(to top, var(--fondo), transparent 45%),
+      linear-gradient(to right, rgb(var(--fondo-rgb) / 0.6), transparent 60%);
+    pointer-events: none;
+  }
+
+  canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  .escultura {
+    opacity: 0;
+    transition: opacity 1.2s var(--suave);
+  }
+
+  .banda[data-listo] .escultura {
+    opacity: 1;
+  }
+
+  .banda[data-listo] .respaldo {
+    opacity: 0;
+    transition: opacity 1.2s var(--suave);
+  }
+
+  .respaldo {
+    position: absolute;
+    left: var(--x, 75%);
+    top: var(--y, 48%);
+    width: var(--lado, min(44vh, 30vw));
+    aspect-ratio: 1;
+    translate: -50% -50%;
+  }
+
+  .gota {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background:
+      radial-gradient(ellipse 46% 22% at 50% 16%, rgb(var(--texto-rgb) / 0.9), transparent 70%),
+      radial-gradient(
+        ellipse 95% 120% at 8% 50%,
+        transparent 76%,
+        rgb(var(--cian-rgb) / 0.5) 78%,
+        transparent 81%
+      ),
+      radial-gradient(
+        circle at 62% 70%,
+        var(--superficie-2),
+        var(--fondo) 58%,
+        var(--superficie) 100%
+      );
+  }
+
+  @media (max-aspect-ratio: 85/100), (max-width: 47.99rem) {
+    .respaldo {
+      left: var(--x, 50%);
+      top: var(--y, 30%);
+      width: var(--lado, min(60vw, 34vh));
+    }
+  }
+
+  .contenido {
+    display: grid;
+    gap: 1.25rem;
+    max-width: 52rem;
+  }
+
+  .contenido > :global(*) {
+    margin: 0;
+  }
+
+  h1 {
+    font-size: var(--t-6);
+    line-height: 0.98;
+    text-shadow: 0 2px 30px rgb(var(--fondo-rgb) / 0.6);
+  }
+
+  .contenido :global(p:not(.rotulo)) {
+    max-width: 52ch;
+    font-size: var(--t-1);
+    color: var(--texto-suave);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .escultura,
+    .banda[data-listo] .respaldo {
+      transition: none;
+    }
+  }
+</style>

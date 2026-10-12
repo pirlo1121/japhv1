@@ -1,0 +1,177 @@
+---
+/**
+ * Cabecera fija: marca y navegación principal. Transparente sobre la
+ * primera escena; al bajar gana un fondo azul profundo para no perderse
+ * sobre la escultura (data-fondo, desde el script de abajo). La página
+ * actual se marca con aria-current y un nodo verde: el estado activo.
+ */
+import Boton from '@/components/ui/Boton.astro';
+import { navegacion, sitio } from '@/config/sitio';
+import { esPaginaActual } from '@/utilidades/rutas';
+
+const ruta = Astro.url.pathname;
+---
+
+<header class="cabecera" data-cabecera>
+  <a class="marca" href="/" aria-label={`${sitio.nombre}, ir a la portada`}>
+    <span class="semilla" aria-hidden="true"></span>
+    {sitio.nombre}
+  </a>
+
+  <nav aria-label="Navegación principal">
+    <ul>
+      {navegacion.map(({ etiqueta, href }) => (
+        <li>
+          <a href={href} aria-current={esPaginaActual(href, ruta) ? 'page' : undefined}>
+            {etiqueta}
+          </a>
+        </li>
+      ))}
+    </ul>
+  </nav>
+
+  <Boton href="/contacto">Empezar un proyecto</Boton>
+</header>
+
+<script>
+  const cabecera = document.querySelector<HTMLElement>('[data-cabecera]');
+  let pendiente = false;
+  const actualizar = () => {
+    pendiente = false;
+    if (cabecera) cabecera.dataset.fondo = String(window.scrollY > 48);
+  };
+  window.addEventListener(
+    'scroll',
+    () => {
+      if (!pendiente) {
+        pendiente = true;
+        requestAnimationFrame(actualizar);
+      }
+    },
+    { passive: true }
+  );
+  // Primera lectura en el siguiente fotograma, no durante la carga.
+  requestAnimationFrame(actualizar);
+</script>
+
+<style>
+  .cabecera {
+    position: fixed;
+    inset: 0 0 auto;
+    z-index: 10;
+    border-bottom: 1px solid transparent;
+    transition:
+      background-color 0.4s var(--suave),
+      border-color 0.4s var(--suave);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem 2rem;
+    padding: 1rem var(--margen);
+  }
+
+  /* Al bajar: una superficie azul profunda, casi opaca; sin vidrio esmerilado
+     pesado. Solo cambia el fondo y el borde: la altura no salta. */
+  .cabecera[data-fondo='true'] {
+    border-bottom-color: var(--linea);
+    background: rgb(var(--fondo-rgb) / 0.88);
+  }
+
+  @supports (backdrop-filter: blur(1px)) {
+    .cabecera[data-fondo='true'] {
+      background: rgb(var(--fondo-rgb) / 0.72);
+      backdrop-filter: blur(10px);
+    }
+  }
+
+  .marca {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-family: var(--fuente-display);
+    font-size: 1.25rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-decoration: none;
+  }
+
+  /* Una gota de cromo como semilla de la marca. */
+  .semilla {
+    width: 0.7rem;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: var(--gota);
+  }
+
+  ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 1.6rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  nav a {
+    position: relative;
+    display: inline-block;
+    padding: 0.4rem 0;
+    color: var(--texto-suave);
+    text-decoration: none;
+    transition: color var(--rapido);
+  }
+
+  nav a:hover,
+  nav a[aria-current='page'] {
+    color: var(--texto);
+  }
+
+  nav a[aria-current='page']::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    bottom: -0.1rem;
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: var(--verde);
+    box-shadow: 0 0 6px rgb(var(--verde-rgb) / 0.8);
+    translate: -50% 0;
+  }
+
+  /* En pantallas estrechas: marca y botón arriba, enlaces en una fila debajo. */
+  @media (max-width: 52rem) {
+    nav {
+      order: 3;
+      width: 100%;
+    }
+
+    /* Una sola fila que se desliza en horizontal si no cabe: nunca dos líneas. */
+    ul {
+      flex-wrap: nowrap;
+      gap: 1.1rem;
+      overflow-x: auto;
+      scrollbar-width: none;
+      font-size: var(--t--1);
+      white-space: nowrap;
+    }
+
+    ul::-webkit-scrollbar {
+      display: none;
+    }
+
+    .cabecera :global(.boton) {
+      min-height: 2.5rem;
+      padding: 0.45rem 1rem;
+      font-size: var(--t--1);
+    }
+  }
+
+  /* Muy estrecho: la acción ya está en el héroe y en el pie. */
+  @media (max-width: 30rem) {
+    .cabecera > :global(.boton) {
+      display: none;
+    }
+  }
+</style>

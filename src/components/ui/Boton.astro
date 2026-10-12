@@ -1,0 +1,35 @@
+---
+/**
+ * Enlace o botón de acción. Con `href` es un <a>; sin él, un <button>.
+ * La acción principal (sólido) lleva una flecha verde: el acento más escaso
+ * del sistema señala el siguiente paso.
+ */
+interface Props {
+  href?: string;
+  tipo?: 'button' | 'submit';
+  variante?: 'contorno' | 'solido';
+}
+
+const { href, tipo = 'button', variante = 'contorno' } = Astro.props;
+const clases = ['boton', `boton--${variante}`];
+---
+
+{href ? (
+  <a class:list={clases} href={href}>
+    <slot />
+    {variante === 'solido' && (
+      <span class="flecha" aria-hidden="true">
+        →
+      </span>
+    )}
+  </a>
+) : (
+  <button class:list={clases} type={tipo}>
+    <slot />
+    {variante === 'solido' && (
+      <span class="flecha" aria-hidden="true">
+        →
+      </span>
+    )}
+  </button>
+)}

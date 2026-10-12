@@ -1,0 +1,49 @@
+---
+/**
+ * Icono lineal de cada servicio (datos/servicios.ts): un trazo fino, del
+ * mismo grosor que los filamentos de la red. Decorativo: el nombre del
+ * servicio siempre va escrito al lado.
+ */
+import type { IdServicio } from '@/datos/servicios';
+
+interface Props {
+  id: IdServicio;
+}
+
+const { id } = Astro.props;
+
+const trazos: Record<IdServicio, string[]> = {
+  web: ['M3 5.5h18v13H3z', 'M3 9h18', 'M6 7.2h.01', 'M8.5 7.2h.01'],
+  'app-web': ['M3 4h18v16H3z', 'M9 4v16', 'M9 10h12', 'M12.5 14h5', 'M12.5 16.5h3'],
+  'app-movil': ['M7 2.8h10v18.4H7z', 'M10.5 18.3h3'],
+  automatizacion: [
+    'M6 12a6 6 0 0 1 10.4-4.1',
+    'M18 12a6 6 0 0 1-10.4 4.1',
+    'M16.6 4.2l-.2 3.7-3.7-.3',
+    'M7.4 19.8l.2-3.7 3.7.3'
+  ],
+  marketing: ['M3 19h18', 'M5 15.5l4.5-4.5 3.5 3 6-6.5', 'M15 7.5h4v4'],
+  video: ['M3 6h13v12H3z', 'M16 10.5l5-3v9l-5-3'],
+  branding: [
+    'M12 3c3.2 4 5.5 6.9 5.5 10a5.5 5.5 0 0 1-11 0C6.5 9.9 8.8 7 12 3z',
+    'M9.5 14a2.5 2.5 0 0 0 2.5 2.5'
+  ]
+};
+---
+
+<svg
+  class="icono-servicio"
+  viewBox="0 0 24 24"
+  width="24"
+  height="24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="1.3"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+  aria-hidden="true"
+>
+  {trazos[id].map((d) => (
+    <path d={d} />
+  ))}
+</svg>

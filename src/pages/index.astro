@@ -1,0 +1,77 @@
+---
+/**
+ * Portada: Liquid Technology × The Living Network. Un recorrido en nueve
+ * escenas alrededor de una escultura de metal líquido de la que nace una
+ * red viva: materia → energía → conexiones → sistema → productos →
+ * crecimiento. El orden de este archivo es el orden de la historia; cada
+ * escena es una <section> con id propio, y scripts/historia/escenarios.ts
+ * dice cómo se ven la escultura y la red en cada una.
+ *
+ *   01 El vacío             Vacio           la gota flota; la red duerme al fondo
+ *   02 La transformación    Transformacion  la gota se estira en una cinta curva
+ *   03 La red viva          RedViva         de la cinta crece la red
+ *   04 El núcleo            Nucleo          la cinta se pliega alrededor del núcleo
+ *   05 Servicios            Servicios       cada servicio enciende su rama
+ *   06 El proceso           Proceso         un camino orgánico entre las fases
+ *   07 Proyectos            Proyectos       un aro enmarca el trabajo
+ *   08 Ecosistema           Ecosistema      núcleo y siete módulos: todo conectado
+ *   09 Hagámoslo real       Llamada         la invitación, en calma
+ */
+import Ecosistema from '@/components/portada/Ecosistema.astro';
+import Lienzo from '@/components/portada/Lienzo.astro';
+import Llamada from '@/components/portada/Llamada.astro';
+import Nucleo from '@/components/portada/Nucleo.astro';
+import Proceso from '@/components/portada/Proceso.astro';
+import Proyectos from '@/components/portada/Proyectos.astro';
+import Recorrido from '@/components/portada/Recorrido.astro';
+import RedViva from '@/components/portada/RedViva.astro';
+import Servicios from '@/components/portada/Servicios.astro';
+import Transformacion from '@/components/portada/Transformacion.astro';
+import Vacio from '@/components/portada/Vacio.astro';
+import Base from '@/layouts/Base.astro';
+import { sitio } from '@/config/sitio';
+
+const escenas = [
+  { id: 'inicio', nombre: 'Inicio' },
+  { id: 'transformacion', nombre: 'Transformación' },
+  { id: 'red', nombre: 'Red viva' },
+  { id: 'nucleo', nombre: 'Núcleo' },
+  { id: 'servicios', nombre: 'Servicios' },
+  { id: 'proceso', nombre: 'Proceso' },
+  { id: 'proyectos-destacados', nombre: 'Proyectos' },
+  { id: 'ecosistema', nombre: 'Ecosistema' },
+  { id: 'llamada', nombre: 'Contacto' }
+];
+---
+
+<Base titulo={`${sitio.nombre} · ${sitio.lema}`} descripcion={sitio.descripcion} inmersiva>
+  <Lienzo />
+  <Vacio />
+  <Recorrido escenas={escenas} />
+  <Transformacion />
+  <RedViva />
+  <Nucleo />
+  <Servicios />
+  <Proceso />
+  <Proyectos />
+  <Ecosistema />
+  <Llamada />
+</Base>
+
+<script>
+  import { iniciarHistoria } from '@/scripts/historia/iniciar';
+  import { iniciarLienzo } from '@/scripts/lienzo/escena';
+  import { crearEstadoNarrativo } from '@/scripts/lienzo/narrativa';
+
+  const estado = crearEstadoNarrativo();
+  iniciarHistoria(estado);
+  // Solo en desarrollo: inspeccionar y ajustar la escena desde la consola.
+  if (import.meta.env.DEV) Object.assign(window, { __estado: estado });
+
+  // Los nombres de las ramas de la red son los de los servicios, tal como están en la página.
+  const ramas = [...document.querySelectorAll('[data-rama] h3')].map((h) => h.textContent ?? '');
+  // La escultura compila su shader después de la primera pintura del texto.
+  const arrancar = () => iniciarLienzo(estado, ramas);
+  if ('requestIdleCallback' in window) requestIdleCallback(arrancar, { timeout: 600 });
+  else setTimeout(arrancar, 200);
+</script>

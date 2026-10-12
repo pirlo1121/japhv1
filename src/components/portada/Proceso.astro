@@ -1,0 +1,319 @@
+---
+/**
+ * Escena 06 · El proceso. Las cuatro fases reales de trabajo
+ * (datos/proceso.ts) son nodos de un camino orgánico: se curva, se divide
+ * un momento y vuelve a unirse, pero el orden de lectura siempre es obvio.
+ *
+ * Con movimiento en escritorio la escena queda fija; el camino se ilumina
+ * hasta la fase actual y una partícula viaja hacia la siguiente
+ * (scripts/historia/proceso.ts). En móvil es una lista vertical con un
+ * filamento que se llena. Las fases son HTML: el dibujo solo acompaña.
+ */
+import { fases } from '@/datos/proceso';
+
+const dos = (n: number) => String(n).padStart(2, '0');
+/** Centros de los nodos en el dibujo (viewBox 1000 × 200): uno sobre cada columna. */
+const nodos = fases.map((_, i) => ({
+  x: ((i + 0.5) / fases.length) * 1000,
+  y: i % 2 === 0 ? 132 : 72
+}));
+// Una curva suave que pasa por todos los nodos (tangentes horizontales).
+const camino = nodos
+  .map((n, i) => {
+    if (i === 0) return `M${n.x} ${n.y}`;
+    const a = nodos[i - 1]!;
+    const medio = (a.x + n.x) / 2;
+    return `C${medio} ${a.y} ${medio} ${n.y} ${n.x} ${n.y}`;
+  })
+  .join(' ');
+// Entre la segunda y la tercera fase, el camino se divide y vuelve a unirse.
+const b = nodos[1];
+const c = nodos[2];
+const desvio =
+  b && c ? `M${b.x} ${b.y} C${b.x + 90} ${b.y - 60} ${c.x - 90} ${c.y + 40} ${c.x} ${c.y}` : '';
+---
+
+<section
+  class="proceso"
+  id="proceso"
+  aria-labelledby="titulo-proceso"
+  data-proceso
+  data-escena="Proceso"
+  style={{ '--fases': fases.length }}
+>
+  <div class="marco">
+    <header class="cabecera" data-zona-lectura>
+      <p class="rotulo">06 · El proceso</p>
+      <h2 id="titulo-proceso">
+        De la idea <em>al ecosistema.</em>
+      </h2>
+      <p>Un proceso claro para transformar objetivos en productos digitales sostenibles.</p>
+      <p class="contador" aria-hidden="true">
+        Fase <span data-proceso-actual>1</span> / {fases.length}
+      </p>
+    </header>
+
+    <div class="dibujo" aria-hidden="true">
+      <svg viewBox="0 0 1000 200" preserveAspectRatio="none">
+        <defs>
+          <linearGradient id="degradado-camino" x1="0" x2="1" y1="0" y2="0">
+            <stop offset="0" style="stop-color: var(--turquesa)" />
+            <stop offset="0.45" style="stop-color: var(--cian)" />
+            <stop offset="1" style="stop-color: var(--purpura)" />
+          </linearGradient>
+        </defs>
+        <path class="base" d={camino} />
+        <path class="desvio" d={desvio} />
+        <path class="luz" d={camino} pathLength="1" data-camino />
+      </svg>
+      {nodos.map((n, i) => (
+        <span
+          class="punto"
+          data-punto={i}
+          style={{ left: `${n.x / 10}%`, top: `${(n.y / 200) * 100}%`, '--i': i }}
+        />
+      ))}
+      <span class="energia" data-energia />
+    </div>
+
+    <ol class="fases" data-zona-lectura>
+      {fases.map(({ titulo, descripcion }, i) => (
+        <li class="fase" data-fase>
+          <span class="nodo" aria-hidden="true" />
+          <p class="numero">{dos(i + 1)}</p>
+          <h3>{titulo}</h3>
+          <p class="descripcion">{descripcion}</p>
+        </li>
+      ))}
+    </ol>
+  </div>
+</section>
+
+<style>
+  .proceso {
+    --recorrido: 280vh;
+  }
+
+  .marco {
+    display: grid;
+    gap: 1.5rem;
+  }
+
+  .cabecera {
+    max-width: 40rem;
+    margin-bottom: 0;
+  }
+
+  .contador {
+    display: none;
+    font-size: var(--t--1);
+    font-variant-numeric: tabular-nums;
+    color: var(--metadato);
+  }
+
+  .fases {
+    position: relative;
+    display: grid;
+    gap: 1.75rem;
+    margin: 0;
+    padding: 0 0 0 1.75rem;
+    list-style: none;
+  }
+
+  /* Móvil y sin movimiento: un filamento vertical que se llena con --avance. */
+  .fases::before,
+  .fases::after {
+    content: '';
+    position: absolute;
+    left: 4px;
+    top: 0.5rem;
+    width: 1px;
+    bottom: 0.5rem;
+    background: var(--linea-fuerte);
+  }
+
+  .fases::after {
+    bottom: auto;
+    height: calc((100% - 1rem) * var(--avance, 1));
+    background: linear-gradient(to bottom, var(--turquesa), var(--cian), var(--purpura));
+    box-shadow: 0 0 8px rgb(var(--cian-rgb) / 0.5);
+  }
+
+  .fase {
+    position: relative;
+    display: grid;
+    gap: 0.4rem;
+    transition: opacity 0.4s var(--suave);
+  }
+
+  .fase .nodo {
+    position: absolute;
+    left: calc(-1.75rem + 1px);
+    top: 0.35rem;
+    width: 7px;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: var(--cian);
+    box-shadow: 0 0 8px rgb(var(--cian-rgb) / 0.6);
+    transition:
+      background-color 0.4s var(--suave),
+      box-shadow 0.4s var(--suave),
+      scale 0.4s var(--suave);
+  }
+
+  .numero {
+    margin: 0;
+    font-size: 0.75rem;
+    letter-spacing: 0.12em;
+    color: var(--metadato);
+  }
+
+  h3 {
+    font-size: var(--t-2);
+  }
+
+  .descripcion {
+    margin: 0;
+    max-width: 36ch;
+  }
+
+  .dibujo {
+    display: none;
+  }
+
+  /* Con movimiento: la fase actual brilla, las anteriores quedan a medias. */
+  .en-escena .fase {
+    opacity: 0.45;
+  }
+
+  .en-escena .fase.alcanzada {
+    opacity: 0.75;
+  }
+
+  .en-escena .fase.activa {
+    opacity: 1;
+  }
+
+  .en-escena .fase.activa .nodo {
+    background: var(--verde);
+    box-shadow: 0 0 12px rgb(var(--verde-rgb) / 0.8);
+    scale: 1.4;
+  }
+
+  .en-escena .contador {
+    display: block;
+  }
+
+  /* ---------------------------------------------------------- escena fija (escritorio) */
+
+  .fija .marco {
+    gap: 0;
+  }
+
+  .fija .dibujo {
+    position: relative;
+    display: block;
+    height: clamp(7rem, 18vh, 10rem);
+    margin: 1.5rem 0 1rem;
+  }
+
+  svg {
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+  }
+
+  svg path {
+    fill: none;
+    vector-effect: non-scaling-stroke;
+    stroke-linecap: round;
+  }
+
+  .base {
+    stroke: var(--linea-fuerte);
+    stroke-width: 1;
+  }
+
+  .desvio {
+    stroke: rgb(var(--purpura-rgb) / 0.35);
+    stroke-width: 1;
+    stroke-dasharray: 2 6;
+  }
+
+  .luz {
+    stroke: url(#degradado-camino);
+    stroke-width: 2;
+    stroke-dasharray: 1;
+    /* La luz llega a la fase actual: avance × fases / tramos entre fases. */
+    stroke-dashoffset: calc(1 - min(1, var(--avance, 0) * var(--fases) / (var(--fases) - 1)));
+    filter: drop-shadow(0 0 4px rgb(var(--cian-rgb) / 0.6));
+  }
+
+  /* La partícula que viaja hacia la siguiente fase (proceso.ts la coloca). */
+  .energia {
+    position: absolute;
+    width: 7px;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: var(--texto);
+    box-shadow:
+      0 0 6px var(--cian),
+      0 0 14px rgb(var(--cian-rgb) / 0.6);
+    translate: -50% -50%;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .punto {
+    position: absolute;
+    width: 11px;
+    aspect-ratio: 1;
+    border: 1px solid rgb(var(--cian-rgb) / 0.6);
+    border-radius: 50%;
+    background: var(--fondo);
+    translate: -50% -50%;
+  }
+
+  /* El nodo se enciende cuando la luz lo alcanza. */
+  .punto::after {
+    content: '';
+    position: absolute;
+    inset: 2px;
+    border-radius: 50%;
+    background: var(--cian);
+    box-shadow: 0 0 10px var(--cian);
+    opacity: clamp(0, (var(--avance, 0) * var(--fases) - var(--i)) * 8, 1);
+  }
+
+  .fija .fases {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 2rem;
+    padding: 0;
+  }
+
+  .fija .fases::before,
+  .fija .fases::after,
+  .fija .fase .nodo {
+    display: none;
+  }
+
+  .fija .fase {
+    justify-items: center;
+    text-align: center;
+  }
+
+  .fija h3 {
+    font-size: var(--t-1);
+  }
+
+  .fija .descripcion {
+    font-size: var(--t--1);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .fase,
+    .fase .nodo {
+      transition: none;
+    }
+  }
+</style>

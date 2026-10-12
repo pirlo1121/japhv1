@@ -1,0 +1,134 @@
+---
+/**
+ * Un campo del formulario: etiqueta, control y mensaje de error.
+ * El error ya queda enlazado con aria-describedby desde el HTML;
+ * scripts/contacto/formulario.ts solo escribe el texto y aria-invalid.
+ */
+interface Opcion {
+  valor: string;
+  etiqueta: string;
+}
+
+interface Props {
+  nombre: string;
+  etiqueta: string;
+  control?: 'input' | 'textarea' | 'select';
+  tipo?: 'text' | 'email' | 'tel';
+  autocompletar?: string;
+  marcador?: string;
+  requerido?: boolean;
+  /** Solo para control="select". La primera opción vacía la añade el componente. */
+  opciones?: Opcion[];
+}
+
+const {
+  nombre,
+  etiqueta,
+  control = 'input',
+  tipo = 'text',
+  autocompletar,
+  marcador,
+  requerido = false,
+  opciones = []
+} = Astro.props;
+
+const idError = `error-${nombre}`;
+const comunes = {
+  id: nombre,
+  name: nombre,
+  required: requerido,
+  'aria-describedby': idError
+};
+---
+
+<div class="campo" data-campo data-error="false">
+  <label for={nombre}>
+    {etiqueta}
+    {!requerido && <span class="opcional">(opcional)</span>}
+  </label>
+
+  {control === 'textarea' && <textarea {...comunes} rows="6" placeholder={marcador}></textarea>}
+  {control === 'select' && (
+    <select {...comunes}>
+      <option value="" disabled selected>
+        Elige una opción
+      </option>
+      {opciones.map(({ valor, etiqueta }) => (
+        <option value={valor}>{etiqueta}</option>
+      ))}
+    </select>
+  )}
+  {control === 'input' && (
+    <input {...comunes} type={tipo} autocomplete={autocompletar} placeholder={marcador} />
+  )}
+
+  <span class="error" id={idError} data-error-campo role="alert"></span>
+</div>
+
+<style>
+  .campo {
+    display: grid;
+    gap: 0.45rem;
+  }
+
+  label {
+    font-size: var(--t--1);
+    font-weight: 500;
+    color: var(--texto-suave);
+  }
+
+  .opcional {
+    margin-left: 0.3rem;
+    color: var(--metadato);
+    font-weight: 400;
+  }
+
+  input,
+  textarea,
+  select {
+    width: 100%;
+    padding: 0.85rem 1rem;
+    border: 1px solid var(--linea);
+    border-radius: 12px;
+    background: rgb(var(--fondo-rgb) / 0.55);
+    color: var(--texto);
+    font: inherit;
+    transition:
+      border-color var(--rapido),
+      box-shadow var(--rapido);
+  }
+
+  textarea {
+    resize: vertical;
+    min-height: 9rem;
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    color: rgb(var(--texto-rgb) / 0.38);
+  }
+
+  input:hover,
+  textarea:hover,
+  select:hover {
+    border-color: rgb(var(--texto-rgb) / 0.3);
+  }
+
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible {
+    outline: none;
+    border-color: var(--metadato);
+    box-shadow: 0 0 0 3px rgb(var(--metadato-rgb) / 0.22);
+  }
+
+  .error {
+    min-height: 1.2em;
+    font-size: var(--t--1);
+    color: var(--error);
+  }
+
+  .campo[data-error='true'] :is(input, textarea, select) {
+    border-color: var(--error);
+  }
+</style>

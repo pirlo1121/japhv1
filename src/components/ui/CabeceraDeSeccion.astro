@@ -1,0 +1,50 @@
+---
+/**
+ * Encabezado estándar de una sección: rótulo opcional, titular y, en el
+ * slot, la entradilla o notas de ejemplo.
+ * El titular admite <em> (texto del equipo, por eso set:html).
+ */
+interface Props {
+  id: string;
+  titulo: string;
+  /** Nombre del capítulo, por ejemplo "03 · Servicios". */
+  rotulo?: string;
+  nivel?: 'h1' | 'h2';
+}
+
+const { id, titulo, rotulo, nivel: Etiqueta = 'h2' } = Astro.props;
+---
+
+<header class="cabecera-seccion">
+  {rotulo && <p class="rotulo">{rotulo}</p>}
+  <Etiqueta id={id} set:html={titulo} />
+  <slot />
+</header>
+
+<style>
+  .cabecera-seccion {
+    display: grid;
+    gap: 1rem;
+    max-width: 44rem;
+    margin-bottom: clamp(2rem, 5vh, 3.5rem);
+  }
+
+  .cabecera-seccion > :global(*) {
+    margin: 0;
+  }
+
+  .cabecera-seccion :global(h1),
+  .cabecera-seccion :global(h2) {
+    font-size: var(--t-4);
+    line-height: 1.02;
+  }
+
+  .cabecera-seccion :global(em) {
+    color: var(--metadato);
+  }
+
+  .cabecera-seccion :global(p:not(.rotulo)) {
+    font-size: var(--t-1);
+    color: var(--texto-suave);
+  }
+</style>

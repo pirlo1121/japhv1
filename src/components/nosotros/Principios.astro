@@ -1,0 +1,57 @@
+---
+/** "En qué creemos" (datos/nosotros.ts → principios). */
+import { principios } from '@/datos/nosotros';
+---
+
+<ul class="principios">
+  {principios.map(({ titulo, descripcion }, i) => (
+    <li class="principio lamina">
+      <span class="numero" aria-hidden="true">
+        {String(i + 1).padStart(2, '0')}
+      </span>
+      <h3>{titulo}</h3>
+      <p>{descripcion}</p>
+    </li>
+  ))}
+</ul>
+
+<style>
+  .principios {
+    display: grid;
+    gap: 1.25rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  @media (min-width: 48rem) {
+    .principios {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  .principio {
+    display: grid;
+    gap: 0.75rem;
+    align-content: start;
+    padding: 2rem 1.75rem;
+  }
+
+  .principio > * {
+    margin: 0;
+  }
+
+  .numero {
+    font-family: var(--fuente-display);
+    font-size: 1.6rem;
+    color: var(--metadato);
+  }
+
+  h3 {
+    font-size: var(--t-2);
+  }
+
+  p {
+    color: var(--texto-suave);
+  }
+</style>

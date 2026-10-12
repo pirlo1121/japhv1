@@ -1,0 +1,89 @@
+---
+/**
+ * Escena 09 · Hagámoslo real. El entorno se calma: la red sigue visible
+ * pero casi quieta y la escultura queda arriba, como una firma. La
+ * invitación lleva a destinos reales: el formulario de contacto y el correo
+ * de config/sitio.ts (marcado como ejemplo mientras lo sea).
+ */
+import Boton from '@/components/ui/Boton.astro';
+import SelloEjemplo from '@/components/ui/SelloEjemplo.astro';
+import { contacto } from '@/config/sitio';
+---
+
+<section class="llamada" id="llamada" aria-labelledby="titulo-llamada" data-escena="Contacto">
+  <div class="contenido" data-zona-lectura>
+    <p class="rotulo">09 · Hagámoslo real</p>
+    <h2 id="titulo-llamada">
+      ¿Qué podemos <em>construir juntos?</em>
+    </h2>
+    <p class="entrada">Cuéntanos tu idea. Exploremos cómo convertirla en una solución digital.</p>
+    <p class="acciones">
+      <Boton href="/contacto" variante="solido">
+        Empezar un proyecto
+      </Boton>
+      <Boton href={`mailto:${contacto.correo}`}>Contactar</Boton>
+    </p>
+    <p class="canales">
+      <a href={`mailto:${contacto.correo}`}>{contacto.correo}</a>
+      <span aria-hidden="true">·</span>
+      <a href={contacto.whatsapp.href}>WhatsApp {contacto.whatsapp.etiqueta}</a>
+      {contacto.ejemplo && <SelloEjemplo>Datos de ejemplo</SelloEjemplo>}
+    </p>
+  </div>
+</section>
+
+<style>
+  .llamada {
+    display: grid;
+    align-content: end;
+    justify-items: center;
+    min-height: 100svh;
+    padding-top: 52svh;
+    text-align: center;
+  }
+
+  .contenido {
+    display: grid;
+    justify-items: center;
+    gap: 1.4rem;
+    max-width: 48rem;
+  }
+
+  .contenido > * {
+    margin: 0;
+  }
+
+  h2 {
+    font-size: clamp(2.4rem, 1.5rem + 3.6vw, 5rem);
+    line-height: 1;
+  }
+
+  .entrada {
+    font-size: var(--t-1);
+  }
+
+  .acciones {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.75rem;
+  }
+
+  .canales {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 0.5rem 0.75rem;
+    font-size: var(--t--1);
+  }
+
+  .canales a {
+    color: var(--texto-suave);
+    text-decoration: none;
+  }
+
+  .canales a:hover {
+    color: var(--texto);
+  }
+</style>

@@ -1,0 +1,69 @@
+---
+import Canales from '@/components/contacto/Canales.astro';
+import FormularioDeContacto from '@/components/contacto/FormularioDeContacto.astro';
+import PreguntasFrecuentes from '@/components/contacto/PreguntasFrecuentes.astro';
+import PortadaDePagina from '@/components/estructura/PortadaDePagina.astro';
+import CabeceraDeSeccion from '@/components/ui/CabeceraDeSeccion.astro';
+import Base from '@/layouts/Base.astro';
+import { preguntasContacto } from '@/datos/preguntas';
+---
+
+<Base
+  titulo="Contacto · JAPH"
+  descripcion="Cuéntanos tu proyecto y te respondemos con una primera lectura."
+>
+  <PortadaDePagina
+    forma={0}
+    id="titulo-contacto"
+    rotulo="Contacto"
+    titulo="Empecemos por entender <em>el problema</em>."
+  >
+    <p>
+      Cuéntanos qué está pasando hoy en tu operación. Revisamos tu mensaje y te respondemos con una
+      primera lectura y los siguientes pasos.
+    </p>
+  </PortadaDePagina>
+
+  <section class="contacto" aria-labelledby="titulo-formulario">
+    <aside class="aparte">
+      <Canales />
+    </aside>
+    <div>
+      <h2 class="solo-lectores" id="titulo-formulario">
+        Formulario de contacto
+      </h2>
+      <FormularioDeContacto />
+    </div>
+  </section>
+
+  <section aria-labelledby="titulo-faq">
+    <CabeceraDeSeccion id="titulo-faq" titulo="Antes de <em>escribir</em>" />
+    <PreguntasFrecuentes preguntas={preguntasContacto} />
+  </section>
+</Base>
+
+<style>
+  .contacto {
+    display: grid;
+    gap: 3rem;
+  }
+
+  .aparte {
+    display: grid;
+    gap: 1.5rem;
+    align-content: start;
+  }
+
+  @media (min-width: 60rem) {
+    .contacto {
+      grid-template-columns: 0.7fr 1.3fr;
+      gap: 4rem;
+      align-items: start;
+    }
+
+    .aparte {
+      position: sticky;
+      top: 7rem;
+    }
+  }
+</style>

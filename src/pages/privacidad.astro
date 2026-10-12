@@ -1,0 +1,241 @@
+---
+/**
+ * PLANTILLA LEGAL: este texto no sustituye la revisión de un abogado.
+ * Completa los campos entre corchetes y la fecha antes de publicar.
+ */
+import Legal, { type EntradaDeIndice } from '@/layouts/Legal.astro';
+import { contacto } from '@/config/sitio';
+
+const indice: EntradaDeIndice[] = [
+  { id: 'responsable', etiqueta: '1. Responsable del tratamiento' },
+  { id: 'datos', etiqueta: '2. Datos que recogemos por contacto' },
+  { id: 'finalidad', etiqueta: '3. Para qué los usamos' },
+  { id: 'base-consentimiento', etiqueta: '4. Base del tratamiento: tu consentimiento' },
+  { id: 'conservacion', etiqueta: '5. Cuánto tiempo los guardamos' },
+  { id: 'proveedores', etiqueta: '6. Con quién los compartimos' },
+  { id: 'seguridad', etiqueta: '7. Cómo los protegemos' },
+  { id: 'derechos', etiqueta: '8. Tus derechos' },
+  { id: 'retirar-consentimiento', etiqueta: '9. Cómo retirar tu consentimiento' },
+  { id: 'cookies', etiqueta: '10. Cookies y medición' },
+  { id: 'contacto-datos', etiqueta: '11. Contacto sobre privacidad' }
+];
+---
+
+<Legal
+  titulo="Privacidad · JAPH"
+  descripcion="Política de privacidad de JAPH: qué datos recogemos por contacto, con qué finalidad, base de consentimiento y tus derechos."
+  encabezado="Política de privacidad"
+  actualizacion="1 de marzo de 2026"
+  fechaDeEjemplo
+  indice={indice}
+>
+  <Fragment slot="aviso">
+    <strong>Aviso importante antes de publicar este documento.</strong> Este texto es una plantilla
+    en español, escrita para que el equipo de JAPH la revise, complete y adapte a su operación real.
+    No constituye asesoría legal ni garantiza por sí sola el cumplimiento de ninguna ley de
+    protección de datos. Antes de publicarlo, pide a un abogado o abogada habilitado en tu país que
+    lo revise conforme a la normativa que te aplique.
+  </Fragment>
+
+  <section id="responsable">
+    <h2>1. Responsable del tratamiento</h2>
+    <p>
+      <strong>[Nombre legal de la empresa]</strong>, con domicilio en
+      <strong>[ciudad y país]</strong>, es responsable del tratamiento de los datos personales que
+      se reciben a través de este sitio web y de su formulario de contacto. Puedes escribir a
+      <a href={`mailto:${contacto.correoDatos}`}>{contacto.correoDatos}</a>
+      para cualquier consulta relacionada con tu información.
+    </p>
+    <p>
+      <small>
+        Reemplaza el nombre legal, el domicilio y el correo por los datos reales de JAPH antes de
+        publicar esta página.
+      </small>
+    </p>
+  </section>
+
+  <section id="datos">
+    <h2>2. Datos que recogemos por medio del contacto</h2>
+    <p>
+      Recogemos únicamente los datos que nos entregas de forma voluntaria al completar el formulario
+      de contacto del sitio:
+    </p>
+    <ul>
+      <li>Nombre.</li>
+      <li>Correo electrónico.</li>
+      <li>Empresa, si decides indicarla (campo opcional).</li>
+      <li>Teléfono, si decides indicarlo (campo opcional).</li>
+      <li>El servicio de tu interés, seleccionado de una lista cerrada.</li>
+      <li>El contenido del mensaje que escribes.</li>
+      <li>La fecha y hora del envío.</li>
+    </ul>
+    <p>
+      De forma automática, y solo con fines de seguridad y prevención de abuso, registramos también
+      la dirección IP y el tipo de navegador desde el que se envía el formulario. No usamos cookies
+      de seguimiento para esto (ver la sección 10).
+    </p>
+  </section>
+
+  <section id="finalidad">
+    <h2>3. Para qué usamos tus datos</h2>
+    <p>Usamos los datos del formulario exclusivamente para:</p>
+    <ul>
+      <li>Responder a tu solicitud de información o cotización.</li>
+      <li>Evaluar el alcance de un posible proyecto y preparar una propuesta.</li>
+      <li>Dar seguimiento a la conversación comercial que iniciaste.</li>
+      <li>Prevenir abuso o uso automatizado del formulario.</li>
+    </ul>
+    <p>
+      No usamos tus datos de contacto para enviarte publicidad no solicitada ni los vendemos,
+      alquilamos o cedemos a terceros con fines comerciales propios de ellos. Si en algún momento
+      quisiéramos enviarte comunicaciones adicionales (por ejemplo, un boletín), te lo pediremos de
+      forma separada y explícita.
+    </p>
+  </section>
+
+  <section id="base-consentimiento">
+    <h2>4. Base del tratamiento: tu consentimiento</h2>
+    <p>
+      El único fundamento que usamos para tratar los datos del formulario de contacto es tu{' '}
+      <strong>consentimiento explícito</strong>. Por eso el formulario incluye una casilla, sin
+      marcar por defecto, en la que debes confirmar activamente que leíste esta política y que
+      aceptas el tratamiento descrito aquí.
+    </p>
+    <p>
+      Si esa casilla no está marcada, el formulario no se envía ni se guarda: el consentimiento no
+      es una formalidad posterior, es una condición previa para que el dato exista en nuestros
+      sistemas.
+    </p>
+  </section>
+
+  <section id="conservacion">
+    <h2>5. Cuánto tiempo guardamos tus datos</h2>
+    <p>
+      Conservamos los mensajes de contacto durante
+      <strong>[plazo, por ejemplo: 24 meses]</strong> desde el último intercambio contigo, o durante
+      el tiempo que exija una relación contractual vigente si el contacto se convierte en un
+      proyecto. Pasado ese plazo, los datos se eliminan de forma segura de nuestras bases de datos y
+      de nuestro gestor de correo.
+    </p>
+    <p>
+      <small>
+        El plazo anterior es un ejemplo: defínelo según tu propia política interna de retención y,
+        si aplica, según lo que exija la normativa de tu país.
+      </small>
+    </p>
+  </section>
+
+  <section id="proveedores">
+    <h2>6. Con quién compartimos los datos</h2>
+    <p>
+      Compartimos los datos estrictamente necesarios con los proveedores que nos permiten operar el
+      sitio y responder tu mensaje, por ejemplo:
+    </p>
+    <ul>
+      <li>El proveedor de alojamiento donde corre el servidor y la base de datos.</li>
+      <li>El proveedor de base de datos administrada (MongoDB Atlas o equivalente).</li>
+      <li>Un proveedor de correo, si se usa para reenviar el aviso de un nuevo mensaje.</li>
+    </ul>
+    <p>
+      No compartimos tus datos con terceros para fines de publicidad. Si en el futuro incorporamos
+      un nuevo proveedor que trate datos personales por nuestra cuenta, actualizaremos esta sección
+      para nombrarlo.
+    </p>
+  </section>
+
+  <section id="seguridad">
+    <h2>7. Cómo protegemos tu información</h2>
+    <p>
+      Aplicamos medidas técnicas y organizativas razonables para proteger los datos que recibimos,
+      entre ellas:
+    </p>
+    <ul>
+      <li>Conexión cifrada (HTTPS) entre tu navegador y nuestro servidor.</li>
+      <li>Acceso restringido a la base de datos, limitado a quien administra el sistema.</li>
+      <li>Un límite de envíos por dirección IP para frenar el abuso del formulario.</li>
+      <li>Recolección mínima: solo pedimos los datos necesarios para responderte.</li>
+    </ul>
+    <p>
+      Ninguna medida de seguridad es infalible. Si llegáramos a detectar un incidente que comprometa
+      tus datos, te lo notificaremos siguiendo lo que establezca la normativa que nos aplique en ese
+      momento.
+    </p>
+  </section>
+
+  <section id="derechos">
+    <h2>8. Tus derechos sobre estos datos</h2>
+    <p>
+      Dependiendo de tu país de residencia, es posible que normas como la Ley 1581 de 2012 en
+      Colombia, el Reglamento General de Protección de Datos (RGPD) en la Unión Europea u otras
+      leyes equivalentes te reconozcan derechos como los siguientes. Esta lista es orientativa y no
+      supone una declaración de que estos derechos aplican exactamente así en tu caso:
+    </p>
+    <ul>
+      <li>Conocer qué datos tuyos tenemos y de dónde los obtuvimos.</li>
+      <li>Solicitar la actualización o corrección de datos inexactos o incompletos.</li>
+      <li>
+        Pedir la eliminación de tus datos cuando no exista una obligación legal de conservarlos.
+      </li>
+      <li>Oponerte a un uso concreto de tus datos.</li>
+      <li>Solicitar una copia de tus datos en un formato accesible, cuando corresponda.</li>
+      <li>Presentar una queja ante la autoridad de protección de datos de tu país.</li>
+    </ul>
+    <p>
+      Para ejercer cualquiera de estos derechos, escribe a
+      <a href={`mailto:${contacto.correoDatos}`}>{contacto.correoDatos}</a>. Indica en el correo un
+      tiempo de respuesta razonable (<strong>[por ejemplo, 15 días hábiles]</strong>) según lo que
+      definas internamente o lo que exija la ley que te aplique.
+    </p>
+  </section>
+
+  <section id="retirar-consentimiento">
+    <h2>9. Cómo retirar tu consentimiento</h2>
+    <p>
+      Puedes retirar el consentimiento que diste al enviar el formulario en cualquier momento, sin
+      que eso afecte la licitud del tratamiento realizado antes de la revocación. Para hacerlo:
+    </p>
+    <ul>
+      <li>
+        Escríbenos a <a href={`mailto:${contacto.correoDatos}`}>{contacto.correoDatos}</a>
+        indicando que deseas retirar tu consentimiento y, si quieres, que se eliminen tus datos.
+      </li>
+      <li>
+        Confirmaremos la solicitud y dejaremos de usar tus datos para los fines descritos en la
+        sección 3.
+      </li>
+      <li>
+        Si existe una relación contractual activa o una obligación legal de conservar cierta
+        información (por ejemplo, datos de facturación), esa parte de los datos podrá conservarse
+        únicamente para ese fin, y solo por el tiempo estrictamente necesario.
+      </li>
+    </ul>
+    <p>Retirar el consentimiento es gratuito y no requiere justificar el motivo.</p>
+  </section>
+
+  <section id="cookies">
+    <h2>10. Cookies y medición</h2>
+    <p>
+      Este sitio, en su versión actual, no utiliza cookies de publicidad ni de seguimiento entre
+      distintos sitios web. Si en el futuro se incorpora una herramienta de medición de visitas o de
+      cookies propias, esta sección se actualizará para explicar qué cookies se usan, con qué
+      finalidad y cómo puedes rechazarlas antes de que se activen.
+    </p>
+  </section>
+
+  <section id="contacto-datos">
+    <h2>11. Contacto sobre privacidad</h2>
+    <p>
+      Para preguntas, solicitudes o reclamos relacionados con el tratamiento de tus datos
+      personales, escribe a <a href={`mailto:${contacto.correoDatos}`}>{contacto.correoDatos}</a>.
+      Para cualquier otro asunto, puedes usar el
+      <a href="/contacto">formulario de contacto</a>
+      del sitio.
+    </p>
+    <p>
+      <small>
+        Si cambiamos algo relevante de esta política, actualizaremos la fecha al inicio de esta
+        página.
+      </small>
+    </p>
+  </section>
+</Legal>

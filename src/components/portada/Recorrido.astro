@@ -1,0 +1,179 @@
+---
+/**
+ * Índice de la portada: una regla vertical en el borde derecho, un nodo por
+ * escena ([data-escena]) unido por un filamento, como la red. Son enlaces
+ * normales a cada sección, así que funcionan sin JavaScript; el script solo
+ * marca la escena actual (el nodo se vuelve verde: el estado activo). En
+ * pantallas estrechas no aparece: allí basta el scroll.
+ */
+interface Props {
+  escenas: { id: string; nombre: string }[];
+}
+
+const { escenas } = Astro.props;
+---
+
+<nav class="recorrido" aria-label="Escenas de la portada" data-recorrido>
+  <ol>
+    {escenas.map(({ id, nombre }, i) => (
+      <li>
+        <a href={`#${id}`} data-destino={id}>
+          <span class="nombre">
+            {nombre}
+            <span class="solo-lectores">
+              , escena {i + 1} de {escenas.length}
+            </span>
+          </span>
+          <span class="nodo" aria-hidden="true" />
+        </a>
+      </li>
+    ))}
+  </ol>
+</nav>
+
+<script>
+  const enlaces = [...document.querySelectorAll<HTMLAnchorElement>('[data-recorrido] a')];
+  const porId = new Map(enlaces.map((a) => [a.dataset.destino, a]));
+  const marcar = (id: string) => {
+    for (const [destino, enlace] of porId) {
+      if (destino === id) enlace.setAttribute('aria-current', 'location');
+      else enlace.removeAttribute('aria-current');
+    }
+  };
+  // Cuenta como actual la escena que cruza la línea media de la pantalla.
+  const vigia = new IntersectionObserver(
+    (entradas) => {
+      for (const entrada of entradas) if (entrada.isIntersecting) marcar(entrada.target.id);
+    },
+    { rootMargin: '-50% 0px -50% 0px' }
+  );
+  for (const id of porId.keys()) {
+    const seccion = id ? document.getElementById(id) : null;
+    if (seccion) vigia.observe(seccion);
+  }
+</script>
+
+<style>
+  .recorrido {
+    display: none;
+  }
+
+  @media (min-width: 64rem) and (min-height: 40rem) {
+    .recorrido {
+      position: fixed;
+      top: 50%;
+      right: clamp(0.75rem, 1.6vw, 1.75rem);
+      z-index: 6;
+      display: block;
+      translate: 0 -50%;
+    }
+  }
+
+  ol {
+    position: relative;
+    display: grid;
+    gap: 0.1rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  /* El filamento que une los nodos. */
+  ol::after {
+    content: '';
+    position: absolute;
+    top: 1rem;
+    bottom: 1rem;
+    right: calc(0.75rem / 2 - 0.5px);
+    width: 1px;
+    background: linear-gradient(
+      to bottom,
+      transparent,
+      rgb(var(--cian-rgb) / 0.25) 15%,
+      rgb(var(--purpura-rgb) / 0.2) 85%,
+      transparent
+    );
+    pointer-events: none;
+  }
+
+  a {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    min-height: 2rem;
+    text-decoration: none;
+  }
+
+  .nodo {
+    position: relative;
+    z-index: 1;
+    width: 0.75rem;
+    aspect-ratio: 1;
+    display: grid;
+    place-items: center;
+  }
+
+  .nodo::before {
+    content: '';
+    width: 5px;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: var(--texto-apagado);
+    transition:
+      background-color 0.5s var(--suave),
+      box-shadow 0.5s var(--suave),
+      scale 0.5s var(--suave);
+  }
+
+  .nombre {
+    padding: 0.2rem 0.6rem;
+    border: 1px solid var(--linea);
+    border-radius: 6px;
+    background: rgb(var(--fondo-rgb) / 0.85);
+    font-size: 0.75rem;
+    letter-spacing: 0.04em;
+    color: var(--texto-suave);
+    white-space: nowrap;
+    opacity: 0;
+    translate: 0.4rem 0;
+    transition:
+      opacity var(--rapido),
+      translate var(--rapido);
+  }
+
+  a:hover .nombre,
+  a:focus-visible .nombre {
+    opacity: 1;
+    translate: 0 0;
+  }
+
+  a:hover .nodo::before,
+  a:focus-visible .nodo::before {
+    background: var(--cian);
+    box-shadow: 0 0 8px rgb(var(--cian-rgb) / 0.7);
+  }
+
+  a[aria-current='location'] .nodo::before {
+    background: var(--verde);
+    box-shadow: 0 0 10px rgb(var(--verde-rgb) / 0.75);
+    scale: 1.5;
+  }
+
+  a:focus-visible {
+    outline: none;
+  }
+
+  a:focus-visible .nodo {
+    outline: 2px solid var(--cian);
+    outline-offset: 4px;
+    border-radius: 50%;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .nodo::before,
+    .nombre {
+      transition: none;
+    }
+  }
+</style>

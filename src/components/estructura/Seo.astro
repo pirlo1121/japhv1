@@ -1,0 +1,20 @@
+---
+/** Metadatos de la página: título, descripción, Open Graph y tema del navegador. */
+import { sitio } from '@/config/sitio';
+
+interface Props {
+  titulo: string;
+  descripcion: string;
+}
+
+const { titulo, descripcion } = Astro.props;
+---
+
+<title>{titulo}</title>
+<meta name="description" content={descripcion} />
+<meta name="theme-color" content={sitio.colorTema} />
+<meta property="og:title" content={titulo} />
+<meta property="og:description" content={descripcion} />
+<meta property="og:type" content="website" />
+<meta property="og:locale" content="es_CO" />
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" />

@@ -32,7 +32,7 @@ const dos = (n: number) => String(n).padStart(2, '0');
     </p>
   </header>
 
-  <ol class="lista" data-zona-lectura>
+  <ol class="lista" data-zona-lectura data-liquido>
     {servicios.map((servicio, i) => (
       <li class="servicio" id={`servicio-${servicio.id}`} data-rama>
         <span class="icono">

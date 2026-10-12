@@ -6,7 +6,7 @@
  * (ver pintor.ts): no toca el DOM.
  */
 import type { Camara } from './camara';
-import { FRAGMENTO, MAX_ZONAS_DE_LECTURA, VERTICE } from './sombreador';
+import { FRAGMENTO, MAX_PANELES, MAX_ZONAS_DE_LECTURA, VERTICE } from './sombreador';
 
 export interface EstadoDeEscena {
   tiempo: number;
@@ -23,6 +23,12 @@ export interface EstadoDeEscena {
   /** Rectángulos en coordenadas uv (x0, y0, x1, y1; y hacia arriba). */
   zonas: Float32Array;
   numZonas: number;
+  /** Paneles líquidos: rectángulos en uv y su estado (solidez, semilla, radio CSS, 0). */
+  paneles: Float32Array;
+  estadosPanel: Float32Array;
+  numPaneles: number;
+  /** Píxeles del lienzo por píxel CSS. */
+  pxCss: number;
 }
 
 const UNIFORMS = [
@@ -38,7 +44,11 @@ const UNIFORMS = [
   'uGrietas',
   'uPiezas',
   'uZonas',
-  'uNumZonas'
+  'uNumZonas',
+  'uPaneles',
+  'uEstadosPanel',
+  'uNumPaneles',
+  'uPxCss'
 ] as const;
 
 type Uniform = (typeof UNIFORMS)[number];
@@ -139,6 +149,10 @@ export class Renderizador {
     gl.uniform4fv(u.uPiezas, estado.piezas);
     gl.uniform4fv(u.uZonas, estado.zonas);
     gl.uniform1i(u.uNumZonas, Math.min(estado.numZonas, MAX_ZONAS_DE_LECTURA));
+    gl.uniform4fv(u.uPaneles, estado.paneles);
+    gl.uniform4fv(u.uEstadosPanel, estado.estadosPanel);
+    gl.uniform1i(u.uNumPaneles, Math.min(estado.numPaneles, MAX_PANELES));
+    gl.uniform1f(u.uPxCss, estado.pxCss);
     gl.bindVertexArray(this.vao);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
   }

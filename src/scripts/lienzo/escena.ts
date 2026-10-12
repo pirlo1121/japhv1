@@ -19,6 +19,11 @@
  * mano con lo que señala. Los filamentos de la red nacen de su cuerpo. La
  * escena se aparta de los textos marcados con [data-zona-lectura].
  *
+ * Algunas piezas de la página ([data-liquido]) llegan como metal líquido:
+ * al entrar en pantalla su solidez (0..1) sigue al scroll con suavizado,
+ * el sombreador las dibuja de gota a placa y el CSS (--solidez) hace
+ * aparecer su contenido al final. Al subir, vuelven a licuarse.
+ *
  * Si WebGL no está disponible la red sigue viva y la gota de respaldo (CSS)
  * se coloca donde estaría el guía. El bucle se detiene cuando el lienzo sale
  * de pantalla o la pestaña se oculta. Con "reducir movimiento" no hay
@@ -37,7 +42,7 @@ import { anclas, manoDe, MAX_PIEZAS, robot, type Brazo } from './escultura';
 import type { EstadoNarrativo } from './narrativa';
 import { crearPintor, type Pintor } from './pintor';
 import { Red, type Densidad } from './red';
-import { MAX_ZONAS_DE_LECTURA } from './sombreador';
+import { MAX_PANELES, MAX_ZONAS_DE_LECTURA } from './sombreador';
 
 /** Cuánto gira la cámara siguiendo al puntero (radianes). */
 const PARALAJE_PUNTERO = 0.06;
@@ -68,9 +73,29 @@ const RAPIDEZ_DEL_FOCO = 5;
 const ATENUACION_PARA_MEDIA_FRECUENCIA = 0.5;
 /** Momento fijo que se dibuja con "reducir movimiento". */
 const TIEMPO_ESTATICO = 7;
+/**
+ * Paneles líquidos: la solidez va de 0 (el borde superior entra por abajo)
+ * a 1 cuando ese borde sube esta fracción de la pantalla, y la sigue con
+ * esta rapidez (por segundo): continuo, sin pausas.
+ */
+const PANEL = { recorrido: 0.38, rapidez: 7 };
 /** La red se dibuja con menos resolución que la pantalla: son líneas finas y luz. */
 const TOPE_DPR_RED = { tactil: 1.25, escritorio: 1.5 };
 const MAX_ZONAS_RED = 6;
+
+interface Liquido {
+  elemento: HTMLElement;
+  /** Radio de las esquinas (px CSS), leído una vez. */
+  radio: number;
+  semilla: number;
+  solidez: number;
+  escrita: number;
+  /**
+   * Ya estaba en pantalla cuando WebGL quedó listo (al recargar a media
+   * página): se queda sólido hasta que salga, no se licúa ante los ojos.
+   */
+  retenido: boolean;
+}
 
 interface Objetivo {
   elemento: HTMLElement;
@@ -145,6 +170,11 @@ export class Escena {
   private readonly lecturas = [...document.querySelectorAll<HTMLElement>('[data-zona-lectura]')];
   private readonly zonas = new Float32Array(MAX_ZONAS_DE_LECTURA * 4);
   private readonly respaldo: HTMLElement | null;
+  private readonly liquidos: Liquido[];
+  private readonly paneles = new Float32Array(MAX_PANELES * 4);
+  private readonly estadosPanel = new Float32Array(MAX_PANELES * 4);
+  private pxCss = 1;
+  private liquidosActivos = false;
   private readonly observador: ResizeObserver;
   private readonly vigia: IntersectionObserver;
 
@@ -158,6 +188,16 @@ export class Escena {
     this.sinMovimiento = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (this.sinMovimiento) this.formacion = 1;
     this.respaldo = contenedor.querySelector<HTMLElement>('[data-respaldo]');
+    this.liquidos = [...document.querySelectorAll<HTMLElement>('[data-liquido]')].map(
+      (elemento, i) => ({
+        elemento,
+        radio: parseFloat(getComputedStyle(elemento).borderTopLeftRadius) || 10,
+        semilla: i * 3.7,
+        solidez: 1,
+        escrita: 1,
+        retenido: false
+      })
+    );
     const { signal } = this.limpieza;
 
     if (lienzoRed) {
@@ -248,6 +288,7 @@ export class Escena {
     if (this.pintor && this.webglListo) {
       const [anchoPx, altoPx] = this.calidad.tamano(this.ancho, this.alto);
       this.pintor.configurar(anchoPx, altoPx);
+      this.pxCss = anchoPx / this.ancho;
     }
     const tope = esTactil() ? TOPE_DPR_RED.tactil : TOPE_DPR_RED.escritorio;
     this.red?.redimensionar(this.ancho, this.alto, Math.min(window.devicePixelRatio || 1, tope));
@@ -490,6 +531,54 @@ export class Escena {
     return { caja: objetivo.caja, mano: { x: p.x, y: p.y }, fuerza: suave((gesto - 0.5) / 0.4) };
   }
 
+  /**
+   * Solidez de cada panel líquido según dónde está su borde superior. Solo
+   * lee el DOM; la escritura (--solidez) va al final del fotograma. Sin
+   * WebGL o sin movimiento los paneles son sólidos desde el principio.
+   */
+  private medirLiquidos(dt: number): number {
+    const activo = this.webglListo && !this.sinMovimiento;
+    const recienActivo = activo && !this.liquidosActivos;
+    this.liquidosActivos = activo;
+    const alto = window.innerHeight;
+    const lienzo = this.contenedor.getBoundingClientRect();
+    let n = 0;
+    for (const l of this.liquidos) {
+      const caja = l.elemento.getBoundingClientRect();
+      // Fuera de pantalla no hay nada que ver: salta directo a su estado.
+      const enPantalla = caja.bottom > 0 && caja.top < alto && caja.width > 0;
+      if (recienActivo && enPantalla) l.retenido = true;
+      if (!enPantalla) l.retenido = false;
+      const meta =
+        activo && !l.retenido ? acotar((alto - caja.top) / (alto * PANEL.recorrido), 0, 1) : 1;
+      if (!enPantalla || !activo) l.solidez = meta;
+      else l.solidez += (meta - l.solidez) * Math.min(1, dt * PANEL.rapidez);
+      if (Math.abs(meta - l.solidez) < 0.002) l.solidez = meta;
+      if (!enPantalla || l.solidez >= 0.999 || l.solidez <= 0.001 || n >= MAX_PANELES) continue;
+      this.paneles.set(
+        [
+          (caja.left - lienzo.left) / this.ancho,
+          1 - (caja.bottom - lienzo.top) / this.alto,
+          (caja.right - lienzo.left) / this.ancho,
+          1 - (caja.top - lienzo.top) / this.alto
+        ],
+        n * 4
+      );
+      this.estadosPanel.set([l.solidez, l.semilla, l.radio, 0], n * 4);
+      n += 1;
+    }
+    return n;
+  }
+
+  /** El contenido de cada panel aparece cuando el líquido ya es sólido (CSS lee --solidez). */
+  private escribirLiquidos(): void {
+    for (const l of this.liquidos) {
+      if (Math.abs(l.solidez - l.escrita) < 0.001) continue;
+      l.escrita = l.solidez;
+      l.elemento.style.setProperty('--solidez', l.solidez.toFixed(3));
+    }
+  }
+
   /** Sin WebGL, la gota de respaldo sigue al guía (centro y tamaño aparentes). */
   private colocarRespaldo(): void {
     if (!this.respaldo || !this.red || this.webglListo) return;
@@ -506,6 +595,7 @@ export class Escena {
     const h = this.historia;
     // Lecturas del DOM antes de cualquier escritura.
     const { numZonas, cajas } = this.medirZonas();
+    const numPaneles = this.medirLiquidos(dt);
 
     if (!this.sinMovimiento) {
       const seguir = Math.min(1, dt * SUAVIDAD_PUNTERO);
@@ -569,6 +659,7 @@ export class Escena {
       movimiento: !this.sinMovimiento
     });
     this.colocarRespaldo();
+    this.escribirLiquidos();
 
     // Si el fotograma anterior aún se está pintando, este se salta.
     if (this.pintor && this.webglListo) {
@@ -582,7 +673,11 @@ export class Escena {
         grietas: h.grietas,
         piezas: this.piezas,
         zonas: this.zonas,
-        numZonas
+        numZonas,
+        paneles: this.paneles,
+        estadosPanel: this.estadosPanel,
+        numPaneles,
+        pxCss: this.pxCss
       });
     }
   }
@@ -594,6 +689,7 @@ export class Escena {
     this.vigia.disconnect();
     this.pintor?.liberar();
     this.red?.liberar();
+    for (const l of this.liquidos) l.elemento.style.removeProperty('--solidez');
   }
 }
 

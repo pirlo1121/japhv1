@@ -22,7 +22,7 @@ const primeraFrase = (texto: string) => texto.split(/(?<=\.)\s/)[0] ?? texto;
         Diseñamos arquitecturas sólidas para que cada componente tenga sentido y todo funcione en
         conjunto.
       </p>
-      <ul class="principios" aria-label="Principios de trabajo" data-pasos data-guia>
+      <ul class="principios" aria-label="Principios de trabajo" data-pasos data-guia data-liquido>
         {principios.map(({ titulo, descripcion }, i) => (
           <li data-paso style={{ '--u': 0.15 + i * 0.17 }}>
             <span class="ordinal" aria-hidden="true">

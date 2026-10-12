@@ -40,6 +40,33 @@ Todo en `scripts/lienzo/escena.ts` y `escultura.ts`:
 - **Formación:** al cargar, la gota se condensa en el robot (unión suave entre las dos
   formas). Con "reducir movimiento" aparece ya formado.
 
+## De líquido a sólido
+
+Algunas piezas de la portada (`data-liquido`: los principios del núcleo, la lista de
+servicios y las tarjetas de proyectos) llegan como metal líquido. Cuando su borde superior
+entra en pantalla:
+
+1. brota una gota de cromo junto a ese borde;
+2. se divide en gotas que bajan, se extienden y se funden;
+3. se solidifica en una placa con la forma exacta del elemento (radio de esquina
+   incluido), con bisel de cromo y cara azul profunda;
+4. aparece el contenido real encima.
+
+La solidez sigue al scroll con un suavizado continuo (sin animaciones que esperar) y es
+reversible: al subir, la pieza vuelve a licuarse.
+
+- **Coste:** no marcha rayos. Es un campo de distancias 2D con relieve, dentro del mismo
+  shader del robot, solo para los paneles visibles que están cambiando (hasta 4) y solo
+  dentro de su caja. Va igual en móvil y en escritorio.
+- **Alineación:** cuando la pieza es sólida la dibuja el HTML, así que el scroll sobre ella
+  no cuesta nada y no puede desalinearse. El contenido solo cambia de opacidad (su caja no
+  se mueve).
+- **Degradación:** sin JavaScript, sin WebGL o con "reducir movimiento", las piezas son
+  sólidas desde el principio. Si recargas a media página, lo que ya está en pantalla no se
+  licúa.
+- **Ámbito:** solo la portada, donde está el lienzo fijo. Las páginas interiores no tienen
+  piezas líquidas.
+
 ## Arquitectura
 
 - **Una sola escena.** `scripts/lienzo/escena.ts` tiene un único bucle y una única

@@ -403,6 +403,15 @@ main > :first-child:not(.vacio, .portada-pagina) {
   translate: 0 calc(clamp(0, (var(--u, 0) - var(--p, 1)) * 7 + 1, 1) * 0.5rem);
 }
 
+/* Paneles líquidos (scripts/lienzo/escena.ts): llegan como metal líquido que
+   se solidifica en su forma; el contenido aparece cuando ya es sólido. Sin
+   JavaScript, sin WebGL o con "reducir movimiento" --solidez no existe y el
+   panel se ve entero. Solo opacidad: su caja no se mueve, así el líquido y
+   el elemento coinciden al píxel. */
+[data-liquido] {
+  opacity: clamp(0, calc((var(--solidez, 1) - 0.8) * 5), 1);
+}
+
 /* Índice pequeño de una pieza ("01"): metadato, no titular. */
 .ordinal {
   font-size: 0.75rem;

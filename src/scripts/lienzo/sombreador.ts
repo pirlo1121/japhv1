@@ -12,6 +12,10 @@
  *   leyéndose como cromo), un filo cian, una tira azul eléctrico, contraluz
  *   violeta y una luz blanca que barre la superficie. El visor brilla cian;
  *   en la escena del núcleo se encienden circuitos de luz en el cuerpo.
+ * - Paneles líquidos: algunas piezas de la página ([data-liquido]) nacen
+ *   como metal líquido que se solidifica en su forma exacta antes de que
+ *   aparezca su contenido. Son un campo de distancias 2D con relieve (no
+ *   marchan rayos): baratas también en móvil. Se dibujan detrás del robot.
  * - Rayos: la misma cámara que camara.ts (función `rayo`).
  */
 import { FOCAL } from './camara';
@@ -19,6 +23,8 @@ import { GOTAS_DE_ESTELA, MAX_PIEZAS, PIEZA, RADIO_LIMITE } from './escultura';
 
 /** Bloques de texto delante de los que la escultura baja sus brillos. */
 export const MAX_ZONAS_DE_LECTURA = 3;
+/** Paneles líquidos que se dibujan a la vez (solo los visibles que están cambiando). */
+export const MAX_PANELES = 4;
 
 export const VERTICE = /* glsl */ `#version 300 es
 void main() {
@@ -35,6 +41,7 @@ precision highp float;
 #define MAX_PIEZAS ${MAX_PIEZAS}
 #define GOTAS ${GOTAS_DE_ESTELA}
 #define MAX_ZONAS ${MAX_ZONAS_DE_LECTURA}
+#define MAX_PANELES ${MAX_PANELES}
 
 uniform vec2 uRes;
 uniform float uTiempo;
@@ -49,6 +56,10 @@ uniform float uGrietas;     // 0..1: circuitos de luz dentro del cuerpo
 uniform vec4 uPiezas[MAX_PIEZAS]; // robot: articulaciones, pose, viaje y estela (escultura.ts)
 uniform vec4 uZonas[MAX_ZONAS];
 uniform int uNumZonas;
+uniform vec4 uPaneles[MAX_PANELES];      // rectángulo en uv (x0, y0, x1, y1; y hacia arriba)
+uniform vec4 uEstadosPanel[MAX_PANELES]; // x: solidez 0..1, y: semilla, z: radio de esquina (px CSS)
+uniform int uNumPaneles;
+uniform float uPxCss;                    // píxeles del lienzo por píxel CSS
 
 out vec4 color;
 
@@ -368,6 +379,98 @@ vec3 cromo(vec3 p, vec3 n, vec3 rd, float ndv) {
   return metal + vec3(0.016, 0.02, 0.03) * (0.5 + 0.5 * n.y);
 }
 
+// ---------------------------------------------------------------- paneles líquidos
+
+// Distancia a un rectángulo redondeado (2D).
+float sdRect(vec2 p, vec2 b, float r) {
+  vec2 q = abs(p) - b + r;
+  return length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - r;
+}
+
+// Dónde termina cada gota cuando el panel se extiende (en el rectángulo, de -1 a 1).
+const vec2 HOGARES[7] = vec2[7](
+  vec2(-0.66, -0.5), vec2(0.0, -0.55), vec2(0.66, -0.5),
+  vec2(-0.66, 0.5), vec2(0.0, 0.55), vec2(0.66, 0.5), vec2(0.0)
+);
+
+// El campo del panel en el píxel px: una gota que crece junto a su borde
+// superior, el que entra primero en pantalla (solidez 0 → 0.18), se divide
+// en gotas que bajan, se extienden y se funden (→ 0.65) y se solidifica en
+// el rectángulo exacto del elemento (→ 0.92).
+float campoPanel(vec2 px, vec2 centro, vec2 mitad, vec4 estado) {
+  float s = estado.x;
+  float semilla = estado.y;
+  float lado = min(mitad.x, mitad.y);
+  float crece = smoothstep(0.0, 0.18, s);
+  float extiende = smoothstep(0.1, 0.65, s);
+  float solido = smoothstep(0.55, 0.92, s);
+  float d = 1e5;
+  float k = mix(0.35, 0.6, extiende) * lado;
+  vec2 origen = vec2(centro.x, centro.y + mitad.y - lado * 0.55);
+  for (int j = 0; j < 7; j++) {
+    float fj = float(j) + semilla;
+    vec2 temblor = vec2(sin(uFase * 1.3 + fj * 2.1), cos(uFase * 1.1 + fj * 1.7)) * lado * 0.12 * (1.0 - solido);
+    vec2 liquido = origen + HOGARES[j] * lado * 0.35 + temblor;
+    vec2 destino = centro + HOGARES[j] * mitad * 0.62;
+    vec2 c = mix(liquido, destino, extiende);
+    float r = mix(lado * 0.22, max(mitad.x * 0.42, mitad.y * 0.6), extiende) * crece * (0.82 + 0.18 * sin(fj * 1.7));
+    float dj = length(px - c) - r;
+    float h = max(k - abs(d - dj), 0.0) / k;
+    d = min(d, dj) - h * h * k * 0.25;
+  }
+  float radio = estado.z * uPxCss;
+  return mix(d, sdRect(px - centro, mitad, radio), solido);
+}
+
+// Pinta los paneles sobre el fondo: cromo líquido con relieve que se
+// convierte en una placa azul profunda con borde de cromo. Al final se
+// desvanece y queda el elemento HTML (que aparece encima a la vez).
+vec3 pintarPaneles(vec3 col) {
+  vec2 px = gl_FragCoord.xy;
+  for (int i = 0; i < MAX_PANELES; i++) {
+    if (i >= uNumPaneles) break;
+    vec4 r = uPaneles[i] * vec4(uRes, uRes);
+    vec4 estado = uEstadosPanel[i];
+    vec2 centro = (r.xy + r.zw) * 0.5;
+    vec2 mitad = (r.zw - r.xy) * 0.5;
+    // Fuera de su caja (con margen para las gotas) no hay nada que pintar.
+    vec2 fuera = abs(px - centro) - mitad;
+    if (max(fuera.x, fuera.y) > min(mitad.x, mitad.y) * 0.2 + 4.0) continue;
+
+    float d = campoPanel(px, centro, mitad, estado);
+    if (d > 2.0 * uPxCss) continue;
+    float solido = smoothstep(0.55, 0.92, estado.x);
+    float lado = min(mitad.x, mitad.y);
+    // Relieve: gotas redondas en estado líquido; un bisel fino al solidificarse.
+    float bisel = mix(lado * 0.5, 7.0 * uPxCss, solido);
+    float x = clamp(-d / bisel, 0.0, 1.0);
+    float borde = 1.0 - x;
+    float e = max(1.0, uPxCss);
+    vec2 gradiente = vec2(
+      campoPanel(px + vec2(e, 0.0), centro, mitad, estado) - d,
+      campoPanel(px + vec2(0.0, e), centro, mitad, estado) - d
+    );
+    vec2 hacia = normalize(gradiente + 1e-5);
+    vec3 n = normalize(vec3(hacia * borde * 2.2, 1.0 - borde * 0.55));
+    vec3 reflejo = reflect(vec3(0.0, 0.0, -1.0), n);
+    // El estudio es el mismo que refleja el robot: el panel es del mismo metal.
+    // Se mira inclinado hacia arriba: la cara plana refleja la pared azul y
+    // los bordes curvos recorren las tiras de luz.
+    vec3 hacia3 = normalize(vec3(reflejo.x, reflejo.y + 0.55, reflejo.z * 0.55));
+    // Algo más contenido que el robot: el panel no debe competir con el contenido.
+    vec3 metal = estudio(hacia3, 0.012) * (0.62 + 0.25 * pow(borde, 3.0));
+    metal += CIAN * 0.25 * pow(borde, 4.0) * (0.6 + 0.4 * sin(uFase * 2.0 + estado.y));
+    metal = metal / (1.0 + metal * 0.55) * 1.2;
+    // La cara se vuelve la superficie del panel (--superficie) al solidificarse.
+    vec3 cara = vec3(0.031, 0.067, 0.13) + vec3(0.0, 0.03, 0.06) * (px.y - r.y) / max(r.w - r.y, 1.0);
+    vec3 color = mix(metal, cara, solido * smoothstep(0.15, 0.6, x));
+    float cobertura = 1.0 - smoothstep(-uPxCss, uPxCss, d);
+    float visible = 1.0 - smoothstep(0.88, 1.0, estado.x);
+    col = mix(col, color, cobertura * visible);
+  }
+  return col;
+}
+
 // ---------------------------------------------------------------- composición
 
 // Rayo de la cámara (igual que camara.ts): el centro del robot cae en uDesplazamiento.
@@ -390,6 +493,8 @@ void main() {
   vec2 alCentro = (ndc - uDesplazamiento) * vec2(uRes.x / uRes.y, 1.0);
   vec3 col = FONDO + vec3(0.012, 0.035, 0.085) * exp(-dot(alCentro, alCentro) * 0.9) * (1.0 - 0.5 * uAtenuacion);
   col += VIOLETA * 0.018 * exp(-dot(alCentro + vec2(1.2, 0.9), alCentro + vec2(1.2, 0.9)) * 0.6);
+
+  if (uNumPaneles > 0) col = pintarPaneles(col);
 
   // Solo se marcha dentro de la esfera que contiene al robot y su estela.
   float b = dot(ro, rd);

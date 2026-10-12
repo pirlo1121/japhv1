@@ -38,8 +38,8 @@ const dos = (n: number) => String(n).padStart(2, '0');
 
   <ol class="lista">
     {destacados.map((proyecto, i) => (
-      <li class="proyecto" data-revelar data-guia>
-        <article aria-labelledby={`proyecto-${i}`}>
+      <li class="proyecto" data-guia>
+        <article aria-labelledby={`proyecto-${i}`} data-liquido>
           <div class="visual" data-reflejo>
             {proyecto.imagen ? (
               <Image

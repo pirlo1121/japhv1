@@ -46,6 +46,9 @@ Antes de dar algo por terminado: `npm run check` y `npm run format:check` sin er
   `scripts/historia/escenarios.ts`; la pose del robot y las anclas de la red, en
   `lienzo/escultura.ts` (compartidas con el shader vía uniforms). El guía señala lo
   marcado con `data-guia` (o el servicio con `data-activa`).
+- Piezas que llegan como metal líquido: atributo `data-liquido` (solo en la portada; ver
+  README, "De líquido a sólido"). No les pongas `transform` ni animaciones de entrada propias:
+  el líquido se dibuja con su caja y debe coincidir al píxel.
 
 ## Cuidado
 

@@ -8,11 +8,14 @@
  * Ambos pintores tienen la misma forma, así la escena no sabe cuál usa.
  */
 import { Renderizador, type EstadoDeEscena } from './renderizador';
+import type { CampoDeTexto } from './titular';
 
 export interface Pintor {
   /** alListo cuando el shader está listo; alFallar si no se puede dibujar. */
   preparar(alListo: () => void, alFallar: (error: unknown) => void): void;
   configurar(anchoPx: number, altoPx: number): void;
+  /** Las letras del titular líquido (una vez, o al cambiar su tamaño). */
+  subirTitular(campo: CampoDeTexto): void;
   /** false si el fotograma anterior aún no terminó: este se salta. */
   dibujar(estado: EstadoDeEscena): boolean;
   /** Se llama con los ms transcurridos desde el fotograma pintado anterior. */
@@ -23,6 +26,7 @@ export interface Pintor {
 export type MensajeAlHilo =
   | { tipo: 'iniciar'; lienzo: OffscreenCanvas }
   | { tipo: 'configurar'; anchoPx: number; altoPx: number }
+  | { tipo: 'titular'; campo: CampoDeTexto }
   | { tipo: 'dibujar'; estado: EstadoDeEscena }
   | { tipo: 'liberar' };
 
@@ -55,6 +59,10 @@ class PintorLocal implements Pintor {
 
   configurar(anchoPx: number, altoPx: number): void {
     this.renderizador.redimensionar(anchoPx, altoPx);
+  }
+
+  subirTitular(campo: CampoDeTexto): void {
+    this.renderizador.subirTitular(campo);
   }
 
   dibujar(estado: EstadoDeEscena): boolean {
@@ -101,6 +109,10 @@ class PintorEnHilo implements Pintor {
 
   configurar(anchoPx: number, altoPx: number): void {
     this.enviar({ tipo: 'configurar', anchoPx, altoPx });
+  }
+
+  subirTitular(campo: CampoDeTexto): void {
+    this.enviar({ tipo: 'titular', campo }, [campo.datos.buffer]);
   }
 
   dibujar(estado: EstadoDeEscena): boolean {

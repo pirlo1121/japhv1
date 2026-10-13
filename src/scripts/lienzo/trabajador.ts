@@ -35,6 +35,9 @@ hilo.addEventListener('message', ({ data: mensaje }) => {
       case 'configurar':
         renderizador?.redimensionar(mensaje.anchoPx, mensaje.altoPx);
         break;
+      case 'titular':
+        renderizador?.subirTitular(mensaje.campo);
+        break;
       case 'dibujar': {
         if (!renderizador?.enlazado) break;
         renderizador.dibujar(mensaje.estado);

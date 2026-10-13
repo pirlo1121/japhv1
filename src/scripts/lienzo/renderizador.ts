@@ -7,6 +7,7 @@
  */
 import type { Camara } from './camara';
 import { FRAGMENTO, MAX_PANELES, MAX_ZONAS_DE_LECTURA, VERTICE } from './sombreador';
+import type { CampoDeTexto } from './titular';
 
 export interface EstadoDeEscena {
   tiempo: number;
@@ -29,6 +30,12 @@ export interface EstadoDeEscena {
   numPaneles: number;
   /** Píxeles del lienzo por píxel CSS. */
   pxCss: number;
+  /**
+   * Titular líquido (titular.ts), en px del lienzo y hacia arriba: caja del
+   * mapa (x0, y0, x1, y1), gota 2D (x, y, radio, 0) y frente (x, y, alcance,
+   * visible). Con visible = 0 no se dibuja.
+   */
+  titular: Float32Array;
 }
 
 const UNIFORMS = [
@@ -48,7 +55,11 @@ const UNIFORMS = [
   'uPaneles',
   'uEstadosPanel',
   'uNumPaneles',
-  'uPxCss'
+  'uPxCss',
+  'uTitularMapa',
+  'uTitularCaja',
+  'uTitularGota',
+  'uTitularFrente'
 ] as const;
 
 type Uniform = (typeof UNIFORMS)[number];
@@ -70,6 +81,7 @@ export class Renderizador {
   private readonly shaders: WebGLShader[];
   /** Extensión que permite saber, sin esperar, si el programa ya está listo. */
   private readonly paralela: unknown;
+  private mapaTitular: WebGLTexture | null = null;
   enlazado = false;
 
   constructor(readonly lienzo: HTMLCanvasElement | OffscreenCanvas) {
@@ -120,6 +132,30 @@ export class Renderizador {
     this.gl.finish();
   }
 
+  /** El campo de distancias de las letras del titular: se sube una vez (y al cambiar de tamaño). */
+  subirTitular(campo: CampoDeTexto): void {
+    const { gl } = this;
+    this.mapaTitular ??= gl.createTexture();
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, this.mapaTitular);
+    gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
+    gl.texImage2D(
+      gl.TEXTURE_2D,
+      0,
+      gl.R8,
+      campo.ancho,
+      campo.alto,
+      0,
+      gl.RED,
+      gl.UNSIGNED_BYTE,
+      campo.datos
+    );
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  }
+
   /** Solo cambia con el tamaño. */
   redimensionar(anchoPx: number, altoPx: number): void {
     const { gl, u } = this;
@@ -153,12 +189,17 @@ export class Renderizador {
     gl.uniform4fv(u.uEstadosPanel, estado.estadosPanel);
     gl.uniform1i(u.uNumPaneles, Math.min(estado.numPaneles, MAX_PANELES));
     gl.uniform1f(u.uPxCss, estado.pxCss);
+    gl.uniform1i(u.uTitularMapa, 0);
+    gl.uniform4fv(u.uTitularCaja, estado.titular.subarray(0, 4));
+    gl.uniform4fv(u.uTitularGota, estado.titular.subarray(4, 8));
+    gl.uniform4fv(u.uTitularFrente, estado.titular.subarray(8, 12));
     gl.bindVertexArray(this.vao);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
   }
 
   liberar(): void {
     this.gl.deleteProgram(this.programa);
+    this.gl.deleteTexture(this.mapaTitular);
     this.gl.deleteVertexArray(this.vao);
     this.gl.getExtension('WEBGL_lose_context')?.loseContext();
   }

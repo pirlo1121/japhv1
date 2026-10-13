@@ -412,6 +412,14 @@ main > :first-child:not(.vacio, .portada-pagina) {
   opacity: clamp(0, calc((var(--solidez, 1) - 0.8) * 5), 1);
 }
 
+/* Titular que nace de una gota del guía (scripts/lienzo/titular.ts): el texto
+   real aparece al final, mientras se desvanece su cromo (--gota de 0.92 a 1,
+   como DESPRENDIMIENTO.revelado). Sin --gota (sin JavaScript, sin WebGL o con
+   "reducir movimiento") se ve normal. */
+[data-gota] {
+  opacity: clamp(0, calc((var(--gota, 1) - 0.92) * 12.5), 1);
+}
+
 /* Hilos de seda (scripts/seda): lo que aún no se ha tejido está oculto y
    aparece con --tejido al final del tejido. La clase `seda` la pone el
    script; sin él (o con "reducir movimiento") todo se ve normal. Lo que se

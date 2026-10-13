@@ -13,7 +13,8 @@
  * hacia la cámara, como un brazo humano.
  *
  * Para que fluya: al viajar se estira, se inclina hacia donde va y suelta
- * una estela de gotas que lo siguen y se reabsorben al frenar.
+ * una estela de gotas que lo siguen y se reabsorben al frenar. Antes de ser
+ * robot, de la gota se desprende una burbuja que viaja al titular (titular.ts).
  */
 
 /** Nada del robot (ni su estela) sale de esta esfera: el sombreador no marcha fuera de ella. */
@@ -41,9 +42,11 @@ export const PIEZA = {
   /** x: inclinación hacia donde viaja; y: 0..1 de gota a robot (formación). */
   viaje: 9,
   /** Primera gota de la estela (x, y, z, radio); siguen GOTAS_DE_ESTELA. */
-  estela: 10
+  estela: 10,
+  /** La burbuja que se desprende de la gota hacia el titular (x, y, z, radio). */
+  desprendida: 10 + GOTAS_DE_ESTELA
 } as const;
-export const MAX_PIEZAS = PIEZA.estela + GOTAS_DE_ESTELA;
+export const MAX_PIEZAS = PIEZA.desprendida + 1;
 
 export type Vec3 = [number, number, number];
 
@@ -67,6 +70,8 @@ export interface Pose {
   direccion: Vec3;
   /** 0 gota, 1 robot: la gota flotante toma forma de robot al bajar a la segunda escena. */
   formacion: number;
+  /** Burbuja que brota del centro de la gota: dirección en el mundo (unitaria), distancia y radio (0: no hay). */
+  brote: { direccion: Vec3; distancia: number; radio: number };
   tiempo: number;
 }
 
@@ -194,6 +199,12 @@ export function robot(pose: Pose, destino = new Float32Array(MAX_PIEZAS * 4)): F
     const radio = v < 0.04 ? 0 : (0.2 - 0.05 * k) * Math.min(1, v * 1.6);
     destino.set([...centro, radio], (PIEZA.estela + k) * 4);
   }
+
+  // La burbuja del titular brota del centro de la gota (que flota con el
+  // cuerpo: el sombreador la centra en pose.y - ALTURA) y la sigue mientras está unida.
+  const { direccion, distancia, radio } = pose.brote;
+  const centro: Vec3 = [0, flotacion, 0];
+  destino.set([...suma(centro, escala(direccion, distancia)), radio], PIEZA.desprendida * 4);
   return destino;
 }
 

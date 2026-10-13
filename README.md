@@ -13,17 +13,18 @@ npm run dev     # http://localhost:5173 (si front-japh ocupa ese puerto: npx ast
 npm run build   # astro check + build estático en dist/
 ```
 
-## Las cuatro capas visuales
+## Las capas visuales
 
-La página se cuenta con cuatro capas que conviven. Cada una tiene su sitio, su atributo y
+La página se cuenta con cinco capas que conviven. Cada una tiene su sitio, su atributo y
 sus perillas:
 
-| Capa                 | Qué es                                                                                    | Dónde                                          | Se activa con                     |
-| -------------------- | ----------------------------------------------------------------------------------------- | ---------------------------------------------- | --------------------------------- |
-| **Guía**             | Gota flotante (WebGL2) que toma forma de robot con el scroll, recorre la página y señala. | `scripts/lienzo/` (escena, escultura, shader)  | `data-guia`, `data-rama`          |
-| **Red viva**         | Filamentos, nodos y energía (Canvas 2D) que nacen del cuerpo del guía.                    | `scripts/lienzo/red.ts`                        | estado `red` / `orden` por escena |
-| **Paneles líquidos** | Piezas que llegan como metal líquido y se solidifican en su forma (en el mismo shader).   | `sombreador.ts` (`pintarPaneles`), `escena.ts` | `data-liquido`                    |
-| **Hilos de seda**    | Hebras que navegan sobre la página y cosen el contorno de titulares y componentes.        | `scripts/seda/`, `Seda.astro`                  | `data-seda`, `<Boton seda>`       |
+| Capa                 | Qué es                                                                                    | Dónde                                           | Se activa con                     |
+| -------------------- | ----------------------------------------------------------------------------------------- | ----------------------------------------------- | --------------------------------- |
+| **Guía**             | Gota flotante (WebGL2) que toma forma de robot con el scroll, recorre la página y señala. | `scripts/lienzo/` (escena, escultura, shader)   | `data-guia`, `data-rama`          |
+| **Red viva**         | Filamentos, nodos y energía (Canvas 2D) que nacen del cuerpo del guía.                    | `scripts/lienzo/red.ts`                         | estado `red` / `orden` por escena |
+| **Paneles líquidos** | Piezas que llegan como metal líquido y se solidifican en su forma (en el mismo shader).   | `sombreador.ts` (`pintarPaneles`), `escena.ts`  | `data-liquido`                    |
+| **Titular de gota**  | De la gota grande se desprende una burbuja que cruza la pantalla y se vuelve el titular.  | `titular.ts`, `sombreador.ts` (`pintarTitular`) | `data-gota` (uno por página)      |
+| **Hilos de seda**    | Hebras que navegan sobre la página y cosen el contorno de titulares y componentes.        | `scripts/seda/`, `Seda.astro`                   | `data-seda`, `<Boton seda>`       |
 
 El guía, la red y los paneles comparten un solo bucle y una sola cámara (`escena.ts`), en
 un lienzo fijo detrás del contenido (solo en la portada; las interiores lo tienen en su
@@ -32,17 +33,17 @@ páginas, y su propio bucle.
 
 ## La historia (portada)
 
-| Escena               | Componente       | Guía y red                                                                                                              | Otras capas                           |
-| -------------------- | ---------------- | ----------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
-| 01 El vacío          | `Vacio`          | Una gota de metal líquido flota junto al titular; la red duerme al fondo.                                               | Seda: titular (al cargar)             |
-| 02 La transformación | `Transformacion` | Al llegar, la gota toma forma de robot. (fija) La cámara lo rodea; señala el manifiesto; nacen los primeros filamentos. | Seda: titular y estados de la materia |
-| 03 La red viva       | `RedViva`        | (fija) La cámara se aleja y la red crece escalonada desde su cuerpo.                                                    | Seda: titular                         |
-| 04 El núcleo         | `Nucleo`         | (fija) De cerca, se encienden circuitos de luz dentro de su cuerpo.                                                     | Líquido: principios. Seda: titular    |
-| 05 Servicios         | `Servicios`      | Señala el servicio activo; un hilo une su mano con el texto y su rama se enciende.                                      | Líquido: la lista. Seda: titular      |
-| 06 El proceso        | `Proceso`        | (fija) Arriba a la derecha, señala la fase actual del camino orgánico (SVG).                                            | Seda: titular                         |
-| 07 Proyectos         | `Proyectos`      | Presenta cada proyecto según pasa por el centro; la red empieza a ordenarse.                                            | Líquido: tarjetas. Seda: titular      |
-| 08 Ecosistema        | `Ecosistema`     | En el centro de la red completa y ordenada; el movimiento se calma.                                                     | Seda: titular                         |
-| 09 Hagámoslo real    | `Llamada`        | Arriba y al centro, señala la invitación, que lleva a destinos reales.                                                  | Seda: titular y botones               |
+| Escena               | Componente       | Guía y red                                                                                                                                                                              | Otras capas                                                           |
+| -------------------- | ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| 01 El vacío          | `Vacio`          | Una gota de metal líquido flota junto al titular; la red duerme al fondo.                                                                                                               | Seda: titular (al cargar)                                             |
+| 02 La transformación | `Transformacion` | Al llegar, de la gota se desprende una burbuja que se vuelve el titular y el resto toma forma de robot. (fija) La cámara lo rodea; señala el manifiesto; nacen los primeros filamentos. | Gota: titular. Líquido: tarjeta de los tres estados (sigue al cursor) |
+| 03 La red viva       | `RedViva`        | (fija) La cámara se aleja y la red crece escalonada desde su cuerpo.                                                                                                                    | Seda: titular                                                         |
+| 04 El núcleo         | `Nucleo`         | (fija) De cerca, se encienden circuitos de luz dentro de su cuerpo.                                                                                                                     | Líquido: principios. Seda: titular                                    |
+| 05 Servicios         | `Servicios`      | Señala el servicio activo; un hilo une su mano con el texto y su rama se enciende.                                                                                                      | Líquido: la lista. Seda: titular                                      |
+| 06 El proceso        | `Proceso`        | (fija) Arriba a la derecha, señala la fase actual del camino orgánico (SVG).                                                                                                            | Seda: titular                                                         |
+| 07 Proyectos         | `Proyectos`      | Presenta cada proyecto según pasa por el centro; la red empieza a ordenarse.                                                                                                            | Líquido: tarjetas. Seda: titular                                      |
+| 08 Ecosistema        | `Ecosistema`     | En el centro de la red completa y ordenada; el movimiento se calma.                                                                                                                     | Seda: titular                                                         |
+| 09 Hagámoslo real    | `Llamada`        | Arriba y al centro, señala la invitación, que lleva a destinos reales.                                                                                                                  | Seda: titular y botones                                               |
 
 "(fija)": en escritorio la sección queda pegada a la pantalla (CSS sticky) mientras avanza.
 En móvil, sin movimiento o sin JavaScript, todas son bloques normales. Las páginas
@@ -69,6 +70,9 @@ Las decisiones visuales están en constantes con nombre, no repartidas por el c�
 | Cuántas hebras de seda, cuánto dura el tejido  | `seda.ts`: `cuantas` (en el constructor), `TEJIDO`, `AGUJAS_POR_PIEZA`                |
 | Color y grosor de la seda                      | `COLORES`, `trazarHebra` y `trazarParcial` en `seda.ts`                               |
 | Qué piezas se tejen o se licúan                | Atributos `data-seda` y `data-liquido` en los componentes                             |
+| Cómo se desprende la gota del titular          | `DESPRENDIMIENTO` en `titular.ts`; aterrizaje y arco: `TITULAR` en `escena.ts`        |
+| Qué tramo de scroll forma el titular           | `TRAMO_DEL_TITULAR` y `gotaDelTitular` en `iniciar.ts`                                |
+| Cuánto se deforma la tarjeta con el cursor     | `DEFORMACION` y `MUELLE` en `historia/tarjeta.ts`                                     |
 | Qué señala el guía                             | Atributo `data-guia` (o un servicio con `data-activa`)                                |
 | Calidad en equipos lentos                      | `calidad.ts` (topes de píxeles, umbrales de bajada)                                   |
 
@@ -116,6 +120,30 @@ reversible.
 - **Alineación:** ya sólida, la pieza la dibuja el HTML, así que el scroll sobre ella no
   cuesta nada y no puede desalinearse. El contenido solo cambia de opacidad.
 - **Ámbito:** solo la portada, donde está el lienzo fijo.
+
+### Titular de gota (`data-gota`)
+
+Al bajar a la escena 02, la gota grande hace dos cosas: primero se le desprende una
+burbuja (brota de su superficie, fundida con ella, y se suelta hacia el titular) y el resto
+toma forma de robot. Las dos cosas comparten el tramo de llegada a la escena (la burbuja
+se suelta cuando la gota apenas empieza a transformarse) y la burbuja termina de formar las
+letras justo después (`TRAMO_DEL_TITULAR`). Al borde de su esfera límite la releva una gota 2D
+del mismo tamaño en pantalla, que vuela en arco, se posa y se vacía en las letras: un
+frente las extiende desde donde aterrizó. Al final el cromo se desvanece y aparece el texto
+real (`--gota`). Ligado al scroll y reversible.
+
+- **Coste:** el campo de distancias de las letras se calcula una vez (en un momento ocioso,
+  con las fuentes ya cargadas, y otra vez si cambia el tamaño del titular) y viaja al
+  worker como textura. Por fotograma solo se muestrea, y solo dentro de la caja del titular
+  y de la gota, mientras está en camino.
+- **Alineación:** la máscara sale de la misma medición que usa la seda (`dibujarLetras` en
+  `seda/forma.ts`), así que las letras de cromo coinciden con las del HTML.
+- **Sin WebGL, sin JS o con "reducir movimiento":** el titular se ve normal.
+
+La tarjeta de los tres estados es `data-liquido` (llega como metal líquido) y además
+`data-tarjeta-liquida`: con ratón o trackpad, su piel (`.piel`, no la tarjeta) se estira un
+poco hacia el cursor, redondea la esquina más cercana y tiembla al soltarla. Su bucle solo
+corre mientras el muelle se mueve.
 
 ### Hilos de seda (`data-seda`)
 
@@ -196,7 +224,9 @@ Para no volver a recorrerlas sin motivo:
   dentro del robot.
 - **Siete gotas-neurona unidas por sinapsis de luz** en el héroe: se revirtió.
 - **Palabras de metal líquido** (filtro SVG de gotas que se solidifican en letras): se
-  sustituyeron por los hilos de seda.
+  sustituyeron por los hilos de seda. El titular de la escena 02 vuelve a nacer de metal
+  líquido, pero en el sombreador (campo de distancias precalculado), no con filtros SVG.
+- **Seda en los tres estados de la materia** (escena 02): ahora van en una tarjeta líquida.
 
 ## Pendiente de diseño
 
@@ -206,7 +236,7 @@ Ideas y huecos conocidos para la siguiente iteración:
   falta. El titular del héroe aparece al terminar de tejerse; vigilar su efecto en el LCP.
 - Mover el cálculo del contorno de los titulares grandes a un momento ocioso (evitaría
   las tareas de unos 55 ms) o precalcularlo.
-- Comprobar que las cuatro capas conviven bien: que la seda no compita con el guía y la red
+- Comprobar que las capas conviven bien: que la seda no compita con el guía y la red
   en escenas cargadas (servicios, ecosistema).
 - Paneles líquidos y seda en las páginas interiores (hoy solo tienen el guía en su
   encabezado y la seda en los títulos).

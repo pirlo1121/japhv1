@@ -10,7 +10,8 @@
  * - Con "reducir movimiento" no hay tramos: el guía y la red cambian de
  *   estado, sin animación, al cruzar cada escena. El texto es un documento
  *   normal.
- * - Lenis solo con ratón o trackpad; en táctil, el scroll nativo.
+ * - Lenis solo con ratón o trackpad; en táctil, el scroll nativo. Las
+ *   tarjetas líquidas solo siguen al cursor con ratón o trackpad.
  */
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
@@ -18,11 +19,17 @@ import type { EstadoNarrativo } from '@/scripts/lienzo/narrativa';
 import { crearEscenarios, crearTramos, escenarioDe, type Tramo } from './escenarios';
 import { iniciarProceso } from './proceso';
 import { iniciarServicios } from './servicios';
+import { iniciarTarjetas } from './tarjeta';
 
 /** Segundos que tarda la escena en alcanzar al scroll: suaviza sin despegarse. */
 const INERCIA = 0.8;
 /** Por debajo de esta proporción ancho/alto el guía va arriba y el texto debajo. */
 const ASPECTO_VERTICAL = 0.85;
+/**
+ * La burbuja del titular empieza con la llegada a la escena 02 (a la vez que
+ * la gota se vuelve robot) y termina de formar las letras aquí (fin del tramo).
+ */
+const TRAMO_DEL_TITULAR = { escritorio: 'top -20%', movil: 'top top' };
 /** Escenas que quedan fijas en escritorio mientras el guía las recorre. */
 const ESCENAS_FIJAS = ['#transformacion', '#red', '#nucleo'];
 
@@ -82,6 +89,30 @@ function salidaDelVacio(): void {
     ease: 'none',
     scrollTrigger: { trigger: '.vacio', start: 'top top', end: 'bottom 15%', scrub: true }
   });
+}
+
+/**
+ * 02 · La burbuja que se desprende de la gota y toma la forma del titular.
+ * Empieza con la llegada a la escena, cuando la gota aún no es robot: se
+ * suelta al principio y vuela hacia el titular mientras sube a su sitio.
+ */
+function gotaDelTitular(estado: EstadoNarrativo, fija: boolean): void {
+  if (!document.querySelector('#transformacion [data-gota]')) return;
+  gsap.fromTo(
+    estado,
+    { titular: 0 },
+    {
+      titular: 1,
+      ease: 'none',
+      immediateRender: false,
+      scrollTrigger: {
+        trigger: '#transformacion',
+        start: 'top bottom',
+        end: fija ? TRAMO_DEL_TITULAR.escritorio : TRAMO_DEL_TITULAR.movil,
+        scrub: INERCIA
+      }
+    }
+  );
 }
 
 /**
@@ -209,7 +240,7 @@ export function iniciarHistoria(estado: EstadoNarrativo): void {
     (contexto) => {
       const { escritorio, movil, punteroFino, apaisado } = contexto.conditions ?? {};
       const escenarios = crearEscenarios(!apaisado);
-      const inicial = { ...escenarios.vacio, foco: -1 };
+      const inicial = { ...escenarios.vacio, foco: -1, titular: 0 };
       Object.assign(estado, inicial);
       const detenerServicios = iniciarServicios(estado);
 
@@ -231,7 +262,9 @@ export function iniciarHistoria(estado: EstadoNarrativo): void {
       const detenerDesplazamiento = iniciarDesplazamiento(Boolean(escritorio && punteroFino));
       const detenerProgreso = progresoDeEscenas(Boolean(escritorio));
       const detenerProceso = iniciarProceso(Boolean(escritorio));
+      const detenerTarjetas = punteroFino ? iniciarTarjetas() : () => {};
       salidaDelVacio();
+      gotaDelTitular(estado, Boolean(escritorio));
       revelarProyectos();
       revelarBloques();
       // Todo lo que mueve la escena, en el orden de la historia: si varios
@@ -243,6 +276,7 @@ export function iniciarHistoria(estado: EstadoNarrativo): void {
       return () => {
         detenerProgreso();
         detenerProceso();
+        detenerTarjetas();
         detenerServicios();
         detenerDesplazamiento();
         for (const s of fijas) s?.classList.remove('fija', 'en-escena');

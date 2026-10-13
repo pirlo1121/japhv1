@@ -25,6 +25,11 @@
  * el sombreador las dibuja de gota a placa y el CSS (--solidez) hace
  * aparecer su contenido al final. Al subir, vuelven a licuarse.
  *
+ * El titular [data-gota] nace de la gota (titular.ts): antes de volverse
+ * robot, de ella brota una burbuja que se suelta, cruza la pantalla y se
+ * extiende en sus letras; el CSS
+ * (--gota) muestra el texto real al final. Todo sigue a historia.titular.
+ *
  * Si WebGL no está disponible la red sigue viva y la gota de respaldo (CSS)
  * se coloca donde estaría el guía. El bucle se detiene cuando el lienzo sale
  * de pantalla o la pestaña se oculta. Con "reducir movimiento" no hay
@@ -33,17 +38,20 @@
 import {
   aMundo,
   calcularCamara,
+  crearProyector,
   ejesDePantalla,
   proyectar,
   type Camara,
+  type Proyeccion,
   type Vec3
 } from './camara';
 import { Calidad, esTactil } from './calidad';
-import { anclas, manoDe, MAX_PIEZAS, robot, type Brazo } from './escultura';
+import { anclas, manoDe, MAX_PIEZAS, PIEZA, robot, type Brazo, type Pose } from './escultura';
 import type { EstadoNarrativo } from './narrativa';
 import { crearPintor, type Pintor } from './pintor';
 import { Red, type Densidad } from './red';
-import { MAX_PANELES, MAX_ZONAS_DE_LECTURA } from './sombreador';
+import { MAX_PANELES, MAX_ZONAS_DE_LECTURA, RANGO_TITULAR } from './sombreador';
+import { campoDeTexto, DESPRENDIMIENTO, fases } from './titular';
 
 /** Cuánto gira la cámara siguiendo al puntero (radianes). */
 const PARALAJE_PUNTERO = 0.06;
@@ -84,6 +92,12 @@ const TIEMPO_ESTATICO = 7;
  * esta rapidez (por segundo): continuo, sin pausas.
  */
 const PANEL = { recorrido: 0.38, rapidez: 7 };
+/**
+ * Titular líquido: dónde aterriza la gota (fracción de su caja), cuánto se
+ * arquea su vuelo (fracción del recorrido) y cuánto mira hacia la cámara al
+ * brotar (para que no salga por detrás de la gota).
+ */
+const TITULAR = { aterrizaje: [0.6, 0.55], arco: 0.18, haciaCamara: 0.45 } as const;
 /** La red se dibuja con menos resolución que la pantalla: son líneas finas y luz. */
 const TOPE_DPR_RED = { tactil: 1.25, escritorio: 1.5 };
 const MAX_ZONAS_RED = 6;
@@ -180,6 +194,13 @@ export class Escena {
   private readonly estadosPanel = new Float32Array(MAX_PANELES * 4);
   private pxCss = 1;
   private liquidosActivos = false;
+  /** Titular que nace de una gota; su mapa de letras se sube una vez al pintor. */
+  private readonly titular: HTMLElement | null;
+  private campoTitular: { ancho: number; alto: number } | null = null;
+  private readonly datosTitular = new Float32Array(12);
+  private gotaEscrita: number | null = null;
+  private brote: Pose['brote'] = { direccion: [0, 0, 1], distancia: 0, radio: 0 };
+  private readonly proyeccion: Proyeccion = { x: 0, y: 0, escala: 1, profundidad: 1 };
   private readonly observador: ResizeObserver;
   private readonly vigia: IntersectionObserver;
 
@@ -192,6 +213,7 @@ export class Escena {
   ) {
     this.sinMovimiento = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     this.respaldo = contenedor.querySelector<HTMLElement>('[data-respaldo]');
+    this.titular = document.querySelector<HTMLElement>('[data-gota]');
     this.liquidos = [...document.querySelectorAll<HTMLElement>('[data-liquido]')].map(
       (elemento, i) => ({
         elemento,
@@ -261,6 +283,7 @@ export class Escena {
         () => {
           this.webglListo = true;
           this.inicioFormacion = this.ahora() + FORMACION.espera;
+          this.prepararTitular();
           this.ajustar();
         },
         (error) => this.sinWebgl(error)
@@ -268,6 +291,35 @@ export class Escena {
     }
     this.iniciado = true;
     this.ajustar();
+  }
+
+  /**
+   * El mapa de letras del titular, cuando las fuentes ya cargaron y el
+   * navegador está ocioso; de nuevo si cambia su tamaño. Hasta que llega,
+   * el titular se ve normal.
+   */
+  private prepararTitular(): void {
+    const titular = this.titular;
+    if (!titular || this.sinMovimiento) return;
+    let pendiente = 0;
+    const calcular = () => {
+      pendiente = 0;
+      const campo = campoDeTexto(titular);
+      if (!campo || !this.pintor) return;
+      this.campoTitular = { ancho: campo.ancho, alto: campo.alto };
+      this.pintor.subirTitular(campo);
+      this.solicitar();
+    };
+    const programar = () => {
+      if (pendiente) return;
+      pendiente =
+        typeof requestIdleCallback === 'function'
+          ? requestIdleCallback(calcular, { timeout: 1000 })
+          : window.setTimeout(calcular, 200);
+    };
+    const observador = new ResizeObserver(() => document.fonts.ready.then(programar));
+    observador.observe(titular);
+    this.limpieza.signal.addEventListener('abort', () => observador.disconnect());
   }
 
   /** Sin WebGL: queda la gota de respaldo y la red sigue viva. */
@@ -516,6 +568,7 @@ export class Escena {
         inclinacion: this.inclinacion,
         direccion: this.direccion,
         formacion: this.formacion,
+        brote: this.brote,
         tiempo: inmediato ? 0 : this.fase
       },
       this.piezas
@@ -583,6 +636,119 @@ export class Escena {
     }
   }
 
+  /** ¿Puede el titular nacer de una gota? (WebGL listo, con movimiento y su mapa subido). */
+  private titularListo(): boolean {
+    return Boolean(this.titular && this.campoTitular && this.webglListo && !this.sinMovimiento);
+  }
+
+  /** Caja del titular (px del lienzo) mientras la gota está en camino; si no, null. Solo lee. */
+  private medirTitular(): DOMRect | null {
+    const p = this.historia.titular;
+    if (!this.titularListo() || p <= 0 || p >= 1 || !this.titular) return null;
+    const caja = this.titular.getBoundingClientRect();
+    const lienzo = this.contenedor.getBoundingClientRect();
+    return new DOMRect(caja.left - lienzo.left, caja.top - lienzo.top, caja.width, caja.height);
+  }
+
+  /**
+   * La burbuja 3D brota de la gota hacia donde aterrizará (llevado al
+   * mundo, algo hacia la cámara). Devuelve el punto de aterrizaje en px del lienzo.
+   */
+  private brotar(caja: DOMRect | null, centro: { x: number; y: number }) {
+    if (!caja) {
+      this.brote.radio = 0;
+      return null;
+    }
+    const aterrizaje = {
+      x: caja.left + caja.width * TITULAR.aterrizaje[0],
+      y: caja.top + caja.height * TITULAR.aterrizaje[1]
+    };
+    const [r, u] = ejesDePantalla(this.camara);
+    const [px, py, pz] = this.camara.posicion;
+    const [ox, oy, oz] = this.camara.objetivo;
+    const cerca = Math.hypot(px - ox, py - oy, pz - oz) || 1;
+    const dx = aterrizaje.x - centro.x;
+    const dy = centro.y - aterrizaje.y;
+    const largo = Math.hypot(dx, dy) || 1;
+    const k = TITULAR.haciaCamara;
+    const dir: Vec3 = [
+      (r[0] * dx + u[0] * dy) / largo + ((px - ox) / cerca) * k,
+      (r[1] * dx + u[1] * dy) / largo + ((py - oy) / cerca) * k,
+      (r[2] * dx + u[2] * dy) / largo + ((pz - oz) / cerca) * k
+    ];
+    const l = Math.hypot(...dir) || 1;
+    const f = fases(this.historia.titular);
+    this.brote = {
+      direccion: [dir[0] / l, dir[1] / l, dir[2] / l],
+      distancia: f.distancia,
+      radio: f.radio
+    };
+    return aterrizaje;
+  }
+
+  /**
+   * La gota 2D (relevo de la 3D, del mismo tamaño en pantalla), su vuelo
+   * hasta el titular y el frente que extiende las letras, para el sombreador.
+   */
+  private gotaDelTitular(caja: DOMRect | null, aterrizaje: { x: number; y: number } | null): void {
+    const datos = this.datosTitular;
+    if (!caja || !aterrizaje || !this.campoTitular) {
+      datos[11] = 0;
+      return;
+    }
+    const f = fases(this.historia.titular);
+    const i = PIEZA.desprendida * 4;
+    const pieza: Vec3 = [this.piezas[i] ?? 0, this.piezas[i + 1] ?? 0, this.piezas[i + 2] ?? 0];
+    const relevo = crearProyector(this.camara, this.ancho, this.alto)(pieza, this.proyeccion);
+    const radio = DESPRENDIMIENTO.radio * relevo.escala;
+    const vx = aterrizaje.x - relevo.x;
+    const vy = aterrizaje.y - relevo.y;
+    // Vuela en arco hacia arriba y se posa; al extenderse, se vacía en las letras.
+    const arco = Math.sin(Math.PI * f.vuelo) * Math.hypot(vx, vy) * TITULAR.arco;
+    const x = relevo.x + vx * f.vuelo;
+    const y = relevo.y + vy * f.vuelo - arco;
+    const r = radio * (f.vuelo > 0 ? 1 : f.relevo) * (1 - f.extension);
+    // Alcance del frente: hasta la esquina más lejana de la caja.
+    const alcance = Math.hypot(
+      Math.max(aterrizaje.x - caja.left, caja.right - aterrizaje.x),
+      Math.max(aterrizaje.y - caja.top, caja.bottom - aterrizaje.y)
+    );
+    const k = this.pxCss;
+    const arriba = caja.top - RANGO_TITULAR;
+    const izquierda = caja.left - RANGO_TITULAR;
+    datos.set(
+      [
+        izquierda * k,
+        (this.alto - arriba - this.campoTitular.alto) * k,
+        (izquierda + this.campoTitular.ancho) * k,
+        (this.alto - arriba) * k,
+        x * k,
+        (this.alto - y) * k,
+        r * k,
+        0,
+        aterrizaje.x * k,
+        (this.alto - aterrizaje.y) * k,
+        f.extension * alcance * 1.1 * k,
+        f.visible
+      ],
+      0
+    );
+  }
+
+  /** El texto real aparece al final (CSS lee --gota); sin la gota, se ve normal. */
+  private escribirTitular(): void {
+    if (!this.titular) return;
+    const valor = this.titularListo() ? acotar(this.historia.titular, 0, 1) : null;
+    const igual =
+      valor === null || this.gotaEscrita === null
+        ? valor === this.gotaEscrita
+        : Math.abs(valor - this.gotaEscrita) < 0.001;
+    if (igual) return;
+    this.gotaEscrita = valor;
+    if (valor === null) this.titular.style.removeProperty('--gota');
+    else this.titular.style.setProperty('--gota', valor.toFixed(3));
+  }
+
   /** Sin WebGL, la gota de respaldo sigue al guía (centro y tamaño aparentes). */
   private colocarRespaldo(): void {
     if (!this.respaldo || !this.red || this.webglListo) return;
@@ -600,6 +766,7 @@ export class Escena {
     // Lecturas del DOM antes de cualquier escritura.
     const { numZonas, cajas } = this.medirZonas();
     const numPaneles = this.medirLiquidos(dt);
+    const cajaTitular = this.medirTitular();
 
     if (!this.sinMovimiento) {
       const seguir = Math.min(1, dt * SUAVIDAD_PUNTERO);
@@ -634,7 +801,9 @@ export class Escena {
     );
     const centro = proyectar([0, 0.3, 0], this.camara, this.ancho, this.alto);
     const objetivo = this.buscarObjetivo(centro);
+    const aterrizaje = this.brotar(cajaTitular, centro);
     this.posarGuia(tiempo, dt, objetivo);
+    this.gotaDelTitular(cajaTitular, aterrizaje);
 
     // Rama destacada: el servicio activo manda; si no hay, el nodo bajo el puntero.
     const bajoPuntero =
@@ -666,6 +835,7 @@ export class Escena {
     });
     this.colocarRespaldo();
     this.escribirLiquidos();
+    this.escribirTitular();
 
     // Si el fotograma anterior aún se está pintando, este se salta.
     if (this.pintor && this.webglListo) {
@@ -683,7 +853,8 @@ export class Escena {
         paneles: this.paneles,
         estadosPanel: this.estadosPanel,
         numPaneles,
-        pxCss: this.pxCss
+        pxCss: this.pxCss,
+        titular: this.datosTitular
       });
     }
   }
@@ -696,6 +867,7 @@ export class Escena {
     this.pintor?.liberar();
     this.red?.liberar();
     for (const l of this.liquidos) l.elemento.style.removeProperty('--solidez');
+    this.titular?.style.removeProperty('--gota');
   }
 }
 

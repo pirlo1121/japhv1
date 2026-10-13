@@ -33,6 +33,11 @@ export type EstadoNarrativo = { -readonly [K in keyof Escenario]: Escenario[K] }
    * cambia de golpe y la escena suaviza el brillo.
    */
   foco: number;
+  /**
+   * 0..1: la gota que se desprende del guía y toma la forma del titular
+   * [data-gota] (escena 02). Lo anima su propio tramo de scroll.
+   */
+  titular: number;
 };
 
 /** Escena 01 · El vacío: el guía, aún gota, flota a la derecha del titular. */
@@ -52,4 +57,8 @@ export const ESCENARIO_INICIAL: Escenario = {
   forma: 0
 };
 
-export const crearEstadoNarrativo = (): EstadoNarrativo => ({ ...ESCENARIO_INICIAL, foco: -1 });
+export const crearEstadoNarrativo = (): EstadoNarrativo => ({
+  ...ESCENARIO_INICIAL,
+  foco: -1,
+  titular: 0
+});

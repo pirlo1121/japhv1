@@ -74,24 +74,18 @@ export function formaDeCaja(ancho: number, alto: number, radio: number, paso = 6
 }
 
 /**
- * El contorno de las letras de un elemento. `escala` < 1 reduce el lienzo
- * de muestreo (los titulares grandes no necesitan cada píxel).
+ * Dibuja en `ctx` (en px CSS, con `margen` alrededor de la caja) cada
+ * carácter del elemento en su posición real y con su fuente. Es la máscara
+ * de las letras: la seda sigue su borde y el titular líquido (lienzo/titular.ts)
+ * saca de ella su campo de distancias.
  */
-export function formaDeTexto(elemento: HTMLElement, escala: number): Forma | null {
-  const caja = elemento.getBoundingClientRect();
-  if (caja.width === 0 || caja.height === 0) return null;
-  const margen = 4;
-  const ancho = Math.ceil((caja.width + margen * 2) * escala);
-  const alto = Math.ceil((caja.height + margen * 2) * escala);
-  const lienzo = document.createElement('canvas');
-  lienzo.width = ancho;
-  lienzo.height = alto;
-  const ctx = lienzo.getContext('2d', { willReadFrequently: true });
-  if (!ctx) return null;
-  ctx.scale(escala, escala);
+export function dibujarLetras(
+  elemento: HTMLElement,
+  ctx: CanvasRenderingContext2D,
+  caja: DOMRect,
+  margen: number
+): void {
   ctx.fillStyle = '#000';
-
-  // Cada carácter, en su sitio y con su fuente.
   const recorrido = document.createTreeWalker(elemento, NodeFilter.SHOW_TEXT);
   const rango = document.createRange();
   for (let nodo = recorrido.nextNode(); nodo; nodo = recorrido.nextNode()) {
@@ -112,6 +106,25 @@ export function formaDeTexto(elemento: HTMLElement, escala: number): Forma | nul
       ctx.fillText(caracter, r.left - caja.left + margen, r.top - caja.top + margen + ascenso);
     }
   }
+}
+
+/**
+ * El contorno de las letras de un elemento. `escala` < 1 reduce el lienzo
+ * de muestreo (los titulares grandes no necesitan cada píxel).
+ */
+export function formaDeTexto(elemento: HTMLElement, escala: number): Forma | null {
+  const caja = elemento.getBoundingClientRect();
+  if (caja.width === 0 || caja.height === 0) return null;
+  const margen = 4;
+  const ancho = Math.ceil((caja.width + margen * 2) * escala);
+  const alto = Math.ceil((caja.height + margen * 2) * escala);
+  const lienzo = document.createElement('canvas');
+  lienzo.width = ancho;
+  lienzo.height = alto;
+  const ctx = lienzo.getContext('2d', { willReadFrequently: true });
+  if (!ctx) return null;
+  ctx.scale(escala, escala);
+  dibujarLetras(elemento, ctx, caja, margen);
 
   // Borde de las letras: píxeles opacos con algún vecino transparente.
   const datos = ctx.getImageData(0, 0, ancho, alto).data;

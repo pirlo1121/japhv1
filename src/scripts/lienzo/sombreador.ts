@@ -7,7 +7,8 @@
  *   unión suave (smin): cuerpo, cabeza, brazos, cola y la estela de gotas
  *   que deja al viajar se funden como líquido. Nace de una gota que flota
  *   (formación, en PIEZA.viaje): al bajar a la segunda escena la gota
- *   adelgaza mientras el robot crece dentro de ella.
+ *   adelgaza mientras el robot crece dentro de ella. Antes, de la gota se
+ *   desprende una burbuja que viaja al titular (PIEZA.desprendida).
  * - Material: cromo. Refleja un estudio procedural de paredes azul
  *   medianoche con luces diseñadas: una caja cenital blanca (el cromo sigue
  *   leyéndose como cromo), un filo cian, una tira azul eléctrico, contraluz
@@ -26,6 +27,8 @@ import { ALTURA, GOTAS_DE_ESTELA, MAX_PIEZAS, PIEZA, RADIO_LIMITE } from './escu
 export const MAX_ZONAS_DE_LECTURA = 3;
 /** Paneles líquidos que se dibujan a la vez (solo los visibles que están cambiando). */
 export const MAX_PANELES = 4;
+/** Px CSS de campo alrededor de las letras del titular líquido: lo que alcanza la unión con la gota. */
+export const RANGO_TITULAR = 28;
 
 export const VERTICE = /* glsl */ `#version 300 es
 void main() {
@@ -61,6 +64,11 @@ uniform vec4 uPaneles[MAX_PANELES];      // rectángulo en uv (x0, y0, x1, y1; y
 uniform vec4 uEstadosPanel[MAX_PANELES]; // x: solidez 0..1, y: semilla, z: radio de esquina (px CSS)
 uniform int uNumPaneles;
 uniform float uPxCss;                    // píxeles del lienzo por píxel CSS
+// Titular que nace de una gota (titular.ts). Todo en px del lienzo, y hacia arriba.
+uniform sampler2D uTitularMapa;          // distancia a las letras (0.5 = borde, ±RANGO px CSS)
+uniform vec4 uTitularCaja;               // caja del mapa (x0, y0, x1, y1)
+uniform vec4 uTitularGota;               // gota 2D: centro y radio
+uniform vec4 uTitularFrente;             // x, y: donde aterriza; z: alcance del frente; w: 0..1 visible
 
 out vec4 color;
 
@@ -69,6 +77,7 @@ const float TAU = 6.28318531;
 const float LIMITE = ${f(RADIO_LIMITE)};
 const float FOCAL = ${f(FOCAL)};
 const float ALTURA = ${f(ALTURA)};
+const float RANGO_TITULAR = ${f(RANGO_TITULAR)};
 
 // Paleta (tokens.css), en lineal aproximado para la luz.
 const vec3 FONDO = vec3(0.0118, 0.0275, 0.0667);
@@ -252,14 +261,23 @@ float robot(vec3 p) {
   return d;
 }
 
-// La distancia a la escena: el robot, o la gota condensándose en él.
-float mapa(vec3 p) {
+// El cuerpo: el robot, o la gota condensándose en él.
+float cuerpo(vec3 p) {
   float s = uPiezas[${PIEZA.viaje}].y;
   if (s >= 0.999) return robot(p);
   if (s <= 0.001) return gota(p);
   s = s * s * (3.0 - 2.0 * s);
   // La gota adelgaza mientras el robot crece dentro de ella, unidos como líquido.
   return smin(gota(p) + s * 0.6, robot(p) + (1.0 - s) * 0.6, 0.3);
+}
+
+// La distancia a la escena: el cuerpo y la burbuja que se desprende de él
+// hacia el titular, unidas como líquido hasta que se separan.
+float mapa(vec3 p) {
+  float d = cuerpo(p);
+  vec4 b = uPiezas[${PIEZA.desprendida}];
+  if (b.w < 0.005) return d;
+  return smin(d, length(p - b.xyz) - b.w, 0.3);
 }
 
 // El paso crece con la distancia (t): las uniones suaves no son distancias
@@ -383,6 +401,26 @@ vec3 cromo(vec3 p, vec3 n, vec3 rd, float ndv) {
   return metal + vec3(0.016, 0.02, 0.03) * (0.5 + 0.5 * n.y);
 }
 
+// ---------------------------------------------------------------- cromo 2D
+
+// Metal líquido visto de frente para una forma plana (paneles, titular):
+// x es la profundidad relativa dentro de su relieve (0 borde, 1 cara) y
+// gradiente, el de su campo de distancias.
+vec3 cromoPlano(float x, vec2 gradiente, float semilla) {
+  float borde = 1.0 - x;
+  vec2 hacia = normalize(gradiente + 1e-5);
+  vec3 n = normalize(vec3(hacia * borde * 2.2, 1.0 - borde * 0.55));
+  vec3 reflejo = reflect(vec3(0.0, 0.0, -1.0), n);
+  // El estudio es el mismo que refleja el robot: es del mismo metal. Se
+  // mira inclinado hacia arriba: la cara plana refleja la pared azul y los
+  // bordes curvos recorren las tiras de luz.
+  vec3 hacia3 = normalize(vec3(reflejo.x, reflejo.y + 0.55, reflejo.z * 0.55));
+  // Algo más contenido que el robot: no debe competir con el contenido.
+  vec3 metal = estudio(hacia3, 0.012) * (0.62 + 0.25 * pow(borde, 3.0));
+  metal += CIAN * 0.25 * pow(borde, 4.0) * (0.6 + 0.4 * sin(uFase * 2.0 + semilla));
+  return metal / (1.0 + metal * 0.55) * 1.2;
+}
+
 // ---------------------------------------------------------------- paneles líquidos
 
 // Distancia a un rectángulo redondeado (2D).
@@ -448,23 +486,12 @@ vec3 pintarPaneles(vec3 col) {
     // Relieve: gotas redondas en estado líquido; un bisel fino al solidificarse.
     float bisel = mix(lado * 0.5, 7.0 * uPxCss, solido);
     float x = clamp(-d / bisel, 0.0, 1.0);
-    float borde = 1.0 - x;
     float e = max(1.0, uPxCss);
     vec2 gradiente = vec2(
       campoPanel(px + vec2(e, 0.0), centro, mitad, estado) - d,
       campoPanel(px + vec2(0.0, e), centro, mitad, estado) - d
     );
-    vec2 hacia = normalize(gradiente + 1e-5);
-    vec3 n = normalize(vec3(hacia * borde * 2.2, 1.0 - borde * 0.55));
-    vec3 reflejo = reflect(vec3(0.0, 0.0, -1.0), n);
-    // El estudio es el mismo que refleja el robot: el panel es del mismo metal.
-    // Se mira inclinado hacia arriba: la cara plana refleja la pared azul y
-    // los bordes curvos recorren las tiras de luz.
-    vec3 hacia3 = normalize(vec3(reflejo.x, reflejo.y + 0.55, reflejo.z * 0.55));
-    // Algo más contenido que el robot: el panel no debe competir con el contenido.
-    vec3 metal = estudio(hacia3, 0.012) * (0.62 + 0.25 * pow(borde, 3.0));
-    metal += CIAN * 0.25 * pow(borde, 4.0) * (0.6 + 0.4 * sin(uFase * 2.0 + estado.y));
-    metal = metal / (1.0 + metal * 0.55) * 1.2;
+    vec3 metal = cromoPlano(x, gradiente, estado.y);
     // La cara se vuelve la superficie del panel (--superficie) al solidificarse.
     vec3 cara = vec3(0.031, 0.067, 0.13) + vec3(0.0, 0.03, 0.06) * (px.y - r.y) / max(r.w - r.y, 1.0);
     vec3 color = mix(metal, cara, solido * smoothstep(0.15, 0.6, x));
@@ -473,6 +500,52 @@ vec3 pintarPaneles(vec3 col) {
     col = mix(col, color, cobertura * visible);
   }
   return col;
+}
+
+// ---------------------------------------------------------------- titular líquido
+
+// Distancia (px del lienzo) a las letras del titular, ya extendidas hasta
+// el frente: más allá del frente aún no han llegado (crecen desde la gota).
+float letras(vec2 px) {
+  vec4 caja = uTitularCaja;
+  vec2 uv = (px - caja.xy) / (caja.zw - caja.xy);
+  // El mapa va con la fila 0 arriba.
+  float d = (texture(uTitularMapa, vec2(uv.x, 1.0 - uv.y)).r - 0.5) * 2.0 * RANGO_TITULAR * uPxCss;
+  // Fuera del mapa: lejos, sin bordes falsos en su límite.
+  vec2 fuera = max(max(caja.xy - px, px - caja.zw), 0.0);
+  d += length(fuera);
+  return d + max(length(px - uTitularFrente.xy) - uTitularFrente.z, 0.0) * 0.45;
+}
+
+// El campo del titular: la gota 2D fundida con las letras que van naciendo.
+float campoTitular(vec2 px) {
+  vec4 g = uTitularGota;
+  float gota = g.z > 0.5 ? length(px - g.xy) - g.z : 1e5;
+  if (uTitularFrente.z <= 0.0) return gota;
+  float texto = letras(px);
+  float k = g.z * 0.8 + 6.0 * uPxCss;
+  float h = max(k - abs(gota - texto), 0.0) / k;
+  return min(gota, texto) - h * h * k * 0.25;
+}
+
+// Pinta la gota en vuelo y las letras de cromo, solo dentro de su alcance.
+vec3 pintarTitular(vec3 col) {
+  vec2 px = gl_FragCoord.xy;
+  vec4 g = uTitularGota;
+  vec4 caja = uTitularCaja;
+  bool enGota = length(px - g.xy) < g.z * 1.8 + 4.0;
+  vec2 fuera = max(max(caja.xy - px, px - caja.zw), 0.0);
+  bool enCaja = uTitularFrente.z > 0.0 && max(fuera.x, fuera.y) <= 0.0;
+  if (!enGota && !enCaja) return col;
+  float d = campoTitular(px);
+  if (d > 2.0 * uPxCss) return col;
+  float e = max(1.0, uPxCss);
+  vec2 gradiente = vec2(campoTitular(px + vec2(e, 0.0)) - d, campoTitular(px + vec2(0.0, e)) - d);
+  // Relieve de esfera en la gota, que se afina hasta el grosor del trazo de las letras.
+  float bisel = max(g.z, 4.0 * uPxCss);
+  vec3 metal = cromoPlano(clamp(-d / bisel, 0.0, 1.0), gradiente, 1.3);
+  float cobertura = 1.0 - smoothstep(-uPxCss, uPxCss, d);
+  return mix(col, metal, cobertura * uTitularFrente.w);
 }
 
 // ---------------------------------------------------------------- composición
@@ -499,6 +572,7 @@ void main() {
   col += VIOLETA * 0.018 * exp(-dot(alCentro + vec2(1.2, 0.9), alCentro + vec2(1.2, 0.9)) * 0.6);
 
   if (uNumPaneles > 0) col = pintarPaneles(col);
+  if (uTitularFrente.w > 0.0) col = pintarTitular(col);
 
   // Solo se marcha dentro de la esfera que contiene al robot y su estela.
   float b = dot(ro, rd);

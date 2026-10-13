@@ -378,24 +378,6 @@ main > :first-child:not(.vacio, .portada-pagina) {
 
 /* ---------------------------------------------------------------- escenas de la portada */
 
-/* Escena fija (escritorio con movimiento, ver scripts/historia/iniciar.ts):
-   la sección se alarga (--recorrido) y su marco queda pegado a la pantalla
-   mientras la escultura se transforma. Sin JavaScript, sin movimiento o en
-   móvil, es un bloque normal. */
-.fija {
-  min-height: var(--recorrido, 240vh);
-  padding-block: 0;
-}
-
-.fija > .marco {
-  position: sticky;
-  top: 0;
-  display: grid;
-  align-content: center;
-  min-height: 100svh;
-  padding-block: 6rem 3rem;
-}
-
 /* Pasos: cada uno se enciende con el progreso de su escena (--p, 0..1) a
    partir de su umbral (--u). Sin JavaScript --p no existe y todo se ve. */
 .en-escena [data-paso] {

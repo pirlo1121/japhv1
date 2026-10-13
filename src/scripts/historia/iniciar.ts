@@ -5,8 +5,9 @@
  *
  * - Escritorio y móvil tienen su propia configuración (gsap.matchMedia), que
  *   se desmonta y rehace sola al cambiar de tamaño o de orientación.
- * - En escritorio las escenas 02, 03, 04 y 06 quedan fijas (CSS sticky)
- *   mientras se transforman; en móvil son bloques normales y tramos cortos.
+ * - Ninguna escena se queda fija: scroll = bajar la página. La escena (el
+ *   guía, la cámara, la red) y los pasos del texto cambian mientras la
+ *   página baja. Escritorio y móvil solo cambian dónde termina cada tramo.
  * - Con "reducir movimiento" no hay tramos: el guía y la red cambian de
  *   estado, sin animación, al cruzar cada escena. El texto es un documento
  *   normal.
@@ -29,9 +30,11 @@ const ASPECTO_VERTICAL = 0.85;
  * La burbuja del titular empieza con la llegada a la escena 02 (a la vez que
  * la gota se vuelve robot) y termina de formar las letras aquí (fin del tramo).
  */
-const TRAMO_DEL_TITULAR = { escritorio: 'top -20%', movil: 'top top' };
-/** Escenas que quedan fijas en escritorio mientras el guía las recorre. */
-const ESCENAS_FIJAS = ['#transformacion', '#red', '#nucleo'];
+const TRAMO_DEL_TITULAR = { escritorio: 'top 15%', movil: 'top top' };
+/** Tramo en que se encienden los pasos: de asomar la escena a que su final pasa por aquí. */
+const PASOS = { inicio: 'top 70%', fin: 'bottom 80%' };
+/** Escenas cuyo texto se enciende por pasos ([data-paso]) según su progreso. */
+const ESCENAS_POR_PASOS = ['#transformacion', '#red', '#nucleo'];
 
 /**
  * Lenis con ratón o trackpad; en táctil, el scroll nativo. Lenis se descarga
@@ -96,7 +99,7 @@ function salidaDelVacio(): void {
  * Empieza con la llegada a la escena, cuando la gota aún no es robot: se
  * suelta al principio y vuela hacia el titular mientras sube a su sitio.
  */
-function gotaDelTitular(estado: EstadoNarrativo, fija: boolean): void {
+function gotaDelTitular(estado: EstadoNarrativo, escritorio: boolean): void {
   if (!document.querySelector('#transformacion [data-gota]')) return;
   gsap.fromTo(
     estado,
@@ -108,7 +111,7 @@ function gotaDelTitular(estado: EstadoNarrativo, fija: boolean): void {
       scrollTrigger: {
         trigger: '#transformacion',
         start: 'top bottom',
-        end: fija ? TRAMO_DEL_TITULAR.escritorio : TRAMO_DEL_TITULAR.movil,
+        end: escritorio ? TRAMO_DEL_TITULAR.escritorio : TRAMO_DEL_TITULAR.movil,
         scrub: INERCIA
       }
     }
@@ -117,19 +120,19 @@ function gotaDelTitular(estado: EstadoNarrativo, fija: boolean): void {
 
 /**
  * 02 · 03 · 04 · El texto de cada escena aparece por pasos según su
- * progreso (el CSS lee --p, 0..1). Siempre queda legible: solo cambia el
- * énfasis, nunca el contenido.
+ * progreso (el CSS lee --p, 0..1) mientras pasa por la pantalla. Siempre
+ * queda legible: solo cambia el énfasis, nunca el contenido.
  */
-function progresoDeEscenas(fija: boolean): () => void {
-  const secciones = ESCENAS_FIJAS.map((s) => document.querySelector<HTMLElement>(s)).filter(
+function progresoDeEscenas(): () => void {
+  const secciones = ESCENAS_POR_PASOS.map((s) => document.querySelector<HTMLElement>(s)).filter(
     (s): s is HTMLElement => s !== null
   );
   const disparadores = secciones.map((seccion) => {
     const escribir = (p: number) => seccion.style.setProperty('--p', p.toFixed(3));
     return ScrollTrigger.create({
-      trigger: fija ? seccion : (seccion.querySelector('[data-pasos]') ?? seccion),
-      start: fija ? 'top top' : 'top 75%',
-      end: fija ? 'bottom bottom' : 'bottom 45%',
+      trigger: seccion,
+      start: PASOS.inicio,
+      end: PASOS.fin,
       onUpdate: (self) => escribir(self.progress),
       onRefresh: (self) => escribir(self.progress)
     });
@@ -228,7 +231,7 @@ export function iniciarHistoria(estado: EstadoNarrativo): void {
 
   medios.add(
     {
-      // Las escenas fijas necesitan ancho y alto: un móvil en horizontal usa la versión móvil.
+      // El escritorio necesita ancho y alto: un móvil en horizontal usa la versión móvil.
       escritorio:
         '(min-width: 48rem) and (min-height: 34rem) and (prefers-reduced-motion: no-preference)',
       movil:
@@ -254,13 +257,11 @@ export function iniciarHistoria(estado: EstadoNarrativo): void {
         };
       }
 
-      // Las escenas fijas se alargan antes de medir nada.
-      const fijas = ESCENAS_FIJAS.map((s) => document.querySelector<HTMLElement>(s));
-      for (const s of fijas) s?.classList.toggle('fija', Boolean(escritorio));
-      for (const s of fijas) s?.classList.add('en-escena');
+      const porPasos = ESCENAS_POR_PASOS.map((s) => document.querySelector<HTMLElement>(s));
+      for (const s of porPasos) s?.classList.add('en-escena');
 
       const detenerDesplazamiento = iniciarDesplazamiento(Boolean(escritorio && punteroFino));
-      const detenerProgreso = progresoDeEscenas(Boolean(escritorio));
+      const detenerProgreso = progresoDeEscenas();
       const detenerProceso = iniciarProceso(Boolean(escritorio));
       const detenerTarjetas = punteroFino ? iniciarTarjetas() : () => {};
       salidaDelVacio();
@@ -279,7 +280,7 @@ export function iniciarHistoria(estado: EstadoNarrativo): void {
         detenerTarjetas();
         detenerServicios();
         detenerDesplazamiento();
-        for (const s of fijas) s?.classList.remove('fija', 'en-escena');
+        for (const s of porPasos) s?.classList.remove('en-escena');
         Object.assign(estado, inicial);
       };
     }

@@ -21,15 +21,11 @@ import { ESCENARIO_INICIAL, type Escenario } from '@/scripts/lienzo/narrativa';
 export interface Escenarios {
   /** 01 · El vacío: una gota flota a la derecha del titular. */
   vacio: Escenario;
-  /** 02 · La transformación: la cámara se acerca y la gota ya es el robot... */
-  transformacionInicio: Escenario;
-  /** 02 · ...y lo rodea mientras señala el manifiesto. Aparecen los primeros filamentos. */
+  /** 02 · La transformación: la gota ya es el robot; la cámara lo rodea y señala el manifiesto. */
   transformacion: Escenario;
   /** 03 · La red viva: la cámara se aleja y la red crece desde su cuerpo. */
   red: Escenario;
-  /** 04 · El núcleo: de cerca... */
-  nucleoInicio: Escenario;
-  /** 04 · ...se encienden los circuitos dentro de su cuerpo. */
+  /** 04 · El núcleo: de cerca, se encienden los circuitos dentro de su cuerpo. */
   nucleo: Escenario;
   /** 05 · Servicios: a la derecha de la lista, señala el servicio activo. */
   servicios: Escenario;
@@ -61,7 +57,7 @@ const frente = (e: Omit<Escenario, 'giro'>, desvio = 0): Escenario => ({
 
 export function crearEscenarios(estrecha: boolean): Escenarios {
   const vacio = ESCENARIO_INICIAL;
-  const transformacionInicio = frente({
+  const transformacionBase = frente({
     ...vacio,
     azimut: 0.7,
     elevacion: 0.2,
@@ -76,7 +72,7 @@ export function crearEscenarios(estrecha: boolean): Escenarios {
   });
   const transformacion = frente(
     {
-      ...transformacionInicio,
+      ...transformacionBase,
       azimut: 1.0,
       elevacion: 0.2,
       distancia: 6.8,
@@ -101,7 +97,7 @@ export function crearEscenarios(estrecha: boolean): Escenarios {
     },
     -0.2
   );
-  const nucleoInicio = frente({
+  const nucleoBase = frente({
     ...red,
     azimut: 0.6,
     elevacion: 0.24,
@@ -110,7 +106,7 @@ export function crearEscenarios(estrecha: boolean): Escenarios {
     flujo: 0.55,
     grietas: 0
   });
-  const nucleo = frente({ ...nucleoInicio, azimut: 0.8, distancia: 6.8, grietas: 1 }, -0.1);
+  const nucleo = frente({ ...nucleoBase, azimut: 0.8, distancia: 6.8, grietas: 1 }, -0.1);
   const servicios = frente({
     ...nucleo,
     azimut: 0.3,
@@ -169,10 +165,8 @@ export function crearEscenarios(estrecha: boolean): Escenarios {
 
   const anchos: Escenarios = {
     vacio,
-    transformacionInicio,
     transformacion,
     red,
-    nucleoInicio,
     nucleo,
     servicios,
     proceso,
@@ -186,10 +180,8 @@ export function crearEscenarios(estrecha: boolean): Escenarios {
   // detrás y apagada: manda la lectura.
   return {
     vacio: vertical(vacio, 0),
-    transformacionInicio: vertical(transformacionInicio, 0.15),
     transformacion: vertical(transformacion, 0.3),
     red: vertical({ ...red, distancia: 9.4 }, 0.3),
-    nucleoInicio: vertical(nucleoInicio, 0.3),
     nucleo: vertical(nucleo, 0.3),
     servicios: vertical(servicios, 0.55),
     proceso: vertical(proceso, 0.55),
@@ -210,9 +202,9 @@ export interface Tramo {
 
 /**
  * El recorrido del guía, con la cámara y la red, tramo a tramo y en el
- * orden de la historia. En escritorio las escenas 02, 03 y 04 quedan fijas
- * mientras avanzan (dos tramos: llegada y recorrido); en móvil cada escena
- * tiene un solo tramo.
+ * orden de la historia: un tramo por escena, mientras la página baja.
+ * Ninguna escena se queda fija: cada movimiento del scroll baja la página
+ * (fijarlas se sentía lento, como si el scroll se trabara).
  */
 export function crearTramos(e: Escenarios, movil: boolean): Tramo[] {
   const llegada = (
@@ -221,13 +213,6 @@ export function crearTramos(e: Escenarios, movil: boolean): Tramo[] {
     hasta: Escenario,
     fin = movil ? 'center center' : 'top top'
   ): Tramo => ({ disparador, inicio: 'top bottom', fin, desde, hasta });
-  const fija = (disparador: string, desde: Escenario, hasta: Escenario): Tramo => ({
-    disparador,
-    inicio: 'top top',
-    fin: 'bottom bottom',
-    desde,
-    hasta
-  });
 
   if (movil) {
     return [
@@ -248,11 +233,16 @@ export function crearTramos(e: Escenarios, movil: boolean): Tramo[] {
     ];
   }
   return [
-    llegada('#transformacion', e.vacio, e.transformacionInicio),
-    fija('#transformacion', e.transformacionInicio, e.transformacion),
-    fija('#red', e.transformacion, e.red),
-    llegada('#nucleo', e.red, e.nucleoInicio),
-    fija('#nucleo', e.nucleoInicio, e.nucleo),
+    llegada('#transformacion', e.vacio, e.transformacion),
+    // La red crece mientras su escena pasa por la pantalla.
+    {
+      disparador: '#red',
+      inicio: 'top bottom',
+      fin: 'bottom bottom',
+      desde: e.transformacion,
+      hasta: e.red
+    },
+    llegada('#nucleo', e.red, e.nucleo),
     llegada('#servicios', e.nucleo, e.servicios, 'top 65%'),
     llegada('#proceso', e.servicios, e.proceso),
     // Termina antes de que el titular llegue arriba: el guía ya está en su sitio.

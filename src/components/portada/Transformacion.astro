@@ -12,9 +12,9 @@
  * llega como metal líquido (data-liquido) y cuya piel se deforma un poco
  * con el cursor (data-tarjeta-liquida, scripts/historia/tarjeta.ts).
  *
- * Con movimiento en escritorio la escena queda fija mientras la cámara lo
+ * Con movimiento, mientras la escena pasa por la pantalla la cámara lo
  * rodea y cada cláusula del manifiesto y cada estado se encienden con el
- * progreso (--p). En móvil y sin movimiento es un bloque normal.
+ * progreso (--p). Nunca se queda fija: el scroll baja la página.
  */
 const estados = [
   { estado: 'Líquido', que: 'la idea', forma: 'liquido' },
@@ -73,10 +73,6 @@ const clausulas = [
 </section>
 
 <style>
-  .transformacion {
-    --recorrido: 230vh;
-  }
-
   .bloque {
     display: grid;
     gap: 1.4rem;

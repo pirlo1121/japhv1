@@ -33,22 +33,22 @@ páginas, y su propio bucle.
 
 ## La historia (portada)
 
-| Escena               | Componente       | Guía y red                                                                                                                                                                              | Otras capas                                                           |
-| -------------------- | ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
-| 01 El vacío          | `Vacio`          | Una gota de metal líquido flota junto al titular; la red duerme al fondo.                                                                                                               | Seda: titular (al cargar)                                             |
-| 02 La transformación | `Transformacion` | Al llegar, de la gota se desprende una burbuja que se vuelve el titular y el resto toma forma de robot. (fija) La cámara lo rodea; señala el manifiesto; nacen los primeros filamentos. | Gota: titular. Líquido: tarjeta de los tres estados (sigue al cursor) |
-| 03 La red viva       | `RedViva`        | (fija) La cámara se aleja y la red crece escalonada desde su cuerpo.                                                                                                                    | Gota: titular                                                         |
-| 04 El núcleo         | `Nucleo`         | (fija) De cerca, se encienden circuitos de luz dentro de su cuerpo.                                                                                                                     | Líquido: principios. Gota: titular                                    |
-| 05 Servicios         | `Servicios`      | Señala el servicio activo; un hilo une su mano con el texto y su rama se enciende.                                                                                                      | Líquido: la lista. Gota: titular                                      |
-| 06 El proceso        | `Proceso`        | (fija) Arriba a la derecha, señala la fase actual del camino orgánico (SVG).                                                                                                            | Gota: titular                                                         |
-| 07 Proyectos         | `Proyectos`      | Presenta cada proyecto según pasa por el centro; la red empieza a ordenarse.                                                                                                            | Líquido: tarjetas. Gota: titular                                      |
-| 08 Ecosistema        | `Ecosistema`     | En el centro de la red completa y ordenada; el movimiento se calma.                                                                                                                     | Gota: titular                                                         |
-| 09 Hagámoslo real    | `Llamada`        | Arriba y al centro, señala la invitación, que lleva a destinos reales.                                                                                                                  | Gota: titular. Seda: botones                                          |
+| Escena               | Componente       | Guía y red                                                                                                                                                                       | Otras capas                                                           |
+| -------------------- | ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| 01 El vacío          | `Vacio`          | Una gota de metal líquido flota junto al titular; la red duerme al fondo.                                                                                                        | Seda: titular (al cargar)                                             |
+| 02 La transformación | `Transformacion` | Al llegar, de la gota se desprende una burbuja que se vuelve el titular y el resto toma forma de robot. La cámara lo rodea; señala el manifiesto; nacen los primeros filamentos. | Gota: titular. Líquido: tarjeta de los tres estados (sigue al cursor) |
+| 03 La red viva       | `RedViva`        | La cámara se aleja y la red crece escalonada desde su cuerpo.                                                                                                                    | Gota: titular                                                         |
+| 04 El núcleo         | `Nucleo`         | De cerca, se encienden circuitos de luz dentro de su cuerpo.                                                                                                                     | Líquido: principios. Gota: titular                                    |
+| 05 Servicios         | `Servicios`      | Señala el servicio activo; un hilo une su mano con el texto y su rama se enciende.                                                                                               | Líquido: la lista. Gota: titular                                      |
+| 06 El proceso        | `Proceso`        | Arriba a la derecha, señala la fase actual del camino orgánico (SVG).                                                                                                            | Gota: titular                                                         |
+| 07 Proyectos         | `Proyectos`      | Presenta cada proyecto según pasa por el centro; la red empieza a ordenarse.                                                                                                     | Líquido: tarjetas. Gota: titular                                      |
+| 08 Ecosistema        | `Ecosistema`     | En el centro de la red completa y ordenada; el movimiento se calma.                                                                                                              | Gota: titular                                                         |
+| 09 Hagámoslo real    | `Llamada`        | Arriba y al centro, señala la invitación, que lleva a destinos reales.                                                                                                           | Gota: titular. Seda: botones                                          |
 
-"(fija)": en escritorio la sección queda pegada a la pantalla (CSS sticky) mientras avanza.
-En móvil, sin movimiento o sin JavaScript, todas son bloques normales. Las páginas
-interiores muestran al guía en calma señalando su título, y la seda teje su título y sus
-encabezados de sección.
+Ninguna escena se queda fija: scroll = bajar la página. La cámara, la red y los pasos del
+texto cambian mientras cada escena pasa por la pantalla. En móvil, sin movimiento o sin
+JavaScript, todas son bloques normales. Las páginas interiores muestran al guía en calma señalando
+su título, y la seda teje su título y sus encabezados de sección.
 
 ## Cómo ajustar el diseño
 
@@ -59,6 +59,7 @@ Las decisiones visuales están en constantes con nombre, no repartidas por el c�
 | Colores, degradados, tipografía, espacios      | `styles/tokens.css` (nunca colores sueltos fuera de ahí)                              |
 | Dónde está el guía en cada escena, cámara, red | `scripts/historia/escenarios.ts` (un `Escenario` por escena; `vertical()` para móvil) |
 | Qué tramo de scroll lleva de una escena a otra | `crearTramos` en `escenarios.ts`; inercia del scroll: `INERCIA` en `iniciar.ts`       |
+| Cuándo se encienden los pasos del texto        | `PASOS` en `iniciar.ts`; el camino del proceso: `CAMINO` en `proceso.ts`              |
 | Cómo viaja y fluye el guía                     | `escena.ts`: `MUELLE_POSICION`, `VIAJE`, `REBOTE`                                     |
 | Cuándo la gota toma forma de robot             | `forma` en `escenarios.ts` (hoy: tramo de llegada a 02); inercia: `FORMACION`         |
 | Cuánto flota la gota (y el robot)              | `FLOTACION` en `escultura.ts`                                                         |
@@ -229,6 +230,9 @@ Para no volver a recorrerlas sin motivo:
 
 - **La gota se condensa en el robot al cargar** (temporizador de 1,8 s): ahora la gota
   flota en la primera escena y toma forma con el scroll.
+- **Escenas fijas** (CSS sticky: 02, 03, 04 y 06 se pegaban a la pantalla mientras el
+  scroll cambiaba la cámara o el texto sin bajar la página): se sentía lento, como si el
+  scroll se trabara. Ahora todo cambia mientras la página baja.
 - **Escultura que cambia de forma** (gota → cinta → núcleo de obsidiana → portal →
   ecosistema): se sustituyó por el robot guía. El núcleo vive ahora como circuitos de luz
   dentro del robot.

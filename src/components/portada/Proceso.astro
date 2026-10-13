@@ -4,8 +4,8 @@
  * (datos/proceso.ts) son nodos de un camino orgánico: se curva, se divide
  * un momento y vuelve a unirse, pero el orden de lectura siempre es obvio.
  *
- * Con movimiento en escritorio la escena queda fija; el camino se ilumina
- * hasta la fase actual y una partícula viaja hacia la siguiente
+ * Con movimiento en escritorio las fases van en fila sobre el camino, que
+ * se ilumina mientras la escena sube por la pantalla hasta la fase actual y una partícula viaja hacia la siguiente
  * (scripts/historia/proceso.ts). En móvil es una lista vertical con un
  * filamento que se llena. Las fases son HTML: el dibujo solo acompaña.
  */
@@ -90,10 +90,6 @@ const desvio =
 </section>
 
 <style>
-  .proceso {
-    --recorrido: 280vh;
-  }
-
   .marco {
     display: grid;
     gap: 1.5rem;
@@ -204,13 +200,13 @@ const desvio =
     display: block;
   }
 
-  /* ---------------------------------------------------------- escena fija (escritorio) */
+  /* ---------------------------------------------------------- en fila (escritorio) */
 
-  .fija .marco {
+  .horizontal .marco {
     gap: 0;
   }
 
-  .fija .dibujo {
+  .horizontal .dibujo {
     position: relative;
     display: block;
     height: clamp(7rem, 18vh, 10rem);
@@ -285,28 +281,28 @@ const desvio =
     opacity: clamp(0, (var(--avance, 0) * var(--fases) - var(--i)) * 8, 1);
   }
 
-  .fija .fases {
+  .horizontal .fases {
     grid-template-columns: repeat(4, 1fr);
     gap: 2rem;
     padding: 0;
   }
 
-  .fija .fases::before,
-  .fija .fases::after,
-  .fija .fase .nodo {
+  .horizontal .fases::before,
+  .horizontal .fases::after,
+  .horizontal .fase .nodo {
     display: none;
   }
 
-  .fija .fase {
+  .horizontal .fase {
     justify-items: center;
     text-align: center;
   }
 
-  .fija h3 {
+  .horizontal h3 {
     font-size: var(--t-1);
   }
 
-  .fija .descripcion {
+  .horizontal .descripcion {
     font-size: var(--t--1);
   }
 

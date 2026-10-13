@@ -6,13 +6,18 @@
  * una partícula viaja hacia la siguiente. Todo deriva del scroll: es
  * reversible. La fase actual lleva data-guia: el robot la señala.
  *
- * En escritorio la escena queda fija mientras avanza. En móvil las fases
- * son una lista vertical y cada una se enciende al pasar por el centro.
+ * En escritorio las fases van en fila sobre el camino, que se ilumina
+ * mientras la escena sube por la pantalla (nunca se queda fija: el scroll
+ * baja la página). En móvil son una lista vertical y cada una se enciende
+ * al pasar por el centro.
  * Las etiquetas y descripciones son HTML: el dibujo solo acompaña.
  */
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
-export function iniciarProceso(fija: boolean): () => void {
+/** Tramo del camino en escritorio: de que la escena asome a que su final pasa por aquí. */
+const CAMINO = { inicio: 'top 45%', fin: 'bottom 85%' };
+
+export function iniciarProceso(horizontal: boolean): () => void {
   const seccion = document.querySelector<HTMLElement>('[data-proceso]');
   if (!seccion) return () => {};
 
@@ -57,14 +62,14 @@ export function iniciarProceso(fija: boolean): () => void {
 
   const disparadores: ScrollTrigger[] = [];
   seccion.classList.add('en-escena');
-  if (fija) seccion.classList.add('fija');
-  // El camino dibujado solo existe en la escena fija; en móvil la línea es CSS.
-  if (fija && camino) largo = camino.getTotalLength();
+  if (horizontal) seccion.classList.add('horizontal');
+  // El camino dibujado solo existe en escritorio; en móvil la línea es CSS.
+  if (horizontal && camino) largo = camino.getTotalLength();
   disparadores.push(
     ScrollTrigger.create({
-      trigger: fija ? seccion : seccion.querySelector('.fases'),
-      start: fija ? 'top top' : 'top 60%',
-      end: fija ? 'bottom bottom' : 'bottom 60%',
+      trigger: horizontal ? seccion : seccion.querySelector('.fases'),
+      start: horizontal ? CAMINO.inicio : 'top 60%',
+      end: horizontal ? CAMINO.fin : 'bottom 60%',
       onUpdate: (self) => pintar(self.progress),
       onRefresh: (self) => pintar(self.progress)
     })
@@ -72,7 +77,7 @@ export function iniciarProceso(fija: boolean): () => void {
 
   return () => {
     for (const d of disparadores) d.kill();
-    seccion.classList.remove('en-escena', 'fija');
+    seccion.classList.remove('en-escena', 'horizontal');
     seccion.style.removeProperty('--avance');
     fases.forEach((fase) => {
       fase.classList.remove('activa', 'alcanzada');

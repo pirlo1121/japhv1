@@ -4,13 +4,10 @@
  * medianoche, a la derecha del titular (en móvil, encima). Al bajar a la
  * segunda escena toma forma de guía: un robot líquido. Unos pocos
  * filamentos duermen al fondo. Los hilos de seda (Seda.astro) tejen el
- * titular y los botones al cargar; la entradilla y los datos entran justo
- * detrás, escalonados (solo con movimiento). Una gota que cae por un
+ * titular al cargar; la entradilla y la invitación a bajar entran justo
+ * detrás, escalonadas (solo con movimiento). Una gota que cae por un
  * filamento invita a bajar.
  */
-import Boton from '@/components/ui/Boton.astro';
-import { sitio } from '@/config/sitio';
-import { servicios } from '@/datos/servicios';
 ---
 
 <section class="vacio" id="inicio" aria-labelledby="titulo-vacio" data-escena="Inicio">
@@ -23,25 +20,9 @@ import { servicios } from '@/datos/servicios';
       Diseñamos, construimos y conectamos productos digitales que transforman ideas en soluciones
       reales.
     </p>
-    <p class="acciones">
-      <Boton href="/contacto" variante="solido" seda="inicio">
-        Empezar un proyecto
-      </Boton>
-      <Boton href="#proyectos-destacados" seda="inicio">
-        Explorar nuestro trabajo
-      </Boton>
-    </p>
   </div>
 
   <dl class="meta">
-    <div>
-      <dt>Servicios</dt>
-      <dd>{servicios.length} capacidades conectadas</dd>
-    </div>
-    <div>
-      <dt>Base</dt>
-      <dd>{sitio.ciudad}</dd>
-    </div>
     <div class="descenso" aria-hidden="true">
       <dt>Recorrido</dt>
       <dd>
@@ -72,7 +53,7 @@ import { servicios } from '@/datos/servicios';
   }
 
   h1 {
-    font-size: var(--t-6);
+    font-size: var(--t-5);
     line-height: 0.96;
     max-width: 11ch;
   }
@@ -81,13 +62,6 @@ import { servicios } from '@/datos/servicios';
     max-width: 44ch;
     font-size: var(--t-1);
     color: var(--texto-suave);
-  }
-
-  .acciones {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.75rem;
-    margin-top: 0.5rem;
   }
 
   .meta {

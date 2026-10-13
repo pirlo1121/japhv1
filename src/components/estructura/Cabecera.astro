@@ -5,7 +5,6 @@
  * sobre la escultura (data-fondo, desde el script de abajo). La página
  * actual se marca con aria-current y un nodo verde: el estado activo.
  */
-import Boton from '@/components/ui/Boton.astro';
 import { navegacion, sitio } from '@/config/sitio';
 import { esPaginaActual } from '@/utilidades/rutas';
 
@@ -29,8 +28,6 @@ const ruta = Astro.url.pathname;
       ))}
     </ul>
   </nav>
-
-  <Boton href="/contacto">Empezar un proyecto</Boton>
 </header>
 
 <script>
@@ -140,7 +137,7 @@ const ruta = Astro.url.pathname;
     translate: -50% 0;
   }
 
-  /* En pantallas estrechas: marca y botón arriba, enlaces en una fila debajo. */
+  /* En pantallas estrechas: marca arriba, enlaces en una fila debajo. */
   @media (max-width: 52rem) {
     nav {
       order: 3;
@@ -158,19 +155,6 @@ const ruta = Astro.url.pathname;
     }
 
     ul::-webkit-scrollbar {
-      display: none;
-    }
-
-    .cabecera :global(.boton) {
-      min-height: 2.5rem;
-      padding: 0.45rem 1rem;
-      font-size: var(--t--1);
-    }
-  }
-
-  /* Muy estrecho: la acción ya está en el héroe y en el pie. */
-  @media (max-width: 30rem) {
-    .cabecera > :global(.boton) {
       display: none;
     }
   }

@@ -81,6 +81,7 @@
   --t-2: clamp(1.35rem, 1.15rem + 0.85vw, 1.8rem);
   --t-3: clamp(1.8rem, 1.4rem + 1.7vw, 2.75rem);
   --t-4: clamp(2.3rem, 1.6rem + 2.9vw, 4.2rem);
+  --t-5: clamp(2.5rem, 1.35rem + 4.6vw, 5.6rem);
   --t-6: clamp(2.8rem, 1.4rem + 5.8vw, 7rem);
   --rastreo-titular: -0.035em;
 

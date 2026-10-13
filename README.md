@@ -34,7 +34,7 @@ páginas, y su propio bucle.
 
 | Escena               | Componente       | Guía y red                                                                                                              | Otras capas                           |
 | -------------------- | ---------------- | ----------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
-| 01 El vacío          | `Vacio`          | Una gota de metal líquido flota junto al titular; la red duerme al fondo.                                               | Seda: titular y botones (al cargar)   |
+| 01 El vacío          | `Vacio`          | Una gota de metal líquido flota junto al titular; la red duerme al fondo.                                               | Seda: titular (al cargar)             |
 | 02 La transformación | `Transformacion` | Al llegar, la gota toma forma de robot. (fija) La cámara lo rodea; señala el manifiesto; nacen los primeros filamentos. | Seda: titular y estados de la materia |
 | 03 La red viva       | `RedViva`        | (fija) La cámara se aleja y la red crece escalonada desde su cuerpo.                                                    | Seda: titular                         |
 | 04 El núcleo         | `Nucleo`         | (fija) De cerca, se encienden circuitos de luz dentro de su cuerpo.                                                     | Líquido: principios. Seda: titular    |

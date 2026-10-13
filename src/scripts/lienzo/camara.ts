@@ -31,7 +31,7 @@ export interface Camara {
 export const FOCAL = 1 / Math.tan((32 * Math.PI) / 180 / 2);
 
 /** En pantallas estrechas la cámara se aleja para que la escultura quepa a lo ancho. */
-const ASPECTO_MINIMO = 0.85;
+export const ASPECTO_MINIMO = 0.85;
 
 const resta = (a: Vec3, b: Vec3): Vec3 => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
 const punto = (a: Vec3, b: Vec3) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];

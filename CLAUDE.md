@@ -86,6 +86,9 @@ principal) desactiva WebGL en la prueba. En desarrollo, `window.__estado` y
 
 ## Cuidado
 
+- **El póster de la gota** (`src/assets/gota-inicial.webp`) es un fotograma del sombreador:
+  si cambias la gota, la luz, `FOCAL` o el escenario inicial, regenéralo con
+  `herramientas/poster-de-la-gota.mjs` (instrucciones en el README, "La gota al abrir").
 - `dist/` y `.astro/` son generados y están en `.gitignore`: no versionarlos.
 - `PUBLIC_API_URL` es opcional (`.env.example`); sin ella se usa `localhost:4000` en dev.
 - El formulario de contacto aún no envía: falta conectar `POST /api/contact`.

@@ -112,6 +112,8 @@ const { id, rotulo, titulo, completa = false } = Astro.props;
   }
 
   .respaldo {
+    /* Sin WebGL la escena da --s (px por unidad del mundo): la gota mide 2,2 unidades. */
+    --lado: calc(var(--s) * 2.2);
     position: absolute;
     left: var(--x, 75%);
     top: var(--y, 48%);

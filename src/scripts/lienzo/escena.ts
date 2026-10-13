@@ -57,6 +57,12 @@ const SUAVIDAD_PUNTERO = 3;
 /** Deriva lenta de la cámara para que el guía respire. */
 const DERIVA = { amplitud: 0.03, periodo: 18 };
 /**
+ * Segundos en que entran el giro del puntero y la deriva cuando WebGL
+ * queda listo: el primer fotograma es el del póster (Lienzo.astro) y desde
+ * ahí la cámara empieza a moverse, sin saltos.
+ */
+const ENTRADA = 1.5;
+/**
  * Muelle de la posición en pantalla: rigidez (1/s²) y amortiguación
  * relativa (<1: se pasa un poco y vuelve, como un líquido que se asienta).
  */
@@ -82,7 +88,7 @@ const FORMACION = { rapidez: 3.2, espera: 0.35 };
 const RAPIDEZ_DEL_FOCO = 5;
 /** Con la escena así de apagada se dibuja un fotograma de cada dos. */
 const ATENUACION_PARA_MEDIA_FRECUENCIA = 0.5;
-/** Momento fijo que se dibuja con "reducir movimiento". */
+/** Momento fijo que se dibuja con "reducir movimiento" (la gota se pinta en la fase 0, la del póster). */
 const TIEMPO_ESTATICO = 7;
 /**
  * Paneles líquidos: la solidez va de 0 (el borde superior entra por abajo)
@@ -92,6 +98,8 @@ const TIEMPO_ESTATICO = 7;
 const PANEL = { recorrido: 0.38, rapidez: 7 };
 /** La red se dibuja con menos resolución que la pantalla: son líneas finas y luz. */
 const TOPE_DPR_RED = { tactil: 1.25, escritorio: 1.5 };
+/** Y con un tope de píxeles: en tablets y pantallas grandes entregar el lienzo pesa más que dibujarlo. */
+const TOPE_PIXELES_RED = { tactil: 0.7e6, escritorio: 1.4e6 };
 const MAX_ZONAS_RED = 6;
 
 interface Liquido {
@@ -173,6 +181,9 @@ export class Escena {
   /** 0 gota, 1 robot: sigue a historia.forma desde que WebGL está listo. */
   private formacion = 0;
   private inicioFormacion = Infinity;
+  /** Cuándo quedó listo WebGL (s): desde ahí entra el movimiento de la cámara. */
+  private entrada = 0;
+  private posterOculto = false;
 
   private brilloFoco = 0;
   private focoVisible = -1;
@@ -269,7 +280,10 @@ export class Escena {
       this.pintor.preparar(
         () => {
           this.webglListo = true;
-          this.inicioFormacion = this.ahora() + FORMACION.espera;
+          // Arranca en el fotograma del póster: fase 0, sin giro de cámara.
+          this.fase = 0;
+          this.entrada = this.ahora();
+          this.inicioFormacion = this.entrada + FORMACION.espera;
           if (!this.sinMovimiento && this.pintor) {
             this.titulares.preparar(this.pintor, () => this.solicitar());
           }
@@ -289,6 +303,9 @@ export class Escena {
     this.pintor?.liberar();
     this.pintor = null;
     this.contenedor.dataset.sinWebgl = 'true';
+    // El póster pasa a ser la gota de respaldo: sigue al guía.
+    this.posterOculto = false;
+    if (this.respaldo) delete this.respaldo.dataset.oculto;
     this.solicitar();
   }
 
@@ -306,8 +323,13 @@ export class Escena {
       this.pintor.configurar(anchoPx, altoPx);
       this.pxCss = anchoPx / this.ancho;
     }
-    const tope = esTactil() ? TOPE_DPR_RED.tactil : TOPE_DPR_RED.escritorio;
-    this.red?.redimensionar(this.ancho, this.alto, Math.min(window.devicePixelRatio || 1, tope));
+    const tipo = esTactil() ? 'tactil' : 'escritorio';
+    const dpr = Math.min(
+      window.devicePixelRatio || 1,
+      TOPE_DPR_RED[tipo],
+      Math.sqrt(TOPE_PIXELES_RED[tipo] / (this.ancho * this.alto))
+    );
+    this.red?.redimensionar(this.ancho, this.alto, dpr);
     this.solicitar();
     this.reanudar();
   }
@@ -596,13 +618,25 @@ export class Escena {
     }
   }
 
-  /** Sin WebGL, la gota de respaldo sigue al guía (centro y tamaño aparentes). */
+  /**
+   * Sin WebGL, el póster de la gota sigue al guía (centro y px por unidad
+   * del mundo). Mientras WebGL carga se queda en su sitio; si al recargar a
+   * media página la escena ya no es la gota, se oculta.
+   */
   private colocarRespaldo(): void {
-    if (!this.respaldo || !this.red || this.webglListo) return;
+    if (!this.respaldo || this.webglListo) return;
+    if (this.pintor) {
+      if (!this.posterOculto && this.historia.forma > 0.02) {
+        this.posterOculto = true;
+        this.respaldo.dataset.oculto = '';
+      }
+      return;
+    }
+    if (!this.red) return;
     const centro = this.red.centro(this.camara);
     this.respaldo.style.setProperty('--x', `${centro.x.toFixed(1)}px`);
     this.respaldo.style.setProperty('--y', `${centro.y.toFixed(1)}px`);
-    this.respaldo.style.setProperty('--lado', `${(centro.escala * 2.2).toFixed(1)}px`);
+    this.respaldo.style.setProperty('--s', `${centro.escala.toFixed(2)}px`);
     this.respaldo.style.setProperty('--apagado', this.historia.atenuacion.toFixed(3));
   }
 
@@ -617,11 +651,14 @@ export class Escena {
 
     if (!this.sinMovimiento) {
       const seguir = Math.min(1, dt * SUAVIDAD_PUNTERO);
-      const deriva = Math.sin((tiempo / DERIVA.periodo) * Math.PI * 2) * DERIVA.amplitud;
+      const desde = tiempo - this.entrada;
+      // Hasta que WebGL pinta, la cámara se queda en el encuadre del póster.
+      const entra = !this.pintor ? 1 : this.webglListo ? suave(desde / ENTRADA) : 0;
+      const deriva = Math.sin((desde / DERIVA.periodo) * Math.PI * 2) * DERIVA.amplitud;
       this.extra.azimut +=
-        (this.puntero.x * PARALAJE_PUNTERO + deriva - this.extra.azimut) * seguir;
+        ((this.puntero.x * PARALAJE_PUNTERO + deriva) * entra - this.extra.azimut) * seguir;
       this.extra.elevacion +=
-        (this.puntero.y * PARALAJE_PUNTERO * 0.5 - this.extra.elevacion) * seguir;
+        (this.puntero.y * PARALAJE_PUNTERO * 0.5 * entra - this.extra.elevacion) * seguir;
       this.fase += dt * h.flujo;
       // El scroll ya llega suavizado (scrub); esto solo absorbe saltos (anclas, recargas).
       const meta = tiempo < this.inicioFormacion ? 0 : h.forma;
@@ -690,7 +727,7 @@ export class Escena {
         tiempo,
         detalle: this.calidad.detalle,
         camara: this.camara,
-        fase: this.fase,
+        fase: this.sinMovimiento ? 0 : this.fase,
         atenuacion: h.atenuacion,
         red: h.red,
         grietas: h.grietas,

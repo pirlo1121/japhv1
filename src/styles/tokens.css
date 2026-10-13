@@ -68,6 +68,11 @@
   );
   /* Gota de cromo de la marca, con un reflejo cian. */
   --gota: radial-gradient(circle at 35% 30%, #ffffff 0 18%, #8fa0bd 42%, #0b1528 70%, #66f0ff 100%);
+  /* Fondo de la escena WebGL (main en sombreador.ts): halo azul detrás del guía
+     (FONDO + su luz) y resto violeta lejano. Lienzo.astro los reproduce en CSS
+     mientras WebGL carga, para que el relevo no se note. */
+  --halo-escena-rgb: 6 16 39;
+  --violeta-escena-rgb: 5 8 21;
   /* Atmósfera: luz azul muy contenida, para que el fondo tenga profundidad. */
   --atmosfera:
     radial-gradient(ellipse 70% 55% at 72% 40%, rgb(var(--azul-rgb) / 0.09), transparent 70%),

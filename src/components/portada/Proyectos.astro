@@ -114,6 +114,8 @@ const dos = (n: number) => String(n).padStart(2, '0');
   article {
     position: relative;
     display: grid;
+    /* Una columna que nunca crece con su contenido: la imagen no ensancha la tarjeta. */
+    grid-template-columns: minmax(0, 1fr);
     height: 100%;
     border: 1px solid var(--linea);
     border-radius: var(--radio);

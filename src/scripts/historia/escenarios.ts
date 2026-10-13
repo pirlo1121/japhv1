@@ -39,8 +39,11 @@ export interface Escenarios {
   llamada: Escenario;
 }
 
+/** Móvil o vertical: altura del guía en pantalla (desplazamientoY) por defecto. */
+export const ALTO_VERTICAL = 0.38;
+
 /** Móvil o vertical: el guía arriba y centrado, el texto debajo. */
-function vertical(e: Escenario, atenuacionMinima: number, alto = 0.42): Escenario {
+function vertical(e: Escenario, atenuacionMinima: number, alto = ALTO_VERTICAL): Escenario {
   return {
     ...e,
     desplazamientoX: 0,

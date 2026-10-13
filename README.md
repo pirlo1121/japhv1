@@ -78,11 +78,30 @@ Las decisiones visuales están en constantes con nombre, no repartidas por el c�
 | Cuánto se deforma la tarjeta con el cursor     | `DEFORMACION` y `MUELLE` en `historia/tarjeta.ts`                                     |
 | Qué señala el guía                             | Atributo `data-guia` (o un servicio con `data-activa`)                                |
 | Calidad en equipos lentos                      | `calidad.ts` (topes de píxeles, umbrales de bajada)                                   |
+| Dónde y cómo se ve la gota al abrir            | `Lienzo.astro` (póster); regenerarlo: `herramientas/poster-de-la-gota.mjs`            |
 
 Para ver un cambio en el estado del guía sin hacer scroll, en desarrollo están
 `window.__estado` (estado narrativo) y `window.__escena` (escena) en la consola.
 
 ## Las capas en detalle
+
+### La gota al abrir
+
+La gota se ve real desde el primer instante, antes de que WebGL compile (de 1 a varios
+segundos en móviles). `Lienzo.astro` muestra su **póster** (`assets/gota-inicial.webp`, el
+primer fotograma del mismo sombreador, en AVIF/WebP de 3 a 15 KB) en el sitio y al tamaño
+exactos en que lo pintará WebGL, sobre un fondo CSS que reproduce el del sombreador (halo
+azul y resto violeta). La cuenta es la de la cámara: el centro de la gota cae en el
+desplazamiento del escenario inicial y una unidad mide `FOCAL / distancia · alto / 2` (en
+pantallas más estrechas que `ASPECTO_MINIMO`, según el ancho). El CSS recibe esas
+constantes del TypeScript (`define:vars`), así que no hay números duplicados. WebGL arranca
+en ese mismo fotograma (fase 0, sin giro de cámara; el puntero y la deriva entran en
+`ENTRADA` segundos) y el relevo dura 0,6 s. Sin JavaScript o sin WebGL, el póster es la gota
+de respaldo.
+
+**Si cambias la gota, la luz del cromo, `FOCAL` o el escenario inicial**, vuelve a renderizar
+el póster: `npm i --no-save playwright-core && node herramientas/poster-de-la-gota.mjs` con
+`npm run dev` en marcha.
 
 ### Guía (robot)
 
@@ -196,12 +215,16 @@ pieza salga de pantalla, así que nada queda oculto.
 - **Hilo principal** (medido): pose, red y paneles cuestan 1–3 ms por fotograma. Seda: 60
   fps en escritorio y en móvil, con una o dos tareas de unos 55 ms en escritorio al medir
   el contorno del titular grande.
+- **Lienzos 2D** (red y seda): además de la densidad máxima, un tope de píxeles
+  (`TOPE_PIXELES_RED` en `escena.ts`, `RESOLUCION` en `seda.ts`). En tablets y pantallas
+  grandes entregar un lienzo de pantalla completa en cada fotograma pesa más que dibujarlo.
 - **Build:** unos 80 KB de JS comprimido (la mayor parte es GSAP); Lenis se descarga bajo
   demanda.
 
 ## Degradación y accesibilidad
 
-- **Sin WebGL:** gota de cromo en CSS donde estaría el guía; la red y la seda siguen vivas.
+- **Sin WebGL:** el póster de la gota se coloca donde estaría el guía; la red y la seda
+  siguen vivas. Sin JavaScript también se ve el póster.
 - **Sin JavaScript:** documento completo y legible; todos los enlaces funcionan.
 - **"Reducir movimiento":** sin tramos, partículas, líquido ni seda. El guía y la red
   cambian de estado por saltos al cruzar cada escena.
@@ -220,6 +243,14 @@ probó con WebGL por software (SwiftShader) y también sin WebGL.
 - Entrada directa por ancla, foco de servicios con puntero y teclado, "reducir
   movimiento", sin WebGL, páginas interiores.
 - Paneles líquidos y seda, fotograma a fotograma, en escritorio y móvil.
+
+Revisión por dispositivo (producción, Chrome headless): 1920×1080, 1440×900, 1280×720,
+tablet 768×1024 y 1024×768, móvil 390×844, 360×740 y 844×390 apaisado, con la CPU 4× más
+lenta en táctiles. Sin desbordes ni errores; el póster aparece en ~200 ms y coincide en sitio
+y tamaño con el primer fotograma de WebGL en todos. Móviles: 60 fps en el hilo principal.
+En este navegador (sin GPU, compone por software) cada lienzo 2D de pantalla completa cuesta
+~16 ms por fotograma en escritorio grande y las tablets con la CPU frenada rondan 20–30
+fps: hay que confirmarlo en dispositivos reales, donde la GPU compone los lienzos.
 
 **No medido todavía:** fluidez con GPU real. SwiftShader no es representativo: pinta el
 robot en segundos por fotograma. Tampoco LCP, INP y CLS, ni móviles reales.
@@ -254,8 +285,10 @@ Ideas y huecos conocidos para la siguiente iteración:
   en escenas cargadas (servicios, ecosistema).
 - Paneles líquidos y seda en las páginas interiores (hoy solo tienen el guía en su
   encabezado y la seda en los títulos).
-- La gota de respaldo CSS es una sola gota; podría anticipar mejor al robot.
-- Afinar composición en tablet (entre 768 y 1100 px) y en móvil apaisado.
+- Medir en tablets reales; si van justas, bajar más `TOPE_PIXELES_RED` y `RESOLUCION` en
+  táctil o pausar la seda cuando no teje.
+- Afinar composición en tablet y en móvil apaisado más allá del héroe (en el héroe, el texto
+  ya no pisa la gota: `max-width: min(40rem, 46vw)` en `Vacio.astro`).
 
 ## Convenciones para la capa visual
 

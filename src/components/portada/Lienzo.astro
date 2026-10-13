@@ -6,24 +6,53 @@
  * scripts/lienzo), y, encima, la red viva (Canvas 2D) proyectada con la
  * misma cámara. La arranca pages/index.astro.
  *
- * Mientras carga, si el navegador no puede dibujar la escultura o sin
- * JavaScript, se ve una gota de cromo hecha solo con CSS donde estará el
- * guía (es la gota de la que nace): la primera pantalla nunca queda
- * incompleta. Sin WebGL la escena la mueve a donde iría el guía (--x, --y,
- * --lado).
+ * La gota se ve real desde el primer instante: mientras WebGL compila (o
+ * si no puede, o sin JavaScript) se ve su póster, el primer fotograma del
+ * mismo sombreador (assets/gota-inicial.webp), en el sitio y al tamaño
+ * exactos en que lo pintará WebGL, sobre un fondo que reproduce el del
+ * sombreador. WebGL arranca en ese mismo fotograma, así que el relevo no
+ * se nota. La posición sale de la misma cuenta que la cámara (camara.ts):
+ * el centro de la gota cae en el desplazamiento del escenario inicial y una
+ * unidad del mundo mide FOCAL / distancia · alto / 2 (o, en pantallas más
+ * estrechas que ASPECTO_MINIMO, · ancho / 2 / ASPECTO_MINIMO). Sin WebGL la
+ * escena mueve el póster a donde iría el guía (--x, --y, --s).
  */
+import { Picture } from 'astro:assets';
+import gotaInicial from '@/assets/gota-inicial.webp';
+import { ALTO_VERTICAL } from '@/scripts/historia/escenarios';
+import { ASPECTO_MINIMO, FOCAL } from '@/scripts/lienzo/camara';
+import { ESCENARIO_INICIAL, POSTER_DE_LA_GOTA } from '@/scripts/lienzo/narrativa';
+
+const { distancia, desplazamientoX, desplazamientoY } = ESCENARIO_INICIAL;
+const camara = {
+  // Px por unidad del mundo, como fracción de medio alto (o medio ancho en vertical).
+  escalaAncha: FOCAL / distancia,
+  escalaEstrecha: FOCAL / (distancia * ASPECTO_MINIMO),
+  dx: desplazamientoX,
+  dy: desplazamientoY,
+  dyVertical: Math.max(desplazamientoY, ALTO_VERTICAL),
+  lado: POSTER_DE_LA_GOTA.extension * 2
+};
 ---
 
 <div class="lienzo" data-lienzo>
   <div class="respaldo" data-respaldo aria-hidden="true">
-    <span class="gota"></span>
-    <span class="gota menor"></span>
+    <Picture
+      src={gotaInicial}
+      formats={['avif', 'webp']}
+      widths={[480, 760, 1100, 1500]}
+      sizes="(max-aspect-ratio: 85/100) 103vw, 88vh"
+      alt=""
+      loading="eager"
+      fetchpriority="high"
+      decoding="async"
+    />
   </div>
   <canvas class="escultura" data-escultura aria-hidden="true"></canvas>
   <canvas class="red" data-red aria-hidden="true"></canvas>
 </div>
 
-<style>
+<style define:vars={camara}>
   /* Alto "lvh": no cambia cuando la barra del navegador móvil aparece o se esconde. */
   .lienzo {
     position: fixed;
@@ -33,8 +62,10 @@
     height: 100lvh;
     z-index: -1;
     overflow: hidden;
-    background: var(--atmosfera), var(--fondo);
+    background: var(--fondo);
     pointer-events: none;
+    /* Las medidas del póster son fracciones del propio lienzo (cqw, cqh). */
+    container-type: size;
   }
 
   canvas {
@@ -46,7 +77,7 @@
 
   .escultura {
     opacity: 0;
-    transition: opacity 1.2s var(--suave);
+    transition: opacity 0.6s var(--suave);
   }
 
   .lienzo[data-listo] .escultura {
@@ -55,69 +86,80 @@
 
   .lienzo[data-listo] .respaldo {
     opacity: 0;
-    transition: opacity 1.2s var(--suave);
+    transition: opacity 0.6s var(--suave) 0.6s;
   }
 
-  /* Gota de cromo en CSS: base azul profunda, una caja de luz arriba, un filo
-     cian a la izquierda, contraluz violeta y el horizonte reflejado. */
+  /*
+   * Póster y fondo de la escena hasta que WebGL pinta. --x, --y: centro de
+   * la gota; --s: px por unidad del mundo. El fondo es el del sombreador
+   * (main en sombreador.ts): un halo azul gaussiano centrado en la gota,
+   * exp(-0.9·r²) con r en medios altos, y un resto violeta lejano.
+   */
   .respaldo {
+    --x: calc((1 + var(--dx)) * 50%);
+    --y: calc((1 - var(--dy)) * 50%);
+    --s: calc(var(--escalaAncha) * 50cqh);
     position: absolute;
-    left: var(--x, 69%);
-    top: var(--y, 48%);
-    width: var(--lado, min(56vh, 40vw));
+    inset: 0;
+    background:
+      radial-gradient(
+        circle at calc(var(--x) - 60cqh) calc(var(--y) + 45cqh),
+        rgb(var(--violeta-escena-rgb) / 1) 0,
+        rgb(var(--violeta-escena-rgb) / 0.86) 25cqh,
+        rgb(var(--violeta-escena-rgb) / 0.55) 50cqh,
+        rgb(var(--violeta-escena-rgb) / 0.26) 75cqh,
+        rgb(var(--violeta-escena-rgb) / 0.09) 100cqh,
+        transparent 150cqh
+      ),
+      radial-gradient(
+        circle at var(--x) var(--y),
+        rgb(var(--halo-escena-rgb) / 1) 0,
+        rgb(var(--halo-escena-rgb) / 0.945) 12.5cqh,
+        rgb(var(--halo-escena-rgb) / 0.8) 25cqh,
+        rgb(var(--halo-escena-rgb) / 0.6) 37.5cqh,
+        rgb(var(--halo-escena-rgb) / 0.41) 50cqh,
+        rgb(var(--halo-escena-rgb) / 0.245) 62.5cqh,
+        rgb(var(--halo-escena-rgb) / 0.13) 75cqh,
+        rgb(var(--halo-escena-rgb) / 0.064) 87.5cqh,
+        rgb(var(--halo-escena-rgb) / 0.027) 100cqh,
+        transparent 125cqh
+      ),
+      var(--fondo);
+  }
+
+  /* Más estrecho que ASPECTO_MINIMO: la cámara se aleja y la escala sigue al ancho. */
+  @container (max-aspect-ratio: 85/100) {
+    .respaldo {
+      --s: calc(var(--escalaEstrecha) * 50cqw);
+    }
+  }
+
+  /* Pantallas verticales o estrechas (ASPECTO_VERTICAL en iniciar.ts): el guía arriba y centrado. */
+  @container (max-aspect-ratio: 85/100) or (max-width: 47.99rem) {
+    .respaldo {
+      --x: 50%;
+      --y: calc((1 - var(--dyVertical)) * 50%);
+    }
+  }
+
+  /* El póster, con el borde fundido en el fondo. */
+  .respaldo :global(img) {
+    position: absolute;
+    left: var(--x);
+    top: var(--y);
+    width: calc(var(--s) * var(--lado));
+    /* En móvil el póster es algo más ancho que la pantalla: no se recorta. */
+    max-width: none;
+    height: auto;
     aspect-ratio: 1;
     translate: -50% -50%;
+    mask-image: radial-gradient(closest-side, rgb(0 0 0) 78%, transparent);
     opacity: calc(1 - var(--apagado, 0) * 0.75);
   }
 
-  .gota {
-    position: absolute;
-    inset: 0;
-    border-radius: 50%;
-    background:
-      radial-gradient(ellipse 46% 22% at 50% 16%, rgb(var(--texto-rgb) / 0.95), transparent 70%),
-      radial-gradient(
-        ellipse 95% 120% at 92% 50%,
-        transparent 74%,
-        rgb(var(--purpura-rgb) / 0.6) 76%,
-        transparent 79%
-      ),
-      radial-gradient(
-        ellipse 95% 120% at 8% 50%,
-        transparent 76%,
-        rgb(var(--cian-rgb) / 0.55) 78%,
-        transparent 81%
-      ),
-      radial-gradient(
-        ellipse 140% 70% at 50% 108%,
-        transparent 60%,
-        rgb(var(--texto-rgb) / 0.5) 62%,
-        transparent 65%
-      ),
-      radial-gradient(
-        circle at 62% 70%,
-        var(--superficie-2),
-        var(--fondo) 58%,
-        var(--superficie) 100%
-      );
-    box-shadow:
-      inset -18px -24px 60px rgb(var(--fondo-rgb) / 0.8),
-      inset 10px 10px 40px rgb(var(--cian-rgb) / 0.1);
-  }
-
-  .menor {
-    inset: auto -4% 78% 74%;
-    width: 30%;
-    aspect-ratio: 1;
-  }
-
-  /* Pantallas estrechas: la escultura vive arriba y centrada. */
-  @media (max-aspect-ratio: 85/100), (max-width: 47.99rem) {
-    .respaldo {
-      left: var(--x, 50%);
-      top: var(--y, 29%);
-      width: var(--lado, min(70vw, 40vh));
-    }
+  /* Al recargar a media página la escena ya no es la gota: no se muestra su póster. */
+  .respaldo[data-oculto] :global(img) {
+    display: none;
   }
 
   @media (prefers-reduced-motion: reduce) {

@@ -57,6 +57,16 @@ export const ESCENARIO_INICIAL: Escenario = {
   forma: 0
 };
 
+/**
+ * El póster de la gota (assets/gota-inicial.webp): el primer fotograma del
+ * escenario inicial, renderizado con el mismo sombreador. Cubre ±`extension`
+ * unidades del mundo alrededor del centro de la gota. Se ve desde el primer
+ * instante (Lienzo.astro lo coloca en el sitio exacto) y WebGL arranca en
+ * ese mismo fotograma. Si cambias la gota, la luz, la cámara o este
+ * escenario, vuelve a renderizarlo (ver "La gota al abrir" en el README).
+ */
+export const POSTER_DE_LA_GOTA = { extension: 2 } as const;
+
 export const crearEstadoNarrativo = (): EstadoNarrativo => ({
   ...ESCENARIO_INICIAL,
   foco: -1,

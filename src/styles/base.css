@@ -282,8 +282,9 @@ main small {
   letter-spacing: 0.04em;
 }
 
-/* Las páginas interiores dejan sitio a la cabecera flotante. */
-main > :first-child:not(.vacio, .portada-pagina) {
+/* Las páginas interiores dejan sitio a la cabecera flotante (el lienzo fijo
+   de la portada no: sus medidas son fracciones de su propia caja). */
+main > :first-child:not(.vacio, .portada-pagina, .lienzo) {
   padding-top: calc(var(--bloque) + 6rem);
 }
 

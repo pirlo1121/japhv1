@@ -53,6 +53,16 @@ const PUNTOS_POR_HEBRA = 34;
 /** Duración del tejido (s) y cuándo empieza a aparecer el contenido (fracción). */
 const TEJIDO = { caja: 0.75, textoMinimo: 0.9, textoMaximo: 1.5, revelar: 0.6, desvanecer: 0.7 };
 const AGUJAS_POR_PIEZA = 2;
+/**
+ * Resolución del lienzo: densidad máxima y píxeles máximos (táctil /
+ * escritorio). Son hebras finas sobre toda la pantalla: en tablets y
+ * pantallas grandes entregar el lienzo entero en cada fotograma pesa más
+ * que dibujarlo.
+ */
+const RESOLUCION = {
+  dpr: { tactil: 1.25, escritorio: 1.5 },
+  pixeles: { tactil: 0.7e6, escritorio: 1.4e6 }
+};
 
 const rgba = ([r, g, b]: [number, number, number], a: number) =>
   `rgba(${r},${g},${b},${a.toFixed(3)})`;
@@ -136,7 +146,12 @@ export class Seda {
   private ajustar(): void {
     this.ancho = window.innerWidth;
     this.alto = window.innerHeight;
-    this.dpr = Math.min(window.devicePixelRatio || 1, this.tactil ? 1.25 : 1.5);
+    const tipo = this.tactil ? 'tactil' : 'escritorio';
+    this.dpr = Math.min(
+      window.devicePixelRatio || 1,
+      RESOLUCION.dpr[tipo],
+      Math.sqrt(RESOLUCION.pixeles[tipo] / (this.ancho * this.alto))
+    );
     this.lienzo.width = Math.round(this.ancho * this.dpr);
     this.lienzo.height = Math.round(this.alto * this.dpr);
   }

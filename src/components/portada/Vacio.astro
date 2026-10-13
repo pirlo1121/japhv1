@@ -42,10 +42,13 @@
     padding-bottom: 7rem;
   }
 
+  /* En pantallas apaisadas estrechas (tablet, móvil horizontal) el texto no
+     pisa la gota: su borde izquierdo cae hacia el 52 % del ancho (centro al
+     70 % menos su radio). Detrás de un texto la escena baja sus brillos. */
   .contenido {
     display: grid;
     gap: 1.5rem;
-    max-width: 40rem;
+    max-width: min(40rem, 46vw);
   }
 
   .contenido > * {
@@ -164,6 +167,11 @@
       align-content: end;
       padding-top: 48svh;
       padding-bottom: 6rem;
+    }
+
+    /* Aquí la gota va arriba y el texto debajo: todo el ancho. */
+    .contenido {
+      max-width: 40rem;
     }
 
     .meta {

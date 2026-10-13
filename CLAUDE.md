@@ -22,7 +22,7 @@ Cinco capas visuales (detalle en el README):
 | Red viva         | `scripts/lienzo/red.ts`                                   | estado `red`/`orden`        |
 | Paneles líquidos | `sombreador.ts` (`pintarPaneles`) + `escena.ts` (`PANEL`) | `data-liquido`              |
 | Hilos de seda    | `scripts/seda/` + `components/estructura/Seda.astro`      | `data-seda`, `<Boton seda>` |
-| Titular de gota  | `scripts/lienzo/titular.ts` + `sombreador.ts`             | `data-gota`                 |
+| Titulares (gota) | `scripts/lienzo/titular.ts` + `distancias.ts`             | `data-gota`                 |
 
 La historia de la portada: `src/pages/index.astro` (orden de escenas),
 `scripts/historia/escenarios.ts` (dónde está el guía en cada una) e `iniciar.ts` (GSAP
@@ -74,8 +74,8 @@ Antes de dar algo por terminado: `npm run check` y `npm run format:check` sin er
   componentes, no en texto largo. `data-seda-inicio` solo para lo que se ve al cargar.
 - **`data-liquido`:** solo en la portada (necesita el lienzo fijo); hasta 4 paneles a la
   vez (`MAX_PANELES`).
-- **`data-gota`:** un solo titular por página, en la portada, sin `data-seda` (las dos
-  capas lo ocultarían a la vez). Su progreso es `titular` en el estado narrativo.
+- **`data-gota`:** titulares de sección de la portada, sin `data-seda` (las dos capas lo
+  ocultarían a la vez) ni `transform` propio. `data-gota="burbuja"` (solo uno, el de la 02) sale de la gota grande y sigue a `titular` en el estado narrativo.
 
 ## Verificar
 

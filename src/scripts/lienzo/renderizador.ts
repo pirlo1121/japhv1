@@ -6,8 +6,8 @@
  * (ver pintor.ts): no toca el DOM.
  */
 import type { Camara } from './camara';
-import { FRAGMENTO, MAX_PANELES, MAX_ZONAS_DE_LECTURA, VERTICE } from './sombreador';
-import type { CampoDeTexto } from './titular';
+import { FRAGMENTO, MAX_PANELES, MAX_TITULARES, MAX_ZONAS_DE_LECTURA, VERTICE } from './sombreador';
+import { campoDeDistancias, type MascaraDeTexto } from './distancias';
 
 export interface EstadoDeEscena {
   tiempo: number;
@@ -31,11 +31,17 @@ export interface EstadoDeEscena {
   /** Píxeles del lienzo por píxel CSS. */
   pxCss: number;
   /**
-   * Titular líquido (titular.ts), en px del lienzo y hacia arriba: caja del
-   * mapa (x0, y0, x1, y1), gota 2D (x, y, radio, 0) y frente (x, y, alcance,
-   * visible). Con visible = 0 no se dibuja.
+   * Titulares líquidos que están cambiando (titular.ts), en px del lienzo y
+   * hacia arriba, un vec4 por titular: caja de su mapa, su sitio en el
+   * atlas (uv), gota 2D (x, y, radio, 0) y frente (x, y, alcance, visible).
    */
-  titular: Float32Array;
+  titulares: {
+    cajas: Float32Array;
+    atlas: Float32Array;
+    gotas: Float32Array;
+    frentes: Float32Array;
+    numero: number;
+  };
 }
 
 const UNIFORMS = [
@@ -58,8 +64,10 @@ const UNIFORMS = [
   'uPxCss',
   'uTitularMapa',
   'uTitularCaja',
+  'uTitularAtlas',
   'uTitularGota',
-  'uTitularFrente'
+  'uTitularFrente',
+  'uNumTitulares'
 ] as const;
 
 type Uniform = (typeof UNIFORMS)[number];
@@ -132,28 +140,38 @@ export class Renderizador {
     this.gl.finish();
   }
 
-  /** El campo de distancias de las letras del titular: se sube una vez (y al cambiar de tamaño). */
-  subirTitular(campo: CampoDeTexto): void {
+  /** Reserva el atlas de los titulares (vacío); cada titular llega luego con subirTitular. */
+  prepararAtlas(ancho: number, alto: number): void {
     const { gl } = this;
     this.mapaTitular ??= gl.createTexture();
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, this.mapaTitular);
-    gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
-    gl.texImage2D(
-      gl.TEXTURE_2D,
-      0,
-      gl.R8,
-      campo.ancho,
-      campo.alto,
-      0,
-      gl.RED,
-      gl.UNSIGNED_BYTE,
-      campo.datos
-    );
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.R8, ancho, alto, 0, gl.RED, gl.UNSIGNED_BYTE, null);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  }
+
+  /** Calcula el campo de distancias de un titular y lo coloca en su sitio del atlas (x, y en texels). */
+  subirTitular(x: number, y: number, mascara: MascaraDeTexto): void {
+    const { gl } = this;
+    if (!this.mapaTitular) return;
+    const campo = campoDeDistancias(mascara);
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, this.mapaTitular);
+    gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
+    gl.texSubImage2D(
+      gl.TEXTURE_2D,
+      0,
+      x,
+      y,
+      mascara.ancho,
+      mascara.alto,
+      gl.RED,
+      gl.UNSIGNED_BYTE,
+      campo
+    );
   }
 
   /** Solo cambia con el tamaño. */
@@ -190,9 +208,12 @@ export class Renderizador {
     gl.uniform1i(u.uNumPaneles, Math.min(estado.numPaneles, MAX_PANELES));
     gl.uniform1f(u.uPxCss, estado.pxCss);
     gl.uniform1i(u.uTitularMapa, 0);
-    gl.uniform4fv(u.uTitularCaja, estado.titular.subarray(0, 4));
-    gl.uniform4fv(u.uTitularGota, estado.titular.subarray(4, 8));
-    gl.uniform4fv(u.uTitularFrente, estado.titular.subarray(8, 12));
+    const { titulares } = estado;
+    gl.uniform4fv(u.uTitularCaja, titulares.cajas);
+    gl.uniform4fv(u.uTitularAtlas, titulares.atlas);
+    gl.uniform4fv(u.uTitularGota, titulares.gotas);
+    gl.uniform4fv(u.uTitularFrente, titulares.frentes);
+    gl.uniform1i(u.uNumTitulares, Math.min(titulares.numero, MAX_TITULARES));
     gl.bindVertexArray(this.vao);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
   }

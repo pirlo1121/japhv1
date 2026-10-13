@@ -35,12 +35,6 @@ hilo.addEventListener('message', ({ data: mensaje }) => {
       case 'configurar':
         renderizador?.redimensionar(mensaje.anchoPx, mensaje.altoPx);
         break;
-      case 'atlas':
-        renderizador?.prepararAtlas(mensaje.ancho, mensaje.alto);
-        break;
-      case 'titular':
-        renderizador?.subirTitular(mensaje.x, mensaje.y, mensaje.mascara);
-        break;
       case 'dibujar': {
         if (!renderizador?.enlazado) break;
         renderizador.dibujar(mensaje.estado);

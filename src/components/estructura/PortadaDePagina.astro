@@ -1,68 +1,66 @@
 ---
 /**
- * Encabezado de las páginas interiores: el mismo guía de la portada, en
- * calma, a la derecha del título (arriba en pantallas estrechas),
- * señalándolo, con la red viva a medio crecer a su alrededor.
+ * Encabezado de las páginas interiores: el mismo mundo que la portada, en
+ * una composición quieta y ligera. Dos monolitos de grafito con sus aristas
+ * de luz (CSS) y, delante, la gota de cromo: el póster que pinta el mismo
+ * sombreador de la portada (assets/gota-inicial.webp), que flota despacio.
+ * Sin WebGL: estas páginas son para leer y actuar, no para recorrer.
+ *
+ * `ausente` (la 404): falta el monolito principal; en su lugar queda su
+ * hueco, un contorno en la oscuridad.
  * El titular admite <em> (texto del equipo, por eso set:html).
  *
  * Slots:
  *   default  la entradilla y lo que vaya bajo el título
  */
+import { Picture } from 'astro:assets';
+import gotaInicial from '@/assets/gota-inicial.webp';
+
 interface Props {
   id: string;
   rotulo: string;
   titulo: string;
   /** Más alta, para páginas cuyo encabezado es casi todo el contenido (404). */
   completa?: boolean;
+  /** Falta el monolito principal: su lugar es un hueco (404). */
+  ausente?: boolean;
 }
 
-const { id, rotulo, titulo, completa = false } = Astro.props;
+const { id, rotulo, titulo, completa = false, ausente = false } = Astro.props;
 ---
 
 <section class:list={['portada-pagina', { completa }]} aria-labelledby={id}>
-  <div class="banda" data-lienzo aria-hidden="true">
-    <div class="respaldo" data-respaldo>
-      <span class="gota"></span>
-    </div>
-    <canvas class="escultura" data-escultura></canvas>
-    <canvas class="red" data-red></canvas>
+  <div class:list={['escenario', { ausente }]} aria-hidden="true">
+    <span class="monolito lejano"></span>
+    <span class="monolito principal">
+      <span class="cara"></span>
+    </span>
+    <span class="losa"></span>
+    <span class="gota">
+      <Picture
+        src={gotaInicial}
+        formats={['avif', 'webp']}
+        widths={[320, 520, 760]}
+        sizes="(max-width: 48rem) 52vw, 22vw"
+        alt=""
+        loading="eager"
+        decoding="async"
+      />
+    </span>
   </div>
-  <div class="contenido" data-zona-lectura>
+  <div class="contenido">
     <p class="rotulo">{rotulo}</p>
-    <h1 id={id} set:html={titulo} data-guia data-seda="texto" data-seda-inicio />
+    <h1 id={id} set:html={titulo} />
     <slot />
   </div>
 </section>
-
-<script>
-  import { iniciarLienzo } from '@/scripts/lienzo/escena';
-  import { crearEstadoNarrativo } from '@/scripts/lienzo/narrativa';
-
-  // Estado tranquilo: el guía a la derecha (arriba en pantallas estrechas),
-  // mirando a la cámara, con la red a medio crecer.
-  const estrecha = window.innerWidth / window.innerHeight < 0.85 || window.innerWidth < 768;
-  const estado = {
-    ...crearEstadoNarrativo(),
-    distancia: 8.4,
-    desplazamientoX: estrecha ? 0 : 0.5,
-    desplazamientoY: estrecha ? 0.4 : 0.05,
-    atenuacion: estrecha ? 0.35 : 0.08,
-    flujo: 0.5,
-    red: 0.62,
-    // Aquí no hay historia que lo forme: la gota se condensa en el robot al cargar.
-    forma: 1
-  };
-  const arrancar = () => iniciarLienzo(estado);
-  if ('requestIdleCallback' in window) requestIdleCallback(arrancar, { timeout: 600 });
-  else setTimeout(arrancar, 200);
-</script>
 
 <style>
   .portada-pagina {
     position: relative;
     display: grid;
     align-items: end;
-    min-height: min(80svh, 48rem);
+    min-height: min(82svh, 50rem);
     padding: 9rem max(var(--margen), (100% - var(--ancho)) / 2) clamp(3rem, 8vh, 5rem);
     overflow: hidden;
     isolation: isolate;
@@ -72,85 +70,147 @@ const { id, rotulo, titulo, completa = false } = Astro.props;
     min-height: 100svh;
   }
 
-  .banda {
+  /* El espacio: aire azul medianoche que se funde con la página. */
+  .escenario {
     position: absolute;
     inset: 0;
     z-index: -1;
     background: var(--atmosfera), var(--fondo);
   }
 
-  /* La banda se funde con el fondo de la página. */
-  .banda::after {
+  .escenario::after {
     content: '';
     position: absolute;
     inset: 0;
     background:
-      linear-gradient(to top, var(--fondo), transparent 45%),
-      linear-gradient(to right, rgb(var(--fondo-rgb) / 0.6), transparent 60%);
+      linear-gradient(to top, var(--fondo), transparent 40%),
+      linear-gradient(to right, rgb(var(--fondo-rgb) / 0.75), transparent 55%);
     pointer-events: none;
   }
 
-  canvas {
+  /* Un monolito: grafito con la cara izquierda algo más clara (la luz viene
+     de la izquierda), su canto superior y una arista de luz cian. */
+  .monolito {
     position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
+    border-radius: 1px;
+    background: linear-gradient(90deg, var(--monolito-luz), var(--monolito) 46%, var(--vacio));
+    box-shadow:
+      inset 1px 0 0 rgb(var(--metal-rgb) / 0.4),
+      inset 0 1px 0 rgb(var(--metal-rgb) / 0.35),
+      inset -1px 0 0 rgb(var(--metal-rgb) / 0.12);
   }
 
-  .escultura {
-    opacity: 0;
-    transition: opacity 1.2s var(--suave);
+  .principal {
+    right: clamp(4%, 10vw, 14%);
+    top: 14%;
+    bottom: -10%;
+    width: clamp(8rem, 16vw, 15rem);
   }
 
-  .banda[data-listo] .escultura {
-    opacity: 1;
-  }
-
-  .banda[data-listo] .respaldo {
-    opacity: 0;
-    transition: opacity 1.2s var(--suave);
-  }
-
-  .respaldo {
-    /* Sin WebGL la escena da --s (px por unidad del mundo): la gota mide 2,2 unidades. */
-    --lado: calc(var(--s) * 2.2);
+  /* La cara lateral, en sombra: el volumen del bloque. */
+  .principal .cara {
     position: absolute;
-    left: var(--x, 75%);
-    top: var(--y, 48%);
-    width: var(--lado, min(44vh, 30vw));
-    aspect-ratio: 1;
-    translate: -50% -50%;
+    top: 1.6rem;
+    bottom: 0;
+    left: 100%;
+    width: 38%;
+    background: linear-gradient(90deg, var(--vacio), rgb(var(--vacio-rgb) / 0.4));
+    transform: skewY(-38deg);
+    transform-origin: left top;
+    box-shadow: inset 0 1px 0 rgb(var(--metal-rgb) / 0.2);
   }
 
+  /* La arista de luz en el borde izquierdo del monolito principal. */
+  .principal::before {
+    content: '';
+    position: absolute;
+    inset: 0 auto 0 -1px;
+    width: 1px;
+    background: linear-gradient(180deg, rgb(var(--cian-rgb) / 0.9), rgb(var(--cian-rgb) / 0.2) 70%);
+    box-shadow: 0 0 14px rgb(var(--cian-rgb) / 0.55);
+  }
+
+  .lejano {
+    right: clamp(30%, 36vw, 42%);
+    top: 4%;
+    bottom: 18%;
+    width: clamp(3rem, 5vw, 5rem);
+    opacity: 0.45;
+  }
+
+  .losa {
+    position: absolute;
+    right: 0;
+    bottom: 12%;
+    width: clamp(14rem, 34vw, 32rem);
+    height: 1.1rem;
+    background: linear-gradient(180deg, var(--monolito-luz), var(--vacio));
+    box-shadow: inset 0 1px 0 rgb(var(--metal-rgb) / 0.3);
+    opacity: 0.8;
+  }
+
+  /* 404: el monolito principal no está; queda su hueco. */
+  .ausente .principal {
+    background: transparent;
+    box-shadow: none;
+    outline: 1px dashed rgb(var(--metal-rgb) / 0.35);
+    outline-offset: -1px;
+  }
+
+  .ausente .principal .cara,
+  .ausente .principal::before {
+    display: none;
+  }
+
+  /* La gota de cromo, delante del monolito. El póster trae el halo azul
+     del fondo del sombreador (exp(-0.9·r²), r en medios altos del render);
+     detrás se pinta el mismo halo, más grande, para que su borde fundido no
+     se note: la caja del póster mide 0.872 medios altos de radio. */
   .gota {
     position: absolute;
-    inset: 0;
-    border-radius: 50%;
-    background:
-      radial-gradient(ellipse 46% 22% at 50% 16%, rgb(var(--texto-rgb) / 0.9), transparent 70%),
-      radial-gradient(
-        ellipse 95% 120% at 8% 50%,
-        transparent 76%,
-        rgb(var(--cian-rgb) / 0.5) 78%,
-        transparent 81%
-      ),
-      radial-gradient(
-        circle at 62% 70%,
-        var(--superficie-2),
-        var(--fondo) 58%,
-        var(--superficie) 100%
-      );
+    right: calc(clamp(4%, 10vw, 14%) + clamp(8rem, 16vw, 15rem) * 0.55);
+    top: 30%;
+    width: clamp(11rem, 22vw, 20rem);
+    aspect-ratio: 1;
+    translate: 50% 0;
   }
 
-  @media (max-aspect-ratio: 85/100), (max-width: 47.99rem) {
-    .respaldo {
-      left: var(--x, 50%);
-      top: var(--y, 30%);
-      width: var(--lado, min(60vw, 34vh));
+  .gota::before {
+    content: '';
+    position: absolute;
+    inset: -75%;
+    z-index: -1;
+    background: radial-gradient(
+      closest-side,
+      rgb(var(--halo-escena-rgb) / 1) 0,
+      rgb(var(--halo-escena-rgb) / 0.84) 20%,
+      rgb(var(--halo-escena-rgb) / 0.5) 40%,
+      rgb(var(--halo-escena-rgb) / 0.21) 60%,
+      rgb(var(--halo-escena-rgb) / 0.065) 80%,
+      transparent
+    );
+  }
+
+  .gota :global(img) {
+    display: block;
+    width: 100%;
+    max-width: none;
+    height: 100%;
+    mask-image: radial-gradient(closest-side, rgb(0 0 0) 74%, transparent);
+  }
+
+  :global(.movimiento) .gota {
+    animation: flotar 9s ease-in-out infinite alternate;
+  }
+
+  @keyframes flotar {
+    to {
+      translate: 50% -1.2rem;
     }
   }
 
   .contenido {
+    position: relative;
     display: grid;
     gap: 1.25rem;
     max-width: 52rem;
@@ -162,7 +222,8 @@ const { id, rotulo, titulo, completa = false } = Astro.props;
 
   h1 {
     font-size: var(--t-6);
-    line-height: 0.98;
+    line-height: 0.96;
+    letter-spacing: -0.045em;
     text-shadow: 0 2px 30px rgb(var(--fondo-rgb) / 0.6);
   }
 
@@ -172,10 +233,36 @@ const { id, rotulo, titulo, completa = false } = Astro.props;
     color: var(--texto-suave);
   }
 
-  @media (prefers-reduced-motion: reduce) {
-    .escultura,
-    .banda[data-listo] .respaldo {
-      transition: none;
+  /* Pantallas estrechas: la composición arriba, el texto debajo. */
+  @media (max-aspect-ratio: 85/100), (max-width: 47.99rem) {
+    .portada-pagina {
+      padding-top: 52svh;
+    }
+
+    .principal {
+      right: 14%;
+      top: 9rem;
+      bottom: auto;
+      height: 38svh;
+      width: 7rem;
+    }
+
+    .lejano {
+      right: auto;
+      left: 10%;
+      top: 7rem;
+      bottom: auto;
+      height: 30svh;
+    }
+
+    .gota {
+      right: calc(14% + 4rem);
+      top: 14rem;
+      width: min(52vw, 15rem);
+    }
+
+    .escenario::after {
+      background: linear-gradient(to top, var(--fondo), var(--fondo) 38%, transparent 62%);
     }
   }
 </style>

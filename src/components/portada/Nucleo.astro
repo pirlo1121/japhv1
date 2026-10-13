@@ -1,9 +1,10 @@
 ---
 /**
- * Escena 04 · El núcleo. De cerca, con el scroll se encienden circuitos de
- * luz cian y violeta dentro del cuerpo del guía: lo que hace que funcione.
- * Habla de profundidad técnica sin convertirse en un diagrama: el texto
- * son los principios de trabajo reales de JAPH (datos/nosotros.ts).
+ * Escena 04 · El núcleo. La cámara avanza hacia una cámara interior: un
+ * marco profundo en la estructura, iluminado desde dentro por una línea de
+ * luz fría, donde entra la cinta. Lo que hay detrás de cada experiencia.
+ * El texto son los principios de trabajo reales de JAPH
+ * (datos/nosotros.ts), en una placa de cuatro celdas, siempre legibles.
  */
 import { principios } from '@/datos/nosotros';
 
@@ -15,14 +16,14 @@ const primeraFrase = (texto: string) => texto.split(/(?<=\.)\s/)[0] ?? texto;
   <div class="marco">
     <div class="bloque" data-zona-lectura>
       <p class="rotulo">04 · El núcleo</p>
-      <h2 id="titulo-nucleo" data-gota>
+      <h2 id="titulo-nucleo">
         Detrás de cada experiencia, <em>hay un sistema.</em>
       </h2>
       <p class="entrada">
         Diseñamos arquitecturas sólidas para que cada componente tenga sentido y todo funcione en
         conjunto.
       </p>
-      <ul class="principios" aria-label="Principios de trabajo" data-pasos data-guia data-liquido>
+      <ul class="principios" aria-label="Principios de trabajo" data-pasos>
         {principios.map(({ titulo, descripcion }, i) => (
           <li data-paso style={{ '--u': 0.15 + i * 0.17 }}>
             <span class="ordinal" aria-hidden="true">
@@ -63,14 +64,19 @@ const primeraFrase = (texto: string) => texto.split(/(?<=\.)\s/)[0] ?? texto;
     border-radius: var(--radio);
     overflow: hidden;
     background: var(--linea);
+    box-shadow: inset 0 1px 0 rgb(var(--metal-rgb) / 0.12);
   }
 
   .principios li {
     display: grid;
     gap: 0.4rem;
     align-content: start;
-    padding: 1.1rem 1.2rem 1.2rem;
-    background: rgb(var(--superficie-rgb) / 0.82);
+    padding: 1.2rem 1.25rem 1.3rem;
+    background: linear-gradient(
+      180deg,
+      rgb(var(--monolito-rgb) / 0.94),
+      rgb(var(--vacio-rgb) / 0.9)
+    );
   }
 
   h3 {

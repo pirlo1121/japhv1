@@ -142,13 +142,28 @@ const opcionesDeServicio = servicios.map(({ id, etiquetaFormulario }) => ({
 </script>
 
 <style>
+  /* La abertura: un marco de grafito con su canto superior encendido. Nada
+     se mueve detrás de los campos: aquí manda el formulario. */
   .formulario {
+    position: relative;
     display: grid;
     gap: 1.75rem;
     padding: clamp(1.25rem, 3vw, 2.25rem);
-    border: 1px solid var(--linea);
-    border-radius: 24px;
-    background: rgb(var(--superficie-rgb) / 0.72);
+    border: 1px solid var(--linea-fuerte);
+    border-radius: var(--radio);
+    background: linear-gradient(180deg, var(--monolito), var(--vacio));
+    box-shadow:
+      inset 0 1px 0 rgb(var(--metal-rgb) / 0.16),
+      inset 0 0 0 6px rgb(var(--vacio-rgb) / 0.6),
+      inset 0 0 0 7px rgb(var(--metal-rgb) / 0.06);
+  }
+
+  .formulario::before {
+    content: '';
+    position: absolute;
+    inset: -1px -1px auto;
+    height: 1px;
+    background: var(--arista);
   }
 
   fieldset {
@@ -192,21 +207,21 @@ const opcionesDeServicio = servicios.map(({ id, etiquetaFormulario }) => ({
   output {
     font-family: var(--fuente-display);
     font-size: 1.15rem;
-    color: var(--metadato);
+    color: var(--metal-luz);
   }
 
   input[type='range'] {
     grid-column: 1 / -1;
     width: 100%;
-    accent-color: var(--metadato);
+    accent-color: var(--metal);
   }
 
   .sensible {
     margin: 0;
     padding: 0.9rem 1.1rem;
-    border-left: 2px solid var(--metadato);
-    border-radius: 0 10px 10px 0;
-    background: rgb(var(--metadato-rgb) / 0.06);
+    border-left: 1px solid var(--metal);
+    border-radius: 0;
+    background: rgb(var(--grafito-rgb) / 0.25);
     font-size: var(--t--1);
     color: var(--texto-suave);
   }
@@ -231,12 +246,14 @@ const opcionesDeServicio = servicios.map(({ id, etiquetaFormulario }) => ({
     width: 1.15rem;
     height: 1.15rem;
     margin-top: 0.15rem;
-    accent-color: var(--metadato);
+    accent-color: var(--metal);
   }
 
   .consentimiento a,
   .nota a {
-    color: var(--metadato);
+    color: var(--texto);
+    text-decoration-color: rgb(var(--metal-rgb) / 0.5);
+    text-underline-offset: 0.2em;
   }
 
   .error {
@@ -266,7 +283,7 @@ const opcionesDeServicio = servicios.map(({ id, etiquetaFormulario }) => ({
   .aviso {
     margin: 0;
     padding: 0.9rem 1.1rem;
-    border-radius: 12px;
+    border-radius: var(--radio);
     font-size: var(--t--1);
   }
 

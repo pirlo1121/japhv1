@@ -1,32 +1,37 @@
 # CLAUDE.md
 
 Guía rápida para trabajar en este repo. El detalle de diseño, capas, perillas de ajuste y
-validación está en `README.md`: léelo antes de tocar la portada, el guía o la seda.
+validación está en `README.md`: léelo antes de tocar la portada, la arquitectura o la
+escultura.
 
 ## Qué es
 
 Front de JAPH (agencia de ecosistemas digitales, Bogotá). Sitio estático con Astro 7 +
 TypeScript. Es una copia de `front-japh` (carpeta hermana, con su propio git) en la que se
-está explorando la dirección visual "Liquid Technology × The Living Network". El backend
+está explorando la dirección visual "The Digital Monolith × Liquid Technology": una
+estructura de monolitos de grafito (dominante) que recorre una cinta de cromo líquido. El
+backend
 vive en `../server` (todavía no conectado).
 
 **El diseño sigue en evolución.** El usuario itera sección a sección. Ante un cambio de
 dirección, revisa "Direcciones probadas y descartadas" y "Pendiente de diseño" en el
 README, y actualiza ambas listas cuando algo se pruebe, se descarte o se resuelva.
 
-Cinco capas visuales (detalle en el README):
+Capas visuales (detalle en el README):
 
-| Capa             | Código                                                    | Atributo                    |
-| ---------------- | --------------------------------------------------------- | --------------------------- |
-| Guía (robot)     | `scripts/lienzo/` (`escena`, `escultura`, `sombreador`)   | `data-guia`, `data-rama`    |
-| Red viva         | `scripts/lienzo/red.ts`                                   | estado `red`/`orden`        |
-| Paneles líquidos | `sombreador.ts` (`pintarPaneles`) + `escena.ts` (`PANEL`) | `data-liquido`              |
-| Hilos de seda    | `scripts/seda/` + `components/estructura/Seda.astro`      | `data-seda`, `<Boton seda>` |
-| Titulares (gota) | `scripts/lienzo/titular.ts` + `distancias.ts`             | `data-gota`                 |
+| Capa         | Código                                                     | Lo mueve                                 |
+| ------------ | ---------------------------------------------------------- | ---------------------------------------- |
+| Arquitectura | `scripts/lienzo/arquitectura.ts` (`PLANOS`) + `sombreador` | `estado.escena`, `foco`, `etapa`         |
+| Escultura    | `scripts/lienzo/escultura.ts` + `sombreador`               | `estado.forma` (gota → cinta)            |
+| Red viva     | `scripts/lienzo/red.ts`                                    | `estado.red`/`orden`, `data-rama`        |
+| Interfaz     | `styles/tokens.css`, `styles/base.css`, componentes        | `data-zona-lectura`, `data-paso` (`--p`) |
+
+Las tres primeras comparten un bucle y una cámara (`escena.ts`, `camara.ts`) en el lienzo
+fijo de la portada. Las páginas interiores no cargan WebGL (`PortadaDePagina.astro`).
 
 La historia de la portada: `src/pages/index.astro` (orden de escenas),
-`scripts/historia/escenarios.ts` (dónde está el guía en cada una) e `iniciar.ts` (GSAP
-ScrollTrigger + Lenis).
+`scripts/historia/escenarios.ts` (cámara y plano de cada escena) e `iniciar.ts` (GSAP
+ScrollTrigger + Lenis, el único que escribe el estado narrativo).
 
 ## Comandos
 
@@ -66,16 +71,17 @@ Antes de dar algo por terminado: `npm run check` y `npm run format:check` sin er
 
 ## Reglas de las capas
 
-- **Guía:** la pose se calcula en `escultura.ts` y el GLSL deshace exactamente la misma
-  cuenta (`alMundo` ↔ `espacioRobot`); cambia las dos a la vez.
-- **`data-liquido` y `data-seda`:** sin `transform` ni animaciones de entrada propias en
-  esas piezas; su capa se dibuja con su caja y debe coincidir al píxel.
-- **`data-seda`:** lo marcado aparece al terminar de tejerse. Úsalo en titulares y
-  componentes, no en texto largo. `data-seda-inicio` solo para lo que se ve al cargar.
-- **`data-liquido`:** solo en la portada (necesita el lienzo fijo); hasta 4 paneles a la
-  vez (`MAX_PANELES`).
-- **`data-gota`:** titulares de sección de la portada, sin `data-seda` (las dos capas lo
-  ocultarían a la vez) ni `transform` propio. `data-gota="burbuja"` (solo uno, el de la 02) sale de la gota grande y sigue a `titular` en el estado narrativo.
+- **Cámara:** `camara.ts` y la función `rayo` del GLSL hacen la misma cuenta (incluido el
+  zoom en pantallas estrechas); cambia las dos a la vez.
+- **Arquitectura:** las piezas son ranuras fijas (`RANURAS`); un plano solo dice dónde está
+  cada una. Para añadir una pieza, añade su ranura (hasta `MAX_CAJAS`). Se escriben en el
+  marco de la cámara de su escena. Nada de marchar rayos para la arquitectura: es
+  intersección analítica.
+- **Escultura:** la gota del sombreador (`gota`) es la del póster; si la cambias,
+  regenera el póster.
+- **Una sola fuente del estado:** solo los tramos de `iniciar.ts` animan la cámara y la
+  arquitectura; `proceso.ts` y `servicios.ts` solo ponen `etapa` y `foco`.
+- Ninguna escena se queda fija (sticky): el scroll siempre baja la página.
 
 ## Verificar
 

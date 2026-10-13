@@ -1,5 +1,9 @@
 ---
-/** Página no encontrada. Los hostings estáticos la sirven para cualquier ruta inexistente. */
+/**
+ * Página no encontrada. Los hostings estáticos la sirven para cualquier
+ * ruta inexistente. Su metáfora: en la estructura falta un monolito; queda
+ * su hueco. Sin escena WebGL: ligera y directa a la vuelta a la portada.
+ */
 import PortadaDePagina from '@/components/estructura/PortadaDePagina.astro';
 import Boton from '@/components/ui/Boton.astro';
 import Base from '@/layouts/Base.astro';
@@ -14,6 +18,7 @@ import Base from '@/layouts/Base.astro';
     rotulo="Error 404"
     titulo="Esta página <em>no existe</em>."
     completa
+    ausente
   >
     <p>Puede que el enlace esté roto o que la página haya cambiado de dirección.</p>
     <p>

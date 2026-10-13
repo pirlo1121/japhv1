@@ -6,10 +6,11 @@
  * (ver pintor.ts): no toca el DOM.
  */
 import type { Camara } from './camara';
-import { FRAGMENTO, MAX_PANELES, MAX_TITULARES, MAX_ZONAS_DE_LECTURA, VERTICE } from './sombreador';
-import { campoDeDistancias, type MascaraDeTexto } from './distancias';
+import { MAX_CAJAS } from './arquitectura';
+import { FRAGMENTO, MAX_ZONAS_DE_LECTURA, VERTICE } from './sombreador';
 
 export interface EstadoDeEscena {
+  /** Segundos desde que WebGL pinta (la luz que barre el estudio del cromo). */
   tiempo: number;
   /** 1 = detalle completo; 0 = versión ligera para equipos modestos. */
   detalle: number;
@@ -18,30 +19,16 @@ export interface EstadoDeEscena {
   fase: number;
   atenuacion: number;
   red: number;
-  grietas: number;
-  /** Piezas del robot ya colocadas (x, y, z, radio), su pose, viaje y estela (escultura.ts). */
-  piezas: Float32Array;
+  /** La gota, la cinta y su esfera límite (escultura.ts). */
+  liquido: Float32Array;
+  /** Las piezas de la arquitectura (arquitectura.ts) y cuántas hay. */
+  cajas: Float32Array;
+  numCajas: number;
+  /** Luz principal: posición e intensidad. */
+  luz: Float32Array;
   /** Rectángulos en coordenadas uv (x0, y0, x1, y1; y hacia arriba). */
   zonas: Float32Array;
   numZonas: number;
-  /** Paneles líquidos: rectángulos en uv y su estado (solidez, semilla, radio CSS, 0). */
-  paneles: Float32Array;
-  estadosPanel: Float32Array;
-  numPaneles: number;
-  /** Píxeles del lienzo por píxel CSS. */
-  pxCss: number;
-  /**
-   * Titulares líquidos que están cambiando (titular.ts), en px del lienzo y
-   * hacia arriba, un vec4 por titular: caja de su mapa, su sitio en el
-   * atlas (uv), gota 2D (x, y, radio, 0) y frente (x, y, alcance, visible).
-   */
-  titulares: {
-    cajas: Float32Array;
-    atlas: Float32Array;
-    gotas: Float32Array;
-    frentes: Float32Array;
-    numero: number;
-  };
 }
 
 const UNIFORMS = [
@@ -51,23 +38,16 @@ const UNIFORMS = [
   'uCamara',
   'uObjetivo',
   'uDesplazamiento',
+  'uFocal',
   'uFase',
   'uAtenuacion',
   'uRed',
-  'uGrietas',
-  'uPiezas',
+  'uLiquido',
+  'uCajas',
+  'uNumCajas',
+  'uLuz',
   'uZonas',
-  'uNumZonas',
-  'uPaneles',
-  'uEstadosPanel',
-  'uNumPaneles',
-  'uPxCss',
-  'uTitularMapa',
-  'uTitularCaja',
-  'uTitularAtlas',
-  'uTitularGota',
-  'uTitularFrente',
-  'uNumTitulares'
+  'uNumZonas'
 ] as const;
 
 type Uniform = (typeof UNIFORMS)[number];
@@ -89,7 +69,6 @@ export class Renderizador {
   private readonly shaders: WebGLShader[];
   /** Extensión que permite saber, sin esperar, si el programa ya está listo. */
   private readonly paralela: unknown;
-  private mapaTitular: WebGLTexture | null = null;
   enlazado = false;
 
   constructor(readonly lienzo: HTMLCanvasElement | OffscreenCanvas) {
@@ -140,40 +119,6 @@ export class Renderizador {
     this.gl.finish();
   }
 
-  /** Reserva el atlas de los titulares (vacío); cada titular llega luego con subirTitular. */
-  prepararAtlas(ancho: number, alto: number): void {
-    const { gl } = this;
-    this.mapaTitular ??= gl.createTexture();
-    gl.activeTexture(gl.TEXTURE0);
-    gl.bindTexture(gl.TEXTURE_2D, this.mapaTitular);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.R8, ancho, alto, 0, gl.RED, gl.UNSIGNED_BYTE, null);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-  }
-
-  /** Calcula el campo de distancias de un titular y lo coloca en su sitio del atlas (x, y en texels). */
-  subirTitular(x: number, y: number, mascara: MascaraDeTexto): void {
-    const { gl } = this;
-    if (!this.mapaTitular) return;
-    const campo = campoDeDistancias(mascara);
-    gl.activeTexture(gl.TEXTURE0);
-    gl.bindTexture(gl.TEXTURE_2D, this.mapaTitular);
-    gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
-    gl.texSubImage2D(
-      gl.TEXTURE_2D,
-      0,
-      x,
-      y,
-      mascara.ancho,
-      mascara.alto,
-      gl.RED,
-      gl.UNSIGNED_BYTE,
-      campo
-    );
-  }
-
   /** Solo cambia con el tamaño. */
   redimensionar(anchoPx: number, altoPx: number): void {
     const { gl, u } = this;
@@ -196,31 +141,22 @@ export class Renderizador {
     gl.uniform3f(u.uCamara, ...camara.posicion);
     gl.uniform3f(u.uObjetivo, ...camara.objetivo);
     gl.uniform2f(u.uDesplazamiento, ...camara.desplazamiento);
+    gl.uniform1f(u.uFocal, camara.focal);
     gl.uniform1f(u.uFase, estado.fase);
     gl.uniform1f(u.uAtenuacion, estado.atenuacion);
     gl.uniform1f(u.uRed, estado.red);
-    gl.uniform1f(u.uGrietas, estado.grietas);
-    gl.uniform4fv(u.uPiezas, estado.piezas);
+    gl.uniform4fv(u.uLiquido, estado.liquido);
+    gl.uniform4fv(u.uCajas, estado.cajas);
+    gl.uniform1i(u.uNumCajas, Math.min(estado.numCajas, MAX_CAJAS));
+    gl.uniform4fv(u.uLuz, estado.luz);
     gl.uniform4fv(u.uZonas, estado.zonas);
     gl.uniform1i(u.uNumZonas, Math.min(estado.numZonas, MAX_ZONAS_DE_LECTURA));
-    gl.uniform4fv(u.uPaneles, estado.paneles);
-    gl.uniform4fv(u.uEstadosPanel, estado.estadosPanel);
-    gl.uniform1i(u.uNumPaneles, Math.min(estado.numPaneles, MAX_PANELES));
-    gl.uniform1f(u.uPxCss, estado.pxCss);
-    gl.uniform1i(u.uTitularMapa, 0);
-    const { titulares } = estado;
-    gl.uniform4fv(u.uTitularCaja, titulares.cajas);
-    gl.uniform4fv(u.uTitularAtlas, titulares.atlas);
-    gl.uniform4fv(u.uTitularGota, titulares.gotas);
-    gl.uniform4fv(u.uTitularFrente, titulares.frentes);
-    gl.uniform1i(u.uNumTitulares, Math.min(titulares.numero, MAX_TITULARES));
     gl.bindVertexArray(this.vao);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
   }
 
   liberar(): void {
     this.gl.deleteProgram(this.programa);
-    this.gl.deleteTexture(this.mapaTitular);
     this.gl.deleteVertexArray(this.vao);
     this.gl.getExtension('WEBGL_lose_context')?.loseContext();
   }

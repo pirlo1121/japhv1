@@ -30,8 +30,8 @@ import { hitos } from '@/datos/nosotros';
     top: 0.6rem;
     bottom: 0.6rem;
     left: 0.55rem;
-    width: 1.5px;
-    background: linear-gradient(var(--metadato), rgb(var(--metadato-rgb) / 0.15));
+    width: 1px;
+    background: linear-gradient(var(--metal), rgb(var(--cian-rgb) / 0.45) 50%, transparent);
   }
 
   .hito {
@@ -44,25 +44,25 @@ import { hitos } from '@/datos/nosotros';
     margin: 0;
   }
 
+  /* Cada hito, un monolito en miniatura sobre la arista del tiempo. */
   .estrella {
     position: absolute;
-    top: 0.1rem;
-    left: -2.5rem;
-    width: 1.2rem;
-    aspect-ratio: 1;
-    border-radius: 50%;
-    background: radial-gradient(
-      circle,
-      var(--texto) 0 18%,
-      rgb(var(--texto-rgb) / 0.85) 35%,
-      transparent 72%
-    );
-    box-shadow: 0 0 14px rgb(var(--metadato-rgb) / 0.5);
+    top: 0.15rem;
+    left: calc(-2.5rem + 0.3rem);
+    width: 0.55rem;
+    height: 1.1rem;
+    border-radius: 1px;
+    background: linear-gradient(90deg, var(--monolito-luz), var(--monolito));
+    box-shadow:
+      inset 1px 0 0 rgb(var(--cian-rgb) / 0.75),
+      inset 0 1px 0 rgb(var(--metal-rgb) / 0.5),
+      0 0 0 1px rgb(var(--metal-rgb) / 0.25),
+      0 0 14px rgb(var(--cian-rgb) / 0.25);
   }
 
   .cuando {
-    font-size: var(--t--1);
-    letter-spacing: 0.14em;
+    font-size: var(--t--2);
+    letter-spacing: var(--rastreo-rotulo);
     text-transform: uppercase;
     color: var(--metadato);
   }

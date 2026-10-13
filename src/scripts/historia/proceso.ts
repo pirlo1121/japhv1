@@ -4,7 +4,8 @@
  * SVG que se curva entre ellos). Con el scroll el camino se ilumina hasta
  * la fase actual, que brilla; las anteriores quedan encendidas a medias y
  * una partícula viaja hacia la siguiente. Todo deriva del scroll: es
- * reversible. La fase actual lleva data-guia: el robot la señala.
+ * reversible. La fase actual enciende su puerta en la arquitectura
+ * (estado.etapa, arquitectura.ts).
  *
  * En escritorio las fases van en fila sobre el camino, que se ilumina
  * mientras la escena sube por la pantalla (nunca se queda fija: el scroll
@@ -13,11 +14,12 @@
  * Las etiquetas y descripciones son HTML: el dibujo solo acompaña.
  */
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import type { EstadoNarrativo } from '@/scripts/lienzo/narrativa';
 
 /** Tramo del camino en escritorio: de que la escena asome a que su final pasa por aquí. */
 const CAMINO = { inicio: 'top 45%', fin: 'bottom 85%' };
 
-export function iniciarProceso(horizontal: boolean): () => void {
+export function iniciarProceso(estado: EstadoNarrativo, horizontal: boolean): () => void {
   const seccion = document.querySelector<HTMLElement>('[data-proceso]');
   if (!seccion) return () => {};
 
@@ -32,13 +34,8 @@ export function iniciarProceso(horizontal: boolean): () => void {
     fases.forEach((fase, i) => {
       fase.classList.toggle('activa', i === activa);
       fase.classList.toggle('alcanzada', i < activa);
-      if (i === activa) {
-        fase.setAttribute('aria-current', 'step');
-        fase.dataset.guia = '';
-      } else {
-        fase.removeAttribute('aria-current');
-        delete fase.dataset.guia;
-      }
+      if (i === activa) fase.setAttribute('aria-current', 'step');
+      else fase.removeAttribute('aria-current');
     });
     if (actual) actual.textContent = String(Math.max(1, activa + 1));
   };
@@ -47,6 +44,8 @@ export function iniciarProceso(horizontal: boolean): () => void {
   const pintar = (progreso: number) => {
     const activa = Math.min(total - 1, Math.floor(progreso * total));
     seccion.style.setProperty('--avance', progreso.toFixed(4));
+    // La escena enciende la puerta de la fase actual (continuo: se enciende al llegar).
+    estado.etapa = progreso * total;
     marcar(activa);
     if (!camino || !energia || largo === 0) return;
     // La partícula avanza dentro del tramo actual, de una fase a la siguiente.
@@ -82,7 +81,7 @@ export function iniciarProceso(horizontal: boolean): () => void {
     fases.forEach((fase) => {
       fase.classList.remove('activa', 'alcanzada');
       fase.removeAttribute('aria-current');
-      delete fase.dataset.guia;
     });
+    estado.etapa = 0;
   };
 }

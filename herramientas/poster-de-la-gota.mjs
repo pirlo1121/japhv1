@@ -31,22 +31,25 @@ const navegador = await chromium.launch({
   args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist']
 });
 const pagina = await navegador.newPage();
-// Una página sin lienzo propio: solo hace falta el servidor para importar los módulos.
-await pagina.goto(`${SERVIDOR}/privacidad`, { waitUntil: 'load' });
+// Un documento sin escena propia (el favicon): solo hace falta el servidor
+// para importar los módulos.
+await pagina.goto(`${SERVIDOR}/favicon.svg`, { waitUntil: 'load' });
 
 const png = await pagina.evaluate(async (lado) => {
   const { Renderizador } = await import('/src/scripts/lienzo/renderizador.ts');
   const { calcularCamara, FOCAL } = await import('/src/scripts/lienzo/camara.ts');
-  const { robot } = await import('/src/scripts/lienzo/escultura.ts');
+  const { liquido } = await import('/src/scripts/lienzo/escultura.ts');
+  const { arquitectura } = await import('/src/scripts/lienzo/arquitectura.ts');
   const { ESCENARIO_INICIAL, POSTER_DE_LA_GOTA } = await import('/src/scripts/lienzo/narrativa.ts');
-  const S = await import('/src/scripts/lienzo/sombreador.ts');
+  const { MAX_ZONAS_DE_LECTURA } = await import('/src/scripts/lienzo/sombreador.ts');
 
   // Alto tal que 2 · extension unidades midan `lado` px (px por unidad = FOCAL / distancia · alto / 2).
   const unidad = lado / (2 * POSTER_DE_LA_GOTA.extension);
   const alto = Math.round((unidad / FOCAL) * ESCENARIO_INICIAL.distancia * 2);
-  // Más ancho que ASPECTO_MINIMO: la cámara no se aleja.
+  // Más ancho que ASPECTO_MINIMO: el campo de visión no se abre.
   const ancho = Math.ceil(alto * 0.9);
-  const lienzo = document.createElement('canvas');
+  // Dentro de un documento SVG (favicon) createElement no da un <canvas> HTML.
+  const lienzo = document.createElementNS('http://www.w3.org/1999/xhtml', 'canvas');
   lienzo.width = ancho;
   lienzo.height = alto;
   const r = new Renderizador(lienzo);
@@ -54,24 +57,21 @@ const png = await pagina.evaluate(async (lado) => {
   r.enlazar();
   r.redimensionar(ancho, alto);
 
-  // El primer fotograma de la escena: la gota en la fase 0, sin giro de cámara, centrada.
+  // El primer fotograma de la escena: la gota en la fase 0, sin giro de
+  // cámara, centrada y con la arquitectura aún en la oscuridad.
   const camara = calcularCamara(
     { ...ESCENARIO_INICIAL, desplazamientoX: 0, desplazamientoY: 0 },
     ancho / alto
   );
-  const piezas = robot({
-    gestos: [0, 0],
-    objetivo: [0, 0, 0],
-    giro: 0,
-    elastico: 0,
-    velocidad: 0,
-    inclinacion: 0,
-    direccion: [0, 0, 0],
-    formacion: 0,
-    brote: { direccion: [0, 0, 1], distancia: 0, radio: 0 },
-    tiempo: 0
+  const estructura = arquitectura({
+    escena: 0,
+    foco: -1,
+    brilloFoco: 0,
+    etapa: 0,
+    revelado: 0,
+    ligera: false
   });
-  const vacio = (n) => new Float32Array(n * 4);
+  const piezas = liquido({ forma: 0, cinta: estructura.cinta, tiempo: 0 });
   r.dibujar({
     tiempo: 0,
     detalle: 1,
@@ -79,23 +79,14 @@ const png = await pagina.evaluate(async (lado) => {
     fase: 0,
     atenuacion: ESCENARIO_INICIAL.atenuacion,
     red: ESCENARIO_INICIAL.red,
-    grietas: 0,
-    piezas,
-    zonas: vacio(S.MAX_ZONAS_DE_LECTURA),
-    numZonas: 0,
-    paneles: vacio(S.MAX_PANELES),
-    estadosPanel: vacio(S.MAX_PANELES),
-    numPaneles: 0,
-    pxCss: 1,
-    titulares: {
-      cajas: vacio(S.MAX_TITULARES),
-      atlas: vacio(S.MAX_TITULARES),
-      gotas: vacio(S.MAX_TITULARES),
-      frentes: vacio(S.MAX_TITULARES),
-      numero: 0
-    }
+    liquido: piezas,
+    cajas: estructura.cajas,
+    numCajas: estructura.numCajas,
+    luz: estructura.luz,
+    zonas: new Float32Array(MAX_ZONAS_DE_LECTURA * 4),
+    numZonas: 0
   });
-  const recorte = document.createElement('canvas');
+  const recorte = document.createElementNS('http://www.w3.org/1999/xhtml', 'canvas');
   recorte.width = lado;
   recorte.height = lado;
   recorte

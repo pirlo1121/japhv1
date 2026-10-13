@@ -1,249 +1,145 @@
 /**
  * escultura.ts
- * El guía: un robot de metal líquido que nace de una gota, viaja por la
- * página y señala los elementos de cada escena. El sombreador dibuja su
- * cuerpo; la página necesita saber dónde están su mano (el hilo que la une
- * con lo que señala) y sus anclas (de donde nacen los filamentos de la red),
- * así que la pose se calcula aquí una sola vez y viaja al sombreador como
- * uniforms.
+ * La materia viva de la escena: una gota de cromo líquido que flota y, al
+ * bajar a la segunda escena, se estira en una cinta curva que recorre la
+ * arquitectura. Es el contrapunto orgánico de los monolitos.
  *
- * El brazo que señala se resuelve con cinemática inversa de dos huesos:
- * hombro, codo y mano alcanzan un punto del mundo (el elemento señalado,
- * llevado a la profundidad del robot), con el codo doblado hacia abajo y
- * hacia la cámara, como un brazo humano.
+ * La cinta son dos curvas de Bézier cuadráticas encadenadas (cinco puntos
+ * de control, con su grosor en cada uno): el sombreador mide la distancia a
+ * ellas y la página sabe dónde está cada tramo (las ramas de la red nacen
+ * a lo largo de la cinta). Su trazado cambia con cada escena
+ * (arquitectura.ts); aquí se le suma lo que la hace líquida: flota,
+ * ondula y respira.
  *
- * Para que fluya: al viajar se estira, se inclina hacia donde va y suelta
- * una estela de gotas que lo siguen y se reabsorben al frenar. Antes de ser
- * robot, de la gota se desprende una burbuja que viaja al titular (titular.ts).
+ * Todo viaja al sombreador como uniforms (LIQUIDO): la cuenta se hace una
+ * vez por fotograma.
  */
-
-/** Nada del robot (ni su estela) sale de esta esfera: el sombreador no marcha fuera de ella. */
-export const RADIO_LIMITE = 2.6;
-/** Una rama de la red por servicio: siete anclas en el cuerpo del robot. */
-export const RAMAS = 7;
-/** Gotas de la estela que deja al viajar. */
-export const GOTAS_DE_ESTELA = 3;
-
-/**
- * Piezas que viajan al sombreador (vec4 cada una). Las articulaciones y las
- * gotas van ya colocadas en el mundo; `pose` y `viaje` llevan parámetros.
- */
-export const PIEZA = {
-  cabeza: 0,
-  hombroIzq: 1,
-  codoIzq: 2,
-  manoIzq: 3,
-  hombroDer: 4,
-  codoDer: 5,
-  manoDer: 6,
-  antena: 7,
-  /** x: estiramiento elástico, y: altura (con flotación), z: giro del cuerpo, w: velocidad. */
-  pose: 8,
-  /** x: inclinación hacia donde viaja; y: 0..1 de gota a robot (formación). */
-  viaje: 9,
-  /** Primera gota de la estela (x, y, z, radio); siguen GOTAS_DE_ESTELA. */
-  estela: 10,
-  /** La burbuja que se desprende de la gota hacia el titular (x, y, z, radio). */
-  desprendida: 10 + GOTAS_DE_ESTELA
-} as const;
-export const MAX_PIEZAS = PIEZA.desprendida + 1;
 
 export type Vec3 = [number, number, number];
 
-/** -1: señala con el brazo del lado izquierdo de la pantalla; 1, con el derecho. */
-export type Brazo = -1 | 1;
+/** Una rama de la red por servicio: siete anclas a lo largo de la escultura. */
+export const RAMAS = 7;
+
+/** La cinta: cinco puntos de control (dos Bézier cuadráticas) y su grosor en cada uno. */
+export interface Cinta {
+  puntos: [Vec3, Vec3, Vec3, Vec3, Vec3];
+  radios: [number, number, number, number, number];
+}
+
+/**
+ * Lo que viaja al sombreador (vec4 cada uno):
+ *   gota    centro de la gota (x, y, z) y forma (0 gota … 1 cinta)
+ *   cinta   cinco puntos (x, y, z, grosor)
+ *   esfera  esfera que contiene todo el líquido: solo se marcha dentro de ella
+ */
+export const LIQUIDO = { gota: 0, cinta: 1, esfera: 6 } as const;
+export const MAX_LIQUIDO = LIQUIDO.esfera + 1;
+
+/** Vaivén vertical al flotar (unidades del mundo): más amplio de gota que de cinta. */
+const FLOTACION = { gota: 0.16, cinta: 0.07 };
+/** Ondulación de la cinta: amplitud de cada punto de control y rapidez. */
+const ONDULACION = { amplitud: 0.09, rapidez: 0.7 };
+/** Radio de la gota (el mismo que en el sombreador): de su superficie salen las ramas mientras es gota. */
+const RADIO_GOTA = 1.05;
+
+const suave = (x: number) => {
+  const t = Math.min(Math.max(x, 0), 1);
+  return t * t * (3 - 2 * t);
+};
+const mezcla = (a: Vec3, b: Vec3, t: number): Vec3 => [
+  a[0] + (b[0] - a[0]) * t,
+  a[1] + (b[1] - a[1]) * t,
+  a[2] + (b[2] - a[2]) * t
+];
 
 export interface Pose {
-  /** 0..1 por brazo (izquierdo, derecho): de colgar a alcanzar el objetivo. */
-  gestos: [number, number];
-  /** Punto del mundo que señala (ya a la profundidad del robot). */
-  objetivo: Vec3;
-  /** Giro del cuerpo alrededor del eje vertical (radianes). */
-  giro: number;
-  /** Estiramiento elástico: >0 se estira hacia arriba, <0 se aplasta. */
-  elastico: number;
-  /** 0..1: lo rápido que viaja por la pantalla (la cola se agita más). */
-  velocidad: number;
-  /** Inclinación hacia donde viaja (cizalla del cuerpo; positiva, hacia +x). */
-  inclinacion: number;
-  /** Dirección del viaje en el mundo (unitaria o nula): la estela queda detrás. */
-  direccion: Vec3;
-  /** 0 gota, 1 robot: la gota flotante toma forma de robot al bajar a la segunda escena. */
-  formacion: number;
-  /** Burbuja que brota del centro de la gota: dirección en el mundo (unitaria), distancia y radio (0: no hay). */
-  brote: { direccion: Vec3; distancia: number; radio: number };
+  /** 0 gota, 1 cinta. */
+  forma: number;
+  /** El trazado de la cinta en esta escena (ya interpolado entre planos). */
+  cinta: Cinta;
+  /** Tiempo del movimiento interno (fase integrada). */
   tiempo: number;
 }
 
-/** Altura a la que flota el robot: su centro visual queda en el origen. */
-export const ALTURA = -0.3;
-/** Vaivén vertical al flotar: más amplio de gota que de robot. */
-const FLOTACION = { gota: 0.16, robot: 0.06 };
-const HOMBRO_IZQ: Vec3 = [-0.6, 0.48, 0];
-const HOMBRO_DER: Vec3 = [0.6, 0.48, 0];
-const CABEZA: Vec3 = [0, 1.08, 0];
-/** Largo del brazo y del antebrazo. */
-const HUESO = 0.42;
-
-const suma = (a: Vec3, b: Vec3): Vec3 => [a[0] + b[0], a[1] + b[1], a[2] + b[2]];
-const resta = (a: Vec3, b: Vec3): Vec3 => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
-const escala = (a: Vec3, k: number): Vec3 => [a[0] * k, a[1] * k, a[2] * k];
-const punto = (a: Vec3, b: Vec3) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
-const largo = (a: Vec3) => Math.hypot(...a);
-const normalizar = (a: Vec3): Vec3 => escala(a, 1 / (largo(a) || 1));
-const mezcla = (a: Vec3, b: Vec3, t: number): Vec3 => suma(a, escala(resta(b, a), t));
-
-/**
- * Del espacio del robot al mundo: estiramiento que conserva el volumen
- * (alto ↑, ancho ↓), inclinación (cizalla según la altura), flotación y
- * giro. El sombreador deshace exactamente esta cuenta (función `robot`).
- */
-function alMundo(v: Vec3, pose: Pose, flotacion: number): Vec3 {
-  const alto = 1 + pose.elastico;
-  const ancho = 1 - pose.elastico * 0.5;
-  const y0 = v[1] * alto;
-  const x = v[0] * ancho + y0 * pose.inclinacion;
-  const y = y0 + ALTURA + flotacion;
-  const z = v[2] * ancho;
-  const c = Math.cos(pose.giro);
-  const s = Math.sin(pose.giro);
-  return [x * c + z * s, y, -x * s + z * c];
-}
-
-/** Inverso de alMundo: un punto del mundo en el espacio del robot. */
-function alRobot(v: Vec3, pose: Pose, flotacion: number): Vec3 {
-  const c = Math.cos(pose.giro);
-  const s = Math.sin(pose.giro);
-  const y0 = v[1] - ALTURA - flotacion;
-  const x = v[0] * c - v[2] * s - y0 * pose.inclinacion;
-  const z = v[0] * s + v[2] * c;
-  const ancho = 1 - pose.elastico * 0.5;
-  return [x / ancho, y0 / (1 + pose.elastico), z / ancho];
-}
-
-/**
- * Brazo de dos huesos que alcanza `objetivo` desde `hombro` (espacio del
- * robot). Si no llega, se estira hacia él; el codo se dobla hacia abajo y
- * hacia delante.
- */
-function alcanzar(hombro: Vec3, objetivo: Vec3): [Vec3, Vec3] {
-  const hacia = resta(objetivo, hombro);
-  const dir = normalizar(hacia);
-  const d = Math.min(Math.max(largo(hacia), 0.3), HUESO * 2 - 0.04);
-  const mano = suma(hombro, escala(dir, d));
-  const altura = Math.sqrt(Math.max(HUESO * HUESO - (d / 2) * (d / 2), 0));
-  const preferido: Vec3 = [0, -1, 0.6];
-  const polo = normalizar(resta(preferido, escala(dir, punto(preferido, dir))));
-  const codo = suma(suma(hombro, escala(dir, d / 2)), escala(polo, altura));
-  return [codo, mano];
-}
-
-/** Brazo en reposo: cuelga y se balancea como un péndulo blando. */
-function colgar(hombro: Vec3, lado: number, t: number): [Vec3, Vec3] {
-  const vaiven = 0.06 * Math.sin(t * 0.9 + lado);
-  const codo = suma(hombro, [0.14 * lado, -0.44, 0.06 + vaiven]);
-  return [codo, suma(codo, [0.06 * lado + vaiven * lado, -0.38, 0.12])];
-}
-
-/** Coloca las piezas del robot para esta pose (x, y, z, radio; ver PIEZA). */
-export function robot(pose: Pose, destino = new Float32Array(MAX_PIEZAS * 4)): Float32Array {
+/** Coloca la gota y la cinta para esta pose (ver LIQUIDO). */
+export function liquido(pose: Pose, destino = new Float32Array(MAX_LIQUIDO * 4)): Float32Array {
   const t = pose.tiempo;
-  const suave = (g: number) => g * g * (3 - 2 * g);
-  // La gota (centrada en pose.y - ALTURA en el sombreador) sube y baja con la misma cuenta.
-  const amplitud = FLOTACION.gota + (FLOTACION.robot - FLOTACION.gota) * suave(pose.formacion);
+  const s = suave(pose.forma);
+  const amplitud = FLOTACION.gota + (FLOTACION.cinta - FLOTACION.gota) * s;
   const flotacion = amplitud * Math.sin(t * 1.3);
+  // La gota: su centro sube y baja (el sombreador la centra aquí).
+  destino.set([0, flotacion, 0, pose.forma], LIQUIDO.gota * 4);
 
-  // Cada brazo pasa de colgar a alcanzar el objetivo según su gesto: al
-  // cambiar de lado, uno baja mientras el otro sube, sin saltos.
-  const objetivo = alRobot(pose.objetivo, pose, flotacion);
-  objetivo[1] += 0.03 * Math.sin(t * 2.1); // un leve vaivén al señalar
-  const brazo = (hombro: Vec3, lado: number, gesto: number): [Vec3, Vec3] => {
-    const [codoR, manoR] = colgar(hombro, lado, t);
-    if (gesto <= 0) return [codoR, manoR];
-    const [codoS, manoS] = alcanzar(hombro, objetivo);
-    const g = suave(gesto);
-    return [mezcla(codoR, codoS, g), mezcla(manoR, manoS, g)];
-  };
-  const [codoIzq, manoIzq] = brazo(HOMBRO_IZQ, -1, pose.gestos[0]);
-  const [codoDer, manoDer] = brazo(HOMBRO_DER, 1, pose.gestos[1]);
+  // La cinta nace del centro de la gota: con forma 0 sus puntos están
+  // recogidos dentro de ella; con forma 1, en su trazado.
+  let cx = 0;
+  let cy = 0;
+  let cz = 0;
+  const puntos = pose.cinta.puntos.map((p, i): Vec3 => {
+    const fase = t * ONDULACION.rapidez + i * 1.7;
+    const onda = ONDULACION.amplitud * s;
+    const recogido: Vec3 = [p[0] * 0.18, p[1] * 0.18 + flotacion, p[2] * 0.18];
+    const extendido: Vec3 = [
+      p[0] + Math.sin(fase) * onda,
+      p[1] + flotacion + Math.cos(fase * 0.8) * onda,
+      p[2] + Math.sin(fase * 1.3) * onda * 0.6
+    ];
+    const q = mezcla(recogido, extendido, s);
+    // Un punto exactamente en línea con sus vecinos anula la curva en el sombreador.
+    q[1] += i % 2 === 0 ? 0.0007 : -0.0007;
+    cx += q[0];
+    cy += q[1];
+    cz += q[2];
+    return q;
+  });
+  puntos.forEach((p, i) => {
+    destino.set([...p, pose.cinta.radios[i] ?? 0.2], (LIQUIDO.cinta + i) * 4);
+  });
 
-  // La antena sigue al cuerpo con retraso: se inclina al contrario del estiramiento y del viaje.
-  const antena: Vec3 = [
-    0.08 * Math.sin(t * 1.7) - pose.elastico * 0.5 - pose.inclinacion * 0.6,
-    1.62,
-    0.05 * Math.cos(t * 1.3)
-  ];
-
-  const piezas: [Vec3, number][] = [
-    [CABEZA, 0.3],
-    [HOMBRO_IZQ, 0.15],
-    [codoIzq, 0.08],
-    [manoIzq, 0.14],
-    [HOMBRO_DER, 0.15],
-    [codoDer, 0.08],
-    [manoDer, 0.14],
-    [antena, 0.07]
-  ];
-  piezas.forEach(([v, radio], i) => destino.set([...alMundo(v, pose, flotacion), radio], i * 4));
-  destino.set([pose.elastico, ALTURA + flotacion, pose.giro, pose.velocidad], PIEZA.pose * 4);
-  destino.set([pose.inclinacion, pose.formacion, 0, 0], PIEZA.viaje * 4);
-
-  // Estela: gotas cada vez más pequeñas detrás del cuerpo, que ondulan y se
-  // reabsorben (radio 0) cuando el robot se detiene.
-  const v = Math.min(1, pose.velocidad);
-  for (let k = 0; k < GOTAS_DE_ESTELA; k++) {
-    const u = (k + 1) / GOTAS_DE_ESTELA;
-    const distancia = (0.55 + 0.75 * u) * (0.4 + 0.6 * v);
-    const ondula = 0.08 * Math.sin(t * 3 - k * 1.3) * v;
-    const centro = suma([0, -0.05 + ondula, ondula * 0.5], escala(pose.direccion, -distancia));
-    const radio = v < 0.04 ? 0 : (0.2 - 0.05 * k) * Math.min(1, v * 1.6);
-    destino.set([...centro, radio], (PIEZA.estela + k) * 4);
-  }
-
-  // La burbuja del titular brota del centro de la gota (que flota con el
-  // cuerpo: el sombreador la centra en pose.y - ALTURA) y la sigue mientras está unida.
-  const { direccion, distancia, radio } = pose.brote;
-  const centro: Vec3 = [0, flotacion, 0];
-  destino.set([...suma(centro, escala(direccion, distancia)), radio], PIEZA.desprendida * 4);
+  // Esfera límite: el centro de los puntos y lo más lejos que llega la cinta (o la gota).
+  const centro: Vec3 = [cx / 5, cy / 5, cz / 5];
+  let radio = RADIO_GOTA * 1.5 + Math.hypot(centro[0], centro[1] - flotacion, centro[2]);
+  puntos.forEach((p, i) => {
+    const r = Math.hypot(p[0] - centro[0], p[1] - centro[1], p[2] - centro[2]);
+    radio = Math.max(radio, r + (pose.cinta.radios[i] ?? 0.2) + 0.35);
+  });
+  destino.set([...centro, radio], LIQUIDO.esfera * 4);
   return destino;
 }
 
-/** Índice (en PIEZA) de la mano que señala con este brazo. */
-export const manoDe = (brazo: Brazo) => (brazo < 0 ? PIEZA.manoIzq : PIEZA.manoDer);
+/** Punto de una Bézier cuadrática. */
+function bezier(a: Vec3, b: Vec3, c: Vec3, t: number): Vec3 {
+  return mezcla(mezcla(a, b, t), mezcla(b, c, t), t);
+}
 
-/**
- * Las siete anclas de la red en el cuerpo del robot, una por servicio:
- * antena, cabeza, las dos manos, los dos hombros y la gota de abajo.
- * Mientras es gota, salen de su superficie (que flota con el cuerpo).
- */
-const PIEZAS_ANCLA = [
-  PIEZA.antena,
-  PIEZA.cabeza,
-  PIEZA.manoIzq,
-  PIEZA.manoDer,
-  PIEZA.hombroIzq,
-  PIEZA.hombroDer,
-  -1
-] as const;
-
+/** Direcciones de las anclas sobre la gota (repartidas en espiral, hacia la cámara). */
 const DIRECCIONES: Vec3[] = Array.from({ length: RAMAS }, (_, i) => {
   const y = 0.78 - (i / (RAMAS - 1)) * 1.56;
   const r = Math.sqrt(1 - y * y);
   const a = i * 2.39996 + 0.6;
-  return normalizar([Math.cos(a) * r, y, Math.sin(a) * r * 0.7 + 0.3]);
+  const v: Vec3 = [Math.cos(a) * r, y, Math.sin(a) * r * 0.7 + 0.3];
+  const l = Math.hypot(...v) || 1;
+  return [v[0] / l, v[1] / l, v[2] / l];
 });
 
+/**
+ * Las siete anclas de la red, una por servicio: sobre la superficie de la
+ * gota mientras es gota; repartidas a lo largo de la cinta cuando se estira.
+ */
 export function anclas(piezas: Float32Array, destino: Vec3[] = []): Vec3[] {
-  const formacion = piezas[PIEZA.viaje * 4 + 1] ?? 1;
-  const alturaCuerpo = piezas[PIEZA.pose * 4 + 1] ?? ALTURA;
+  const forma = suave(piezas[LIQUIDO.gota * 4 + 3] ?? 0);
+  const flotacion = piezas[LIQUIDO.gota * 4 + 1] ?? 0;
+  const p = (i: number): Vec3 => {
+    const k = (LIQUIDO.cinta + i) * 4;
+    return [piezas[k] ?? 0, piezas[k + 1] ?? 0, piezas[k + 2] ?? 0];
+  };
   for (let i = 0; i < RAMAS; i++) {
-    const indice = PIEZAS_ANCLA[i] ?? -1;
-    const enRobot: Vec3 =
-      indice < 0
-        ? [0, alturaCuerpo - 0.75, 0]
-        : [piezas[indice * 4] ?? 0, piezas[indice * 4 + 1] ?? 0, piezas[indice * 4 + 2] ?? 0];
-    const enGota = suma(escala(DIRECCIONES[i] ?? [0, 1, 0], 1.05), [0, alturaCuerpo - ALTURA, 0]);
-    destino[i] = mezcla(enGota, enRobot, formacion);
+    const d = DIRECCIONES[i] ?? [0, 1, 0];
+    const enGota: Vec3 = [d[0] * RADIO_GOTA, d[1] * RADIO_GOTA + flotacion, d[2] * RADIO_GOTA];
+    // A lo largo de la cinta, sin sus extremos (allí es casi un hilo).
+    const u = 0.12 + (i / (RAMAS - 1)) * 0.76;
+    const enCinta = u < 0.5 ? bezier(p(0), p(1), p(2), u * 2) : bezier(p(2), p(3), p(4), u * 2 - 1);
+    destino[i] = mezcla(enGota, enCinta, forma);
   }
   return destino;
 }

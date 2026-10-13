@@ -1,8 +1,9 @@
 /**
  * red.ts
- * The Living Network: la red viva que nace de la escultura. Filamentos
- * curvos, nodos que se encienden y unas pocas partículas de energía que
- * viajan con propósito por las conexiones.
+ * La red viva que nace de la escultura y recorre la arquitectura.
+ * Filamentos curvos y finos, nodos que se encienden y unas pocas partículas
+ * de energía que viajan con propósito por las conexiones. Siempre por
+ * debajo de los monolitos en jerarquía: luz contenida, nunca una telaraña.
  *
  * Por qué Canvas 2D y no otro WebGL: la red son unas decenas de curvas y
  * puntos; proyectarlos con la misma cámara que el sombreador (camara.ts) la
@@ -14,7 +15,7 @@
  * Al subir, la red se repliega exactamente igual que creció.
  *
  *   ramas         7 nodos principales, uno por servicio, unidos a su ancla
- *                 en la superficie de la escultura (escultura.ts)
+ *                 a lo largo de la escultura (escultura.ts)
  *   secundarios   ramifican hacia fuera; crecen más tarde cuanto más lejos
  *   reconexiones  enlaces entre secundarios: la red se vuelve sistema
  *   anillo        une las ramas entre sí; solo con orden (ecosistema)
@@ -35,16 +36,21 @@ const CANTIDADES: Record<
   ligera: { secundarios: 8, reconexiones: 3, lejanos: 5, particulas: 5 }
 };
 
-/** Colores de la red (tokens.css): cian, azul eléctrico, púrpura, turquesa y el verde escaso. */
+/**
+ * Colores de la red (tokens.css): luz cian y azul, algún nodo violeta y el
+ * plata del metal; el verde, escaso, solo en lo activo.
+ */
 const COLORES: [number, number, number][] = [
-  [0, 229, 255],
-  [22, 119, 255],
-  [177, 92, 255],
-  [0, 245, 212]
+  [85, 221, 245],
+  [39, 107, 255],
+  [128, 103, 232],
+  [191, 198, 209]
 ];
-const VERDE: [number, number, number] = [57, 255, 136];
-const BLANCO: [number, number, number] = [235, 250, 255];
+const VERDE: [number, number, number] = [57, 230, 163];
+const BLANCO: [number, number, number] = [242, 245, 250];
 
+/** Lo que pesa la red frente a la arquitectura: luz contenida, por debajo de los monolitos. */
+const PRESENCIA = 0.62;
 /** Lo que tarda un filamento en crecer entero, en unidades de `red`. */
 const CRECIMIENTO = 0.12;
 const TAU = Math.PI * 2;
@@ -152,10 +158,8 @@ export interface MarcoDeRed {
   brilloFoco: number;
   /** Si el foco viene del puntero sobre el nodo: se muestra su nombre. */
   etiquetarFoco: boolean;
-  /** Anclas de las ramas en el cuerpo del guía (mundo), una por servicio (escultura.ts). */
+  /** Anclas de las ramas a lo largo de la escultura (mundo), una por servicio (escultura.ts). */
   anclas: Vec3[];
-  /** Lo que el guía señala (px del lienzo) y su mano en pantalla: un hilo de luz los une. */
-  senal: { caja: DOMRect; mano: { x: number; y: number }; fuerza: number } | null;
   /** Rectángulos (px del lienzo) de texto: la red se aparta de ellos. */
   zonas: DOMRect[];
   movimiento: boolean;
@@ -211,7 +215,7 @@ export class Red {
       this.nodos.push({
         tipo: 'rama',
         base: [Math.cos(a) * radio, entre(-1.2, 1.2), Math.sin(a) * radio * 0.6 - 0.3],
-        // Ordenada: un anillo alrededor del guía, en un plano inclinado.
+        // Ordenada: un anillo alrededor de la escultura, en un plano inclinado.
         ordenado: enAnillo(angulo, 2.9),
         umbral: 0.1 + i * 0.035,
         color: i % 3,
@@ -482,8 +486,9 @@ export class Red {
       if (destino) proyectar(p, destino);
     });
 
-    // La red se apaga con la escena para que mande el contenido.
-    const presencia = 1 - estado.atenuacion * 0.6;
+    // La red se apaga con la escena para que mande el contenido, y nunca
+    // pesa más que la arquitectura (PRESENCIA).
+    const presencia = PRESENCIA * (1 - estado.atenuacion * 0.6);
     const centro = proyectar([0, 0, 0], { x: 0, y: 0, escala: 1, profundidad: 1 });
     const radioEscultura = 1.15 * centro.escala;
     const control: Proyeccion = { x: 0, y: 0, escala: 1, profundidad: 1 };
@@ -577,9 +582,6 @@ export class Red {
 
     // ---- la red se aparta del texto
     this.despejar(m.zonas);
-
-    // ---- el hilo del guía: después del despeje, para que se vea entero
-    this.trazarSenal(m);
   }
 
   private moverParticulas(
@@ -642,48 +644,6 @@ export class Red {
       }
       ctx.globalAlpha = 1;
     });
-  }
-
-  /**
-   * El hilo del guía: une lo que el robot señala con su mano. Sale del
-   * punto del elemento más cercano a la mano, hace un codo suave y termina
-   * en la mano con el verde de lo activo.
-   */
-  private trazarSenal(m: MarcoDeRed): void {
-    const senal = m.senal;
-    if (!senal || senal.fuerza < 0.02) return;
-    const { caja, mano } = senal;
-    const x0 = Math.min(Math.max(mano.x, caja.left), caja.right);
-    const y0 = Math.min(Math.max(mano.y, caja.top), caja.bottom);
-    const dx = mano.x - x0;
-    const dy = mano.y - y0;
-    const largo = Math.hypot(dx, dy);
-    if (largo < 48) return;
-    // Se detiene un poco antes de tocar la mano.
-    const corte = Math.min(26, largo * 0.25) / largo;
-    const x1 = mano.x - dx * corte;
-    const y1 = mano.y - dy * corte;
-    const horizontal = Math.abs(dx) >= Math.abs(dy);
-    const { ctx } = this;
-    ctx.globalCompositeOperation = 'lighter';
-    const gradiente = ctx.createLinearGradient(x0, y0, x1, y1);
-    gradiente.addColorStop(0, rgba(COLORES[0]!, 0.15 * senal.fuerza));
-    gradiente.addColorStop(0.5, rgba(COLORES[0]!, 0.55 * senal.fuerza));
-    gradiente.addColorStop(1, rgba(VERDE, 0.9 * senal.fuerza));
-    ctx.beginPath();
-    ctx.moveTo(x0, y0);
-    if (horizontal) ctx.bezierCurveTo(x0 + dx * 0.55, y0, x0 + dx * 0.55, y1, x1, y1);
-    else ctx.bezierCurveTo(x0, y0 + dy * 0.55, x1, y0 + dy * 0.55, x1, y1);
-    ctx.strokeStyle = gradiente;
-    ctx.lineWidth = 1.1;
-    ctx.stroke();
-    // Una chispa en el elemento y otra en la punta de los dedos.
-    ctx.globalAlpha = 0.7 * senal.fuerza;
-    ctx.drawImage(this.destellos[0]!, x0 - 9, y0 - 9, 18, 18);
-    ctx.globalAlpha = senal.fuerza;
-    ctx.drawImage(this.destelloVerde, x1 - 11, y1 - 11, 22, 22);
-    ctx.globalAlpha = 1;
-    ctx.globalCompositeOperation = 'source-over';
   }
 
   /** Borra suavemente la red detrás de los textos: nunca cruza un párrafo o un botón. */

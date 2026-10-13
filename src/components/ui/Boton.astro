@@ -1,26 +1,21 @@
 ---
 /**
  * Enlace o botón de acción. Con `href` es un <a>; sin él, un <button>.
- * La acción principal (sólido) lleva una flecha verde: el acento más escaso
- * del sistema señala el siguiente paso.
+ * La acción principal (sólido) es una placa de metal claro con una flecha:
+ * el siguiente paso, sin neón.
  */
 interface Props {
   href?: string;
   tipo?: 'button' | 'submit';
   variante?: 'contorno' | 'solido';
-  /** Los hilos de seda lo tejen al entrar en pantalla (`inicio`: al cargar la página). */
-  seda?: boolean | 'inicio';
 }
 
-const { href, tipo = 'button', variante = 'contorno', seda = false } = Astro.props;
-const atributosSeda = seda
-  ? { 'data-seda': 'caja', ...(seda === 'inicio' ? { 'data-seda-inicio': '' } : {}) }
-  : {};
+const { href, tipo = 'button', variante = 'contorno' } = Astro.props;
 const clases = ['boton', `boton--${variante}`];
 ---
 
 {href ? (
-  <a class:list={clases} href={href} {...atributosSeda}>
+  <a class:list={clases} href={href}>
     <slot />
     {variante === 'solido' && (
       <span class="flecha" aria-hidden="true">
@@ -29,7 +24,7 @@ const clases = ['boton', `boton--${variante}`];
     )}
   </a>
 ) : (
-  <button class:list={clases} type={tipo} {...atributosSeda}>
+  <button class:list={clases} type={tipo}>
     <slot />
     {variante === 'solido' && (
       <span class="flecha" aria-hidden="true">

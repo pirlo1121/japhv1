@@ -1,8 +1,8 @@
 ---
 /**
  * Lienzo.astro
- * La escena compartida de toda la portada, fija detrás de la historia: el
- * guía, un robot de metal líquido que nace de una gota (WebGL2,
+ * La escena compartida de toda la portada, fija detrás de la historia: la
+ * arquitectura de monolitos y la escultura de cromo líquido (WebGL2,
  * scripts/lienzo), y, encima, la red viva (Canvas 2D) proyectada con la
  * misma cámara. La arranca pages/index.astro.
  *
@@ -10,12 +10,13 @@
  * si no puede, o sin JavaScript) se ve su póster, el primer fotograma del
  * mismo sombreador (assets/gota-inicial.webp), en el sitio y al tamaño
  * exactos en que lo pintará WebGL, sobre un fondo que reproduce el del
- * sombreador. WebGL arranca en ese mismo fotograma, así que el relevo no
- * se nota. La posición sale de la misma cuenta que la cámara (camara.ts):
+ * sombreador. WebGL arranca en ese mismo fotograma (con la arquitectura
+ * aún en la oscuridad, de la que emerge después), así que el relevo no se
+ * nota. La posición sale de la misma cuenta que la cámara (camara.ts):
  * el centro de la gota cae en el desplazamiento del escenario inicial y una
  * unidad del mundo mide FOCAL / distancia · alto / 2 (o, en pantallas más
  * estrechas que ASPECTO_MINIMO, · ancho / 2 / ASPECTO_MINIMO). Sin WebGL la
- * escena mueve el póster a donde iría el guía (--x, --y, --s).
+ * escena mueve el póster a donde iría la escultura (--x, --y, --s).
  */
 import { Picture } from 'astro:assets';
 import gotaInicial from '@/assets/gota-inicial.webp';
@@ -127,14 +128,14 @@ const camara = {
       var(--fondo);
   }
 
-  /* Más estrecho que ASPECTO_MINIMO: la cámara se aleja y la escala sigue al ancho. */
+  /* Más estrecho que ASPECTO_MINIMO: el campo de visión se abre y la escala sigue al ancho. */
   @container (max-aspect-ratio: 85/100) {
     .respaldo {
       --s: calc(var(--escalaEstrecha) * 50cqw);
     }
   }
 
-  /* Pantallas verticales o estrechas (ASPECTO_VERTICAL en iniciar.ts): el guía arriba y centrado. */
+  /* Pantallas verticales o estrechas (ASPECTO_VERTICAL en iniciar.ts): la gota arriba y centrada. */
   @container (max-aspect-ratio: 85/100) or (max-width: 47.99rem) {
     .respaldo {
       --x: 50%;

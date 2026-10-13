@@ -1,9 +1,11 @@
 ---
 /**
- * Escena 08 · Ecosistema. La culminación: el guía queda en el centro de la
- * red, que termina de conectarse y se ordena a su alrededor (una rama por
- * servicio); el movimiento se calma. No aparece nada
- * nuevo: son las mismas piezas de antes, ya funcionando juntas.
+ * Escena 08 · Ecosistema. La culminación: la cámara se aleja y revela el
+ * espacio entero. Los monolitos, los marcos y las losas de las escenas
+ * anteriores se alinean en un anillo alrededor de la cinta, unidos por
+ * líneas de luz; la red termina de conectarse y se ordena (una rama por
+ * servicio) y el movimiento se calma. No aparece nada nuevo: son las
+ * mismas piezas de antes, ya funcionando juntas.
  */
 import { servicios } from '@/datos/servicios';
 ---
@@ -16,13 +18,13 @@ import { servicios } from '@/datos/servicios';
 >
   <div class="contenido" data-zona-lectura>
     <p class="rotulo">08 · Ecosistema</p>
-    <h2 id="titulo-ecosistema" data-gota>
+    <h2 id="titulo-ecosistema">
       Todo conectado. <em>Todo con propósito.</em>
     </h2>
     <p class="entrada">
       Construimos soluciones digitales donde cada pieza contribuye a un sistema más sólido.
     </p>
-    <ul class="piezas" aria-label="Las piezas del sistema" data-guia>
+    <ul class="piezas" aria-label="Las piezas del sistema">
       {servicios.map((servicio) => (
         <li>
           <a href={`/servicios#${servicio.id}`}>{servicio.nombre}</a>
@@ -74,7 +76,7 @@ import { servicios } from '@/datos/servicios';
     width: 1.4rem;
     height: 1px;
     margin-inline: 0.5rem;
-    background: linear-gradient(90deg, rgb(var(--cian-rgb) / 0.5), rgb(var(--purpura-rgb) / 0.5));
+    background: linear-gradient(90deg, rgb(var(--metal-rgb) / 0.4), rgb(var(--cian-rgb) / 0.6));
   }
 
   .piezas a {
@@ -84,7 +86,7 @@ import { servicios } from '@/datos/servicios';
   }
 
   .piezas a:hover {
-    color: var(--cian);
+    color: var(--metal-luz);
   }
 
   @media (max-aspect-ratio: 85/100), (max-width: 47.99rem) {

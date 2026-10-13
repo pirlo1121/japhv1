@@ -1,7 +1,9 @@
 # front-japh2
 
-Sitio de JAPH con la dirección visual **Liquid Technology × The Living Network**. Una
-copia de `front-japh` en la que se está explorando el diseño.
+Sitio de JAPH con la dirección visual **The Digital Monolith × Liquid Technology**: un
+recorrido cinematográfico por una estructura digital monumental (monolitos de grafito,
+aristas de metal, luz contenida) que una cinta de cromo líquido recorre. Es una copia de
+`front-japh` en la que se explora el diseño.
 
 > **Estado: diseño en evolución.** Lo que hay funciona y está probado, pero la dirección
 > visual se sigue afinando. Antes de cambiar algo, lee "Cómo ajustar el diseño" y
@@ -13,75 +15,77 @@ npm run dev     # http://localhost:5173 (si front-japh ocupa ese puerto: npx ast
 npm run build   # astro check + build estático en dist/
 ```
 
+## El concepto
+
+La arquitectura manda; el metal líquido es la materia viva que la recorre; la luz revela;
+las conexiones integran. La historia de la portada: **misterio → descubrimiento →
+transformación → estructura → conexión → creación → resolución**.
+
+- **Arquitectura (dominante):** monolitos de grafito que absorben casi toda la luz, con
+  aristas de metal finas que revelan su escala, un pórtico que se abre, una cámara
+  interior, una columnata, puertas, nichos y, al final, todo alineado en un anillo.
+- **Metal líquido (contrapunto):** una gota de cromo que flota y, al bajar, se estira en
+  una cinta curva. Refleja el estudio de luces y la propia arquitectura.
+- **Luz:** cian y azul como acentos (aristas, tiras de luz, reflejos); violeta escaso;
+  verde casi nunca (solo el envío correcto del formulario).
+- **Red viva:** filamentos finos que crecen a lo largo de la cinta, siempre por debajo de
+  la arquitectura.
+
 ## Las capas visuales
 
-La página se cuenta con cinco capas que conviven. Cada una tiene su sitio, su atributo y
-sus perillas:
+| Capa             | Qué es                                                                                     | Dónde                                         |
+| ---------------- | ------------------------------------------------------------------------------------------ | --------------------------------------------- |
+| **Arquitectura** | Monolitos, losas, tiras de luz y marcos con hueco (WebGL2, intersección analítica).        | `lienzo/arquitectura.ts`, `sombreador.ts`     |
+| **Escultura**    | Gota de cromo que se estira en una cinta (dos Bézier), por _raymarching_ en su esfera.     | `lienzo/escultura.ts`, `sombreador.ts`        |
+| **Red viva**     | Filamentos, nodos y energía (Canvas 2D) proyectados con la misma cámara.                   | `lienzo/red.ts`                               |
+| **Interfaz**     | Grafito, aristas de metal, placas de metal claro para la acción principal, rótulos de luz. | `styles/tokens.css`, `styles/base.css`, comp. |
 
-| Capa                  | Qué es                                                                                                                                       | Dónde                                                              | Se activa con                      |
-| --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ | ---------------------------------- |
-| **Guía**              | Gota flotante (WebGL2) que toma forma de robot con el scroll, recorre la página y señala.                                                    | `scripts/lienzo/` (escena, escultura, shader)                      | `data-guia`, `data-rama`           |
-| **Red viva**          | Filamentos, nodos y energía (Canvas 2D) que nacen del cuerpo del guía.                                                                       | `scripts/lienzo/red.ts`                                            | estado `red` / `orden` por escena  |
-| **Paneles líquidos**  | Piezas que llegan como metal líquido y se solidifican en su forma (en el mismo shader).                                                      | `sombreador.ts` (`pintarPaneles`), `escena.ts`                     | `data-liquido`                     |
-| **Titulares de gota** | Cada titular de sección nace de una gota que cae y se derrama en sus letras; el de la 02, de una burbuja que se desprende de la gota grande. | `titular.ts`, `distancias.ts`, `sombreador.ts` (`pintarTitulares`) | `data-gota`, `data-gota="burbuja"` |
-| **Hilos de seda**     | Hebras que navegan sobre la página y cosen el contorno de titulares y componentes.                                                           | `scripts/seda/`, `Seda.astro`                                      | `data-seda`, `<Boton seda>`        |
-
-El guía, la red y los paneles comparten un solo bucle y una sola cámara (`escena.ts`), en
-un lienzo fijo detrás del contenido (solo en la portada; las interiores lo tienen en su
-encabezado). La seda tiene su propio lienzo, por encima del contenido y en todas las
-páginas, y su propio bucle.
+Arquitectura, escultura y red comparten un solo bucle y una sola cámara (`escena.ts`) en un
+lienzo fijo detrás de la portada. Las páginas interiores no cargan WebGL: su encabezado
+(`PortadaDePagina.astro`) es una composición quieta de monolitos en CSS con el póster de la
+gota delante.
 
 ## La historia (portada)
 
-| Escena               | Componente       | Guía y red                                                                                                                                                                       | Otras capas                                                           |
-| -------------------- | ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
-| 01 El vacío          | `Vacio`          | Una gota de metal líquido flota junto al titular; la red duerme al fondo.                                                                                                        | Seda: titular (al cargar)                                             |
-| 02 La transformación | `Transformacion` | Al llegar, de la gota se desprende una burbuja que se vuelve el titular y el resto toma forma de robot. La cámara lo rodea; señala el manifiesto; nacen los primeros filamentos. | Gota: titular. Líquido: tarjeta de los tres estados (sigue al cursor) |
-| 03 La red viva       | `RedViva`        | La cámara se aleja y la red crece escalonada desde su cuerpo.                                                                                                                    | Gota: titular                                                         |
-| 04 El núcleo         | `Nucleo`         | De cerca, se encienden circuitos de luz dentro de su cuerpo.                                                                                                                     | Líquido: principios. Gota: titular                                    |
-| 05 Servicios         | `Servicios`      | Señala el servicio activo; un hilo une su mano con el texto y su rama se enciende.                                                                                               | Líquido: la lista. Gota: titular                                      |
-| 06 El proceso        | `Proceso`        | Arriba a la derecha, señala la fase actual del camino orgánico (SVG).                                                                                                            | Gota: titular                                                         |
-| 07 Proyectos         | `Proyectos`      | Presenta cada proyecto según pasa por el centro; la red empieza a ordenarse.                                                                                                     | Líquido: tarjetas. Gota: titular                                      |
-| 08 Ecosistema        | `Ecosistema`     | En el centro de la red completa y ordenada; el movimiento se calma.                                                                                                              | Gota: titular                                                         |
-| 09 Hagámoslo real    | `Llamada`        | Arriba y al centro, señala la invitación, que lleva a destinos reales.                                                                                                           | Gota: titular. Seda: botones                                          |
+Cada escena cambia mientras entra en pantalla y se queda quieta mientras se lee. Ninguna
+queda fija: el scroll siempre baja la página.
 
-Ninguna escena se queda fija: scroll = bajar la página. La cámara, la red y los pasos del
-texto cambian mientras cada escena pasa por la pantalla. En móvil, sin movimiento o sin
-JavaScript, todas son bloques normales. Las páginas interiores muestran al guía en calma señalando
-su título, y la seda teje su título y sus encabezados de sección.
+| Escena               | Componente       | Cámara y arquitectura                                                         | Escultura y red                       |
+| -------------------- | ---------------- | ----------------------------------------------------------------------------- | ------------------------------------- |
+| 01 El vacío          | `Vacio`          | Plano general: un monolito en esquina emerge de la oscuridad al cargar.       | La gota flota delante; red dormida    |
+| 02 La transformación | `Transformacion` | Acercamiento: el monolito se abre en un pórtico con luz dentro.               | La gota se estira en cinta y lo cruza |
+| 03 La red viva       | `RedViva`        | Apertura lateral: losas a distintas profundidades, tiras de luz.              | La red crece desde la cinta           |
+| 04 El núcleo         | `Nucleo`         | Avance hacia una cámara interior: un marco profundo iluminado desde dentro.   | La cinta entra en ella                |
+| 05 Servicios         | `Servicios`      | Una columnata de siete losas; la del servicio activo recoge luz cian.         | Su rama de la red se enciende         |
+| 06 El proceso        | `Proceso`        | Cuatro puertas en un camino que se adentra; se enciende la de la fase actual. | Camino SVG con cuatro umbrales        |
+| 07 Proyectos         | `Proyectos`      | Una galería: tres nichos en un muro oscuro.                                   | La red empieza a ordenarse            |
+| 08 Ecosistema        | `Ecosistema`     | Plano amplio: todas las piezas alineadas en un anillo, unidas por luz.        | La cinta en anillo; red completa      |
+| 09 Hagámoslo real    | `Llamada`        | Un último pórtico; una línea de luz en el suelo lleva a la llamada.           | En calma                              |
 
 ## Cómo ajustar el diseño
 
 Las decisiones visuales están en constantes con nombre, no repartidas por el código:
 
-| Quiero cambiar…                                | Dónde                                                                                 |
-| ---------------------------------------------- | ------------------------------------------------------------------------------------- |
-| Colores, degradados, tipografía, espacios      | `styles/tokens.css` (nunca colores sueltos fuera de ahí)                              |
-| Dónde está el guía en cada escena, cámara, red | `scripts/historia/escenarios.ts` (un `Escenario` por escena; `vertical()` para móvil) |
-| Qué tramo de scroll lleva de una escena a otra | `crearTramos` en `escenarios.ts`; inercia del scroll: `INERCIA` en `iniciar.ts`       |
-| Cuándo se encienden los pasos del texto        | `PASOS` en `iniciar.ts`; el camino del proceso: `CAMINO` en `proceso.ts`              |
-| Cómo viaja y fluye el guía                     | `escena.ts`: `MUELLE_POSICION`, `VIAJE`, `REBOTE`                                     |
-| Cuándo la gota toma forma de robot             | `forma` en `escenarios.ts` (hoy: tramo de llegada a 02); inercia: `FORMACION`         |
-| Cuánto flota la gota (y el robot)              | `FLOTACION` en `escultura.ts`                                                         |
-| Cómo señala                                    | `escena.ts`: `RAPIDEZ_DEL_BRAZO`, `RAPIDEZ_DE_LA_MANO`, `GIRO_AL_SENALAR`             |
-| Forma del robot (cuerpo, cabeza, cola, estela) | `robot()` en `sombreador.ts` y `escultura.ts` (las dos cuentas deben coincidir)       |
-| Luz y reflejos del cromo                       | `estudio()` en `sombreador.ts`                                                        |
-| Cuánta red hay y cómo crece                    | `CANTIDADES` y `generar()` en `red.ts`                                                |
-| Cuándo y qué tan rápido se solidifica un panel | `PANEL` en `escena.ts`; aspecto: `campoPanel` y `pintarPaneles` en `sombreador.ts`    |
-| Cuántas hebras de seda, cuánto dura el tejido  | `seda.ts`: `cuantas` (en el constructor), `TEJIDO`, `AGUJAS_POR_PIEZA`                |
-| Color y grosor de la seda                      | `COLORES`, `trazarHebra` y `trazarParcial` en `seda.ts`                               |
-| Qué piezas se tejen o se licúan                | Atributos `data-seda` y `data-liquido` en los componentes                             |
-| Cómo cae la gota de los titulares y cuándo     | `CAIDA` en `titular.ts` (tramos, altura, tamaño, recorrido en pantalla)               |
-| Cómo se desprende la burbuja del titular 02    | `DESPRENDIMIENTO` y `TITULAR` (aterrizaje, arco) en `titular.ts`                      |
-| Qué tramo de scroll forma el titular 02        | `TRAMO_DEL_TITULAR` y `gotaDelTitular` en `iniciar.ts`                                |
-| Cuántos titulares se dibujan a la vez          | `MAX_TITULARES` en `sombreador.ts`                                                    |
-| Cuánto se deforma la tarjeta con el cursor     | `DEFORMACION` y `MUELLE` en `historia/tarjeta.ts`                                     |
-| Qué señala el guía                             | Atributo `data-guia` (o un servicio con `data-activa`)                                |
-| Calidad en equipos lentos                      | `calidad.ts` (topes de píxeles, umbrales de bajada)                                   |
-| Dónde y cómo se ve la gota al abrir            | `Lienzo.astro` (póster); regenerarlo: `herramientas/poster-de-la-gota.mjs`            |
+| Quiero cambiar…                                | Dónde                                                                                |
+| ---------------------------------------------- | ------------------------------------------------------------------------------------ |
+| Colores, degradados, tipografía, espacios      | `styles/tokens.css` (nunca colores sueltos fuera de ahí)                             |
+| Dónde está cada monolito en cada escena        | `PLANOS` en `lienzo/arquitectura.ts` (un plano por escena, en el marco de su cámara) |
+| Un monolito que se abre                        | `monolito()` en `arquitectura.ts` (dos mitades y su `abertura`)                      |
+| Trazado de la cinta en cada escena             | `cinta` de cada plano; tamaño y puntas: `CINTA` en `arquitectura.ts`                 |
+| Cómo flota y ondula el líquido                 | `FLOTACION`, `ONDULACION` en `lienzo/escultura.ts`                                   |
+| Cámara de cada escena (encuadre, objetivo)     | `crearEscenarios` en `historia/escenarios.ts`; móvil: `vertical()`, `ALTO_VERTICAL`  |
+| Qué tramo de scroll lleva de una escena a otra | `crearTramos` en `escenarios.ts`; inercia del scroll: `INERCIA` en `iniciar.ts`      |
+| Material del grafito, aristas, niebla          | `GRAFITO`, `GRAFITO_LUZ`, `METAL`, `sombrearPieza` y `main` en `sombreador.ts`       |
+| Luz y reflejos del cromo                       | `estudio()` y `cromo()` en `sombreador.ts`                                           |
+| Cómo emerge la arquitectura al cargar          | `REVELADO` en `lienzo/escena.ts`                                                     |
+| Cuánta red hay, cómo crece y cuánto pesa       | `CANTIDADES`, `generar()` y `PRESENCIA` en `lienzo/red.ts`                           |
+| Módulos de servicios y puertas del proceso     | `MODULOS_DE_SERVICIOS`, `PUERTAS` en `arquitectura.ts`                               |
+| Dónde y cómo se ve la gota al abrir            | `Lienzo.astro` (póster); regenerarlo: `herramientas/poster-de-la-gota.mjs`           |
+| Encabezado de las páginas interiores           | `components/estructura/PortadaDePagina.astro`                                        |
+| Calidad en equipos lentos                      | `calidad.ts` (topes de píxeles, umbrales); lienzo de la red: `TOPE_PIXELES_RED`      |
 
-Para ver un cambio en el estado del guía sin hacer scroll, en desarrollo están
-`window.__estado` (estado narrativo) y `window.__escena` (escena) en la consola.
+Para ver el estado sin hacer scroll, en desarrollo están `window.__estado` (estado
+narrativo) y `window.__escena` (escena) en la consola.
 
 ## Las capas en detalle
 
@@ -89,206 +93,150 @@ Para ver un cambio en el estado del guía sin hacer scroll, en desarrollo están
 
 La gota se ve real desde el primer instante, antes de que WebGL compile (de 1 a varios
 segundos en móviles). `Lienzo.astro` muestra su **póster** (`assets/gota-inicial.webp`, el
-primer fotograma del mismo sombreador, en AVIF/WebP de 3 a 15 KB) en el sitio y al tamaño
+primer fotograma del mismo sombreador, en AVIF/WebP de pocos KB) en el sitio y al tamaño
 exactos en que lo pintará WebGL, sobre un fondo CSS que reproduce el del sombreador (halo
 azul y resto violeta). La cuenta es la de la cámara: el centro de la gota cae en el
 desplazamiento del escenario inicial y una unidad mide `FOCAL / distancia · alto / 2` (en
-pantallas más estrechas que `ASPECTO_MINIMO`, según el ancho). El CSS recibe esas
-constantes del TypeScript (`define:vars`), así que no hay números duplicados. WebGL arranca
-en ese mismo fotograma (fase 0, sin giro de cámara; el puntero y la deriva entran en
-`ENTRADA` segundos) y el relevo dura 0,6 s. Sin JavaScript o sin WebGL, el póster es la gota
-de respaldo.
+pantallas más estrechas que `ASPECTO_MINIMO`, según el ancho: allí el campo de visión se
+abre, no se aleja la cámara). El CSS recibe esas constantes del TypeScript
+(`define:vars`). WebGL arranca en ese mismo fotograma (fase 0, sin giro de cámara, con la
+arquitectura aún en la oscuridad) y, medio segundo después, el monolito emerge de la
+oscuridad (`REVELADO`). Sin JavaScript o sin WebGL, el póster es la gota de respaldo.
 
-**Si cambias la gota, la luz del cromo, `FOCAL` o el escenario inicial**, vuelve a renderizar
-el póster: `npm i --no-save playwright-core && node herramientas/poster-de-la-gota.mjs` con
+**Si cambias la gota, la luz del cromo, el fondo, `FOCAL` o el escenario inicial**, vuelve a
+renderizar el póster:
+`npm i --no-save playwright-core && node herramientas/poster-de-la-gota.mjs` con
 `npm run dev` en marcha.
 
-### Guía (robot)
+### Arquitectura
 
-- **Formación:** en la primera escena es una gota de metal líquido que flota (sube y baja
-  más que el robot, con una gota menor que se separa y vuelve). Al bajar a la segunda
-  escena toma forma de robot (unión suave entre las dos formas), ligado al scroll y
-  reversible: al subir vuelve a ser gota. Lo decide `forma` en el estado narrativo; la
-  escena la sigue con algo de inercia (`FORMACION`), así que al recargar a media página o
-  saltar con un ancla se condensa sin saltos. En las páginas interiores (`forma: 1`) se
-  condensa al cargar. Con "reducir movimiento" cambia por saltos con la escena.
-- **Viaje:** su posición en pantalla sigue a la historia con un muelle algo
-  subamortiguado. La velocidad de ese muelle lo estira, lo inclina hacia donde va (una
-  cizalla que también aplica el GLSL), agita la cola y suelta una estela de tres gotas que
-  se reabsorben al frenar.
-- **Señalar:** brazo de cinemática inversa de dos huesos. Cambia de brazo con histéresis,
-  la mano viaja de un elemento a otro, rebota al cambiar de objetivo, y un hilo de luz une
-  la mano con lo que señala.
-- **Detalles:** el visor brilla cian; en el núcleo se encienden circuitos (`grietas`).
-  Las siete ramas de la red (una por servicio) nacen de la antena, la cabeza, las manos,
-  los hombros y la gota de abajo.
+- **Piezas:** un juego fijo de 14 ranuras (`RANURAS`): dos mitades de monolito, dintel,
+  losa, dos piezas lejanas, fondo, dos tiras de luz, cuatro marcos con hueco y una columna.
+  Cada plano dice dónde está cada una (centro, semiejes, giro), cuánto se ve (`presencia`),
+  cuánta luz recogen sus aristas, su luz interior y lo pulida que es. Las que un plano no
+  nombra se quedan donde las dejó el plano vecino, fundidas en la oscuridad.
+- **Un solo número:** el scroll anima `estado.escena` (0..8) y `arquitectura()` interpola
+  las piezas entre los dos planos vecinos. Es determinista y reversible.
+- **Sombreado:** intersección analítica rayo-caja (y marco con túnel), sin marchar rayos:
+  bordes exactos y coste fijo por pieza. Grafito modelado por una luz principal con caída
+  y un degradado cenital; aristas de metal de grosor constante en píxeles; cromo negro en
+  las piezas pulidas; perspectiva atmosférica. Las tiras de luz son halo, no geometría.
+- **Interacción:** el módulo del servicio activo y la puerta de la fase del proceso
+  recogen luz cian (`foco`, `etapa`).
+- **Móvil:** las piezas secundarias no se envían (`ligera`).
+
+### Escultura
+
+La gota es la misma función de distancia que pinta el póster. La cinta son dos Bézier
+cuadráticas con grosor variable unidas con unión suave; la gota adelgaza mientras la cinta
+crece desde su centro (`forma`, ligada al scroll del vacío a la transformación). Flota,
+ondula y su trazado cambia por escena. Es cromo: refleja un estudio procedural y, con un
+segundo rayo analítico, la arquitectura que tiene alrededor (sus caras, aristas y tiras de
+luz). Se marcha solo dentro de una esfera límite que calcula la página.
 
 ### Red viva
 
 Determinista: se genera con una semilla fija y crece según `red` y `orden`, así que al
-subir se repliega igual que creció. Las partículas son pocas (12, 8 o 5 según la
-pantalla) y viajan por filamentos encadenados. Se borra detrás de `[data-zona-lectura]`.
+subir se repliega igual que creció. Sus siete ramas nacen de la superficie de la gota y,
+cuando se estira, a lo largo de la cinta. Pocas partículas (12, 8 o 5 según la pantalla).
+Se borra detrás de `[data-zona-lectura]` y su presencia está limitada (`PRESENCIA`).
 
-### Paneles líquidos (`data-liquido`)
+### Interfaz
 
-Cuando el borde superior de la pieza entra en pantalla: brota una gota de cromo junto a
-ese borde, se divide en gotas que se extienden y se funden, se solidifica en una placa con
-la forma exacta del elemento (radio de esquina incluido), con bisel de cromo y cara azul
-profunda, y aparece el contenido real. La solidez sigue al scroll con suavizado y es
-reversible.
+Grafito, esquinas casi rectas (`--radio: 2px`), aristas de metal de 1 px y la luz solo
+donde guía la mirada: el canto superior de una placa al pasar o enfocarla, el enlace
+activo, el servicio activo. La acción principal es una placa de metal claro con texto
+negro; la secundaria, un contorno sobre grafito. Los énfasis de los titulares son de
+cromo (`--cromo`); el del titular principal recoge luz cian (`--cromo-luz`). La marca es un
+monolito en miniatura con su gota.
 
-- **Coste:** no marcha rayos. Es un campo de distancias 2D con relieve, solo para los
-  paneles visibles que están cambiando (hasta 4) y solo dentro de su caja.
-- **Alineación:** ya sólida, la pieza la dibuja el HTML, así que el scroll sobre ella no
-  cuesta nada y no puede desalinearse. El contenido solo cambia de opacidad.
-- **Ámbito:** solo la portada, donde está el lienzo fijo.
+## Arquitectura del código
 
-### Titulares de gota (`data-gota`)
-
-Todos los titulares de sección de la portada (02 a 09) nacen de metal líquido. Al entrar
-en pantalla aparece una gota sobre el titular, cae, se posa y se vacía en las letras: un
-frente las extiende desde donde aterrizó. Al final el cromo se desvanece y aparece el
-texto real (`--gota`). Su progreso sigue a la posición del titular (de asomar por abajo a
-la mitad de la pantalla), con suavizado y reversible; lo que ya se veía al activarse no se
-licúa ante los ojos. El titular del héroe sigue tejido por la seda: se ve al cargar y no
-puede esperar a WebGL.
-
-El de la escena 02 (`data-gota="burbuja"`) es especial. Al bajar a la escena 02, la gota grande hace dos cosas: primero se le desprende una
-burbuja (brota de su superficie, fundida con ella, y se suelta hacia el titular) y el resto
-toma forma de robot. Las dos cosas comparten el tramo de llegada a la escena (la burbuja
-se suelta cuando la gota apenas empieza a transformarse) y la burbuja termina de formar las
-letras justo después (`TRAMO_DEL_TITULAR`). Al borde de su esfera límite la releva una gota 2D
-del mismo tamaño en pantalla, que vuela en arco, se posa y se vacía en las letras: un
-frente las extiende desde donde aterrizó. Ligado al scroll y reversible.
-
-- **Coste en la página:** solo la máscara de las letras de cada titular (3–12 ms), una por
-  momento ocioso y con las fuentes ya cargadas; otra vez si cambia el tamaño de alguno.
-- **Coste en el worker:** el campo de distancias (decenas de ms por titular, una vez,
-  `distancias.ts`) y un solo atlas para todos. Por fotograma solo se muestrea, solo para los
-  titulares que están cambiando (hasta `MAX_TITULARES`) y solo dentro de su caja y su gota.
-- **Alineación:** la máscara sale de la misma medición que usa la seda (`dibujarLetras` en
-  `seda/forma.ts`), así que las letras de cromo coinciden con las del HTML.
-- **Sin WebGL, sin JS o con "reducir movimiento":** el titular se ve normal.
-
-La tarjeta de los tres estados es `data-liquido` (llega como metal líquido) y además
-`data-tarjeta-liquida`: con ratón o trackpad, su piel (`.piel`, no la tarjeta) se estira un
-poco hacia el cursor, redondea la esquina más cercana y tiembla al soltarla. Su bucle solo
-corre mientras el muelle se mueve.
-
-### Hilos de seda (`data-seda`)
-
-Hebras finas (cian, púrpura, turquesa, blanco frío): cinco en táctil o en pantallas de
-menos de 768 px, nueve en el resto. Su cabeza sigue un campo de flujo y la cola la sigue
-con retraso. Cuando una pieza entra en pantalla, su contorno se cose de izquierda a
-derecha con las hebras más cercanas como agujas; al final aparece el contenido y el hilo
-se desvanece. Si sale por abajo y vuelve, se teje otra vez. El tejido termina aunque la
-pieza salga de pantalla, así que nada queda oculto.
-
-- `data-seda="texto"`: contorno exacto de las letras. Cada carácter se dibuja en su
-  posición real (`Range`) con su fuente y se sigue el borde (`forma.ts`).
-- `data-seda="caja"`: rectángulo redondeado del componente (en botones, `<Boton seda>`).
-- `data-seda-inicio`: se teje al cargar; se oculta antes de la primera pintura y, si el
-  script no llegara, aparece a los 3 s.
-
-## Arquitectura
-
-- **Una sola escena** para guía, red y paneles (`escena.ts`). El robot y los paneles se
-  pintan en un worker con OffscreenCanvas (`pintor.ts`, `trabajador.ts`); la red, en
-  Canvas 2D con la misma cámara (`camara.ts`).
-- **Estado narrativo** (`narrativa.ts`): posición, cámara, giro, flujo, atenuación, `red`,
-  `orden` y `grietas`. `escenarios.ts` es el storyboard; `iniciar.ts` lo anima con GSAP
-  ScrollTrigger (`scrub`, reversible) y Lenis con ratón o trackpad.
-- **Datos compartidos:** `escultura.ts` calcula la pose una vez por fotograma; el shader la
-  recibe como uniforms y la red ancla en ella sus ramas.
+- **Una sola escena** (`escena.ts`) para arquitectura, escultura y red. WebGL se pinta en
+  un worker con OffscreenCanvas (`pintor.ts`, `trabajador.ts`); la red, en Canvas 2D con la
+  misma cámara (`camara.ts`).
+- **Estado narrativo** (`narrativa.ts`): cámara (órbita alrededor de un objetivo),
+  desplazamiento en pantalla, flujo, atenuación, `red`, `orden`, `forma` y `escena`, más
+  `foco` (servicio activo) y `etapa` (fase del proceso). `escenarios.ts` es el storyboard;
+  `iniciar.ts` lo anima con GSAP ScrollTrigger (`scrub`, reversible) y Lenis con ratón o
+  trackpad. Es el único que escribe la cámara y la arquitectura.
 - **Fase integrada:** el tiempo interno del líquido se integra con su velocidad (`uFase`),
   así que cambiar de escena no hace saltar la forma.
-- **El texto manda:** `[data-zona-lectura]` baja los brillos del guía y borra la red detrás.
+- **El texto manda:** `[data-zona-lectura]` baja los brillos de la escultura, apaga las
+  aristas detrás del texto y borra la red.
 
 ## Rendimiento
 
-- **Guía:** marcha solo dentro de la esfera límite, con volúmenes envolventes (lejos del
-  robot, una esfera; cola, abdominales y cada brazo solo cerca de su región). Va a media
-  frecuencia con la escena atenuada y se pausa fuera de pantalla.
+- **Arquitectura:** coste fijo y bajo por pieza (sin marchar rayos); hasta 14 piezas, menos
+  en móvil.
+- **Escultura:** marcha solo dentro de su esfera límite y antes de la arquitectura.
+- **Bucle:** uno solo; a media frecuencia con la escena atenuada; se pausa fuera de
+  pantalla o con la pestaña oculta.
 - **Calidad adaptativa** (`calidad.ts`): con tres fotogramas seguidos de más de 50 ms baja
-  al momento (primero el detalle, luego la resolución); con muestras lentas, baja poco a
-  poco. Nunca vuelve a subir.
-- **Hilo principal** (medido): pose, red y paneles cuestan 1–3 ms por fotograma. Seda: 60
-  fps en escritorio y en móvil, con una o dos tareas de unos 55 ms en escritorio al medir
-  el contorno del titular grande.
-- **Lienzos 2D** (red y seda): además de la densidad máxima, un tope de píxeles
-  (`TOPE_PIXELES_RED` en `escena.ts`, `RESOLUCION` en `seda.ts`). En tablets y pantallas
-  grandes entregar un lienzo de pantalla completa en cada fotograma pesa más que dibujarlo.
+  al momento (primero el detalle, luego la resolución). Nunca vuelve a subir.
+- **Lienzo de la red:** tope de densidad y de píxeles (`TOPE_PIXELES_RED`).
+- **Páginas interiores:** sin WebGL ni bucle: CSS y una imagen de pocos KB.
 - **Build:** unos 80 KB de JS comprimido (la mayor parte es GSAP); Lenis se descarga bajo
   demanda.
 
 ## Degradación y accesibilidad
 
-- **Sin WebGL:** el póster de la gota se coloca donde estaría el guía; la red y la seda
-  siguen vivas. Sin JavaScript también se ve el póster.
-- **Sin JavaScript:** documento completo y legible; todos los enlaces funcionan.
-- **"Reducir movimiento":** sin tramos, partículas, líquido ni seda. El guía y la red
-  cambian de estado por saltos al cruzar cada escena.
-- **Servicios:** se activan con el puntero, con el foco del teclado o al cruzar el centro
-  de la pantalla. El contenido nunca depende del hover.
-- **Contraste sobre `--fondo`:** texto 18.8:1, texto secundario 9.5:1, metadatos 5.1:1.
+- **Sin WebGL:** el póster de la gota se coloca donde estaría la escultura y la red sigue
+  viva. Sin JavaScript también se ve el póster y el documento completo.
+- **"Reducir movimiento":** sin tramos ni animaciones de entrada; la escena cambia de
+  estado por saltos al cruzar cada escena; nada de contenido oculto.
+- **Servicios:** se activan con el puntero, con el foco del teclado o al cruzar el centro de
+  la pantalla. Nada depende del hover.
+- **Contraste sobre `--fondo`:** texto 18.4:1, texto secundario 8.8:1, metadatos 4.7:1.
 
 ## Validación
 
-Probado con Chrome headless (Playwright) a 1440×900 y a 390×844 táctil. La portada se
-probó con WebGL por software (SwiftShader) y también sin WebGL.
+Probado con Chrome headless (Playwright) sobre el build de producción, a 1440×900 y a
+390×844 táctil. La portada, con WebGL por software (SwiftShader) y sin WebGL.
 
 - `astro check`, `prettier --check` y `astro build` sin errores.
-- Recorrido completo de la portada, de bajada y de vuelta arriba, sin errores de consola;
-  el estado vuelve al inicial.
-- Entrada directa por ancla, foco de servicios con puntero y teclado, "reducir
-  movimiento", sin WebGL, páginas interiores.
-- Paneles líquidos y seda, fotograma a fotograma, en escritorio y móvil.
+- Portada sin WebGL: recorrido completo abajo y arriba sin errores; el índice de escenas
+  marca la actual y salta a cada escena; el póster queda como respaldo.
+- "Reducir movimiento": ningún paso ni titular oculto. Sin JavaScript: las 9 escenas y el
+  póster.
+- Proyectos: los seis filtros (y `aria-pressed`). Contacto: al enviar vacío, cinco errores
+  con texto, `aria-invalid`, foco en el primero y un aviso general.
+- Enlaces de cabecera y pie: todas las rutas responden. Teclado: "Saltar al contenido" es
+  el primer Tab; el foco activa los servicios.
+- El primer fotograma de WebGL coincide en sitio y tamaño con el póster.
 
-Revisión por dispositivo (producción, Chrome headless): 1920×1080, 1440×900, 1280×720,
-tablet 768×1024 y 1024×768, móvil 390×844, 360×740 y 844×390 apaisado, con la CPU 4× más
-lenta en táctiles. Sin desbordes ni errores; el póster aparece en ~200 ms y coincide en sitio
-y tamaño con el primer fotograma de WebGL en todos. Móviles: 60 fps en el hilo principal.
-En este navegador (sin GPU, compone por software) cada lienzo 2D de pantalla completa cuesta
-~16 ms por fotograma en escritorio grande y las tablets con la CPU frenada rondan 20–30
-fps: hay que confirmarlo en dispositivos reales, donde la GPU compone los lienzos.
-
-**No medido todavía:** fluidez con GPU real. SwiftShader no es representativo: pinta el
-robot en segundos por fotograma. Tampoco LCP, INP y CLS, ni móviles reales.
+**No medido todavía:** fluidez con GPU real (SwiftShader pinta en segundos por fotograma),
+LCP, INP y CLS, ni móviles o tablets reales.
 
 ## Direcciones probadas y descartadas
 
 Para no volver a recorrerlas sin motivo:
 
-- **La gota se condensa en el robot al cargar** (temporizador de 1,8 s): ahora la gota
-  flota en la primera escena y toma forma con el scroll.
-- **Escenas fijas** (CSS sticky: 02, 03, 04 y 06 se pegaban a la pantalla mientras el
-  scroll cambiaba la cámara o el texto sin bajar la página): se sentía lento, como si el
-  scroll se trabara. Ahora todo cambia mientras la página baja.
-- **Escultura que cambia de forma** (gota → cinta → núcleo de obsidiana → portal →
-  ecosistema): se sustituyó por el robot guía. El núcleo vive ahora como circuitos de luz
-  dentro del robot.
+- **Liquid Technology × The Living Network** (todo el diseño anterior): un robot de metal
+  líquido que guiaba la página y señalaba con el brazo, hilos de seda que tejían titulares
+  y botones, titulares que nacían de gotas, paneles que llegaban como metal líquido y una
+  tarjeta que seguía al cursor. Sustituido entero por The Digital Monolith (está en el
+  historial de git, commit `00b8d63`).
+- **Escenas fijas** (CSS sticky que se quedaban en pantalla mientras el scroll cambiaba la
+  cámara o el texto sin bajar la página): se sentía lento, como si el scroll se trabara.
+- **Cinta con puntas de colmillo** (grosor que se afina a cero): se lee como un cuerno; las
+  puntas tienen un grosor mínimo (`CINTA.puntaMinima`).
+- **Siete módulos de servicios como barras de distinta altura sobre una misma base**: se
+  leía como un gráfico de barras. Ahora es una columnata de losas altas a dos
+  profundidades.
+- **Una escena WebGL completa en el encabezado de cada página interior**: cara y
+  repetitiva; ahora es una composición CSS con el póster.
 - **Siete gotas-neurona unidas por sinapsis de luz** en el héroe: se revirtió.
-- **Palabras de metal líquido** (filtro SVG de gotas que se solidifican en letras): se
-  sustituyeron por los hilos de seda. El titular de la escena 02 vuelve a nacer de metal
-  líquido, pero en el sombreador (campo de distancias precalculado), no con filtros SVG.
-- **Seda en los tres estados de la materia** (escena 02): ahora van en una tarjeta líquida.
 
 ## Pendiente de diseño
 
-Ideas y huecos conocidos para la siguiente iteración:
-
-- Probar en GPU y móviles reales, medir LCP, INP y CLS y ajustar `calidad.ts` si hace
-  falta. El titular del héroe aparece al terminar de tejerse; vigilar su efecto en el LCP.
-- Mover el cálculo del contorno de los titulares grandes a un momento ocioso (evitaría
-  las tareas de unos 55 ms) o precalcularlo.
-- Comprobar que las capas conviven bien: que la seda no compita con el guía y la red
-  en escenas cargadas (servicios, ecosistema).
-- Paneles líquidos y seda en las páginas interiores (hoy solo tienen el guía en su
-  encabezado y la seda en los títulos).
-- Medir en tablets reales; si van justas, bajar más `TOPE_PIXELES_RED` y `RESOLUCION` en
-  táctil o pausar la seda cuando no teje.
-- Afinar composición en tablet y en móvil apaisado más allá del héroe (en el héroe, el texto
-  ya no pisa la gota: `max-width: min(40rem, 46vw)` en `Vacio.astro`).
+- Probar en GPU, tablets y móviles reales; medir LCP, INP y CLS y ajustar `calidad.ts`, los
+  topes de píxeles y el número de piezas si hace falta.
+- Afinar los encuadres de cada escena con el texto real encima en más proporciones
+  (tablet vertical, móvil apaisado, ultrapanorámico).
+- Afinar el reflejo de la arquitectura en la cinta (hoy un rayo sin difuminado) y, si el
+  rendimiento lo permite, sombras de contacto suaves de la cinta sobre las piezas cercanas.
+- Imágenes reales de proyectos (hoy, vistas provisionales de la arquitectura).
 
 ## Convenciones para la capa visual
 
@@ -296,9 +244,9 @@ Ideas y huecos conocidos para la siguiente iteración:
   anclajes del scrollytelling y del índice `Recorrido`.
 - Los textos que aparecen por pasos llevan `data-paso` y un umbral `--u`; el CSS lee el
   progreso de su escena (`--p`). Sin JavaScript se ven enteros.
-- A las piezas `data-liquido` y `data-seda` no les pongas `transform` ni animaciones de
-  entrada propias: su capa se dibuja con su caja y debe coincidir al píxel.
-- Las piezas `ejemplo: true` en `src/datos/` muestran un aviso; desaparecen al poner
-  contenido real. Ningún proyecto, cliente ni cifra es inventado.
-- El formulario de contacto tiene el marcado completo, pero aún no envía: falta conectar
-  `POST /api/contact` (ver `../server`).
+- Los bloques de texto que la escena debe respetar llevan `data-zona-lectura`.
+- Las piezas `ejemplo: true` en `src/datos/` y `config/sitio.ts` muestran un aviso;
+  desaparecen al poner contenido real. Ningún proyecto, cliente, precio ni cifra es
+  inventado.
+- El formulario de contacto tiene el marcado y la validación completos, pero aún no envía:
+  falta conectar `POST /api/contact` (ver `../server`).

@@ -1,9 +1,10 @@
 ---
 /**
  * Cabecera fija: marca y navegación principal. Transparente sobre la
- * primera escena; al bajar gana un fondo azul profundo para no perderse
- * sobre la escultura (data-fondo, desde el script de abajo). La página
- * actual se marca con aria-current y un nodo verde: el estado activo.
+ * primera escena; al bajar gana un fondo casi negro para no perderse sobre
+ * la arquitectura (data-fondo, desde el script de abajo). La marca es un
+ * monolito en miniatura con su gota de cromo; la página actual se marca con
+ * aria-current y una arista de luz bajo el enlace.
  */
 import { navegacion, sitio } from '@/config/sitio';
 import { esPaginaActual } from '@/utilidades/rutas';
@@ -13,7 +14,9 @@ const ruta = Astro.url.pathname;
 
 <header class="cabecera" data-cabecera>
   <a class="marca" href="/" aria-label={`${sitio.nombre}, ir a la portada`}>
-    <span class="semilla" aria-hidden="true"></span>
+    <span class="semilla" aria-hidden="true">
+      <span></span>
+    </span>
     {sitio.nombre}
   </a>
 
@@ -72,30 +75,45 @@ const ruta = Astro.url.pathname;
      pesado. Solo cambia el fondo y el borde: la altura no salta. */
   .cabecera[data-fondo='true'] {
     border-bottom-color: var(--linea);
-    background: rgb(var(--fondo-rgb) / 0.88);
+    background: rgb(var(--vacio-rgb) / 0.9);
   }
 
   @supports (backdrop-filter: blur(1px)) {
     .cabecera[data-fondo='true'] {
-      background: rgb(var(--fondo-rgb) / 0.72);
-      backdrop-filter: blur(10px);
+      background: rgb(var(--vacio-rgb) / 0.74);
+      backdrop-filter: blur(12px);
     }
   }
 
   .marca {
     display: inline-flex;
     align-items: center;
-    gap: 0.6rem;
+    gap: 0.7rem;
     font-family: var(--fuente-display);
-    font-size: 1.25rem;
+    font-size: 1.1rem;
     font-weight: 600;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.24em;
     text-decoration: none;
   }
 
-  /* Una gota de cromo como semilla de la marca. */
+  /* La marca: un monolito en miniatura con su arista de luz y, delante, la gota de cromo. */
   .semilla {
-    width: 0.7rem;
+    position: relative;
+    width: 0.55rem;
+    height: 1.1rem;
+    border-radius: 1px;
+    background: linear-gradient(90deg, var(--monolito-luz), var(--monolito));
+    box-shadow:
+      inset 1px 0 0 rgb(var(--cian-rgb) / 0.7),
+      inset 0 1px 0 rgb(var(--metal-rgb) / 0.5),
+      0 0 0 1px rgb(var(--metal-rgb) / 0.22);
+  }
+
+  .semilla span {
+    position: absolute;
+    left: -0.2rem;
+    bottom: 0.18rem;
+    width: 0.42rem;
     aspect-ratio: 1;
     border-radius: 50%;
     background: var(--gota);
@@ -104,7 +122,7 @@ const ruta = Astro.url.pathname;
   ul {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.25rem 1.6rem;
+    gap: 0.25rem 1.8rem;
     margin: 0;
     padding: 0;
     list-style: none;
@@ -114,6 +132,8 @@ const ruta = Astro.url.pathname;
     position: relative;
     display: inline-block;
     padding: 0.4rem 0;
+    font-size: var(--t--1);
+    letter-spacing: 0.01em;
     color: var(--texto-suave);
     text-decoration: none;
     transition: color var(--rapido);
@@ -127,14 +147,12 @@ const ruta = Astro.url.pathname;
   nav a[aria-current='page']::after {
     content: '';
     position: absolute;
-    left: 50%;
-    bottom: -0.1rem;
-    width: 4px;
-    height: 4px;
-    border-radius: 50%;
-    background: var(--verde);
-    box-shadow: 0 0 6px rgb(var(--verde-rgb) / 0.8);
-    translate: -50% 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 1px;
+    background: linear-gradient(90deg, var(--metal), var(--cian));
+    box-shadow: 0 0 8px rgb(var(--cian-rgb) / 0.6);
   }
 
   /* En pantallas estrechas: marca arriba, enlaces en una fila debajo. */

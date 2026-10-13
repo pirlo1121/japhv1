@@ -1,5 +1,9 @@
 ---
-/** Preguntas desplegables con <details>/<summary>: accesibles y sin JavaScript. */
+/**
+ * Preguntas desplegables con <details>/<summary>: accesibles con teclado y
+ * táctil, y sin JavaScript. Cada pregunta es una franja separada por
+ * aristas; la abierta enciende la suya.
+ */
 import type { Pregunta } from '@/datos/preguntas';
 
 interface Props {
@@ -27,7 +31,17 @@ const { preguntas } = Astro.props;
   }
 
   .item {
+    position: relative;
     border-bottom: 1px solid var(--linea);
+  }
+
+  /* La pregunta abierta enciende su arista inferior. */
+  .item[open]::after {
+    content: '';
+    position: absolute;
+    inset: auto 0 -1px;
+    height: 1px;
+    background: var(--arista);
   }
 
   summary {
@@ -47,7 +61,11 @@ const { preguntas } = Astro.props;
   }
 
   summary:hover {
-    color: var(--metadato);
+    color: var(--metal-luz);
+  }
+
+  summary:focus-visible {
+    outline-offset: 6px;
   }
 
   .signo {
@@ -64,8 +82,8 @@ const { preguntas } = Astro.props;
     top: 50%;
     left: 0;
     width: 100%;
-    height: 1.5px;
-    background: var(--metadato);
+    height: 1px;
+    background: var(--metal);
     transition: rotate var(--rapido);
   }
 
@@ -81,5 +99,12 @@ const { preguntas } = Astro.props;
     max-width: 62ch;
     margin: 0 0 1.5rem;
     color: var(--texto-suave);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .signo::before,
+    .signo::after {
+      transition: none;
+    }
   }
 </style>

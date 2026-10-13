@@ -1,100 +1,143 @@
 /**
  * tokens.css
- * Liquid Technology × The Living Network. Un azul medianoche casi negro da la
- * profundidad; el cromo y la red ponen la luz. Los neones (cian, azul,
- * violeta) iluminan reflejos, filamentos y detalles concretos, nunca grandes
- * superficies; el verde eléctrico es escaso a propósito: nodos activos,
- * estados e indicadores pequeños.
+ * The Digital Monolith × Liquid Technology. Negro, azul medianoche y
+ * grafito para la arquitectura (la mayor parte de lo que se ve), plata fría
+ * para el metal y el texto, y la luz como acento controlado: cian y azul
+ * en reflejos y aristas, violeta muy de vez en cuando, verde casi nunca
+ * (solo estados activos pequeños).
  *
- * Contraste sobre --fondo: --texto 18.8:1, --texto-suave 9.5:1,
- * --metadato 5.1:1. --texto-apagado (4.3:1) solo para texto grande o
- * piezas decorativas.
+ * Contraste sobre --fondo: --texto 18.4:1, --texto-suave 8.8:1,
+ * --metadato 4.7:1 (AA justo: solo metadatos y texto pequeño de apoyo).
+ * --texto-apagado (3:1) solo para piezas decorativas.
  * Los canales "-rgb" permiten transparencias sin colores sueltos:
  * rgb(var(--fondo-rgb) / 0.8).
  */
 
 :root {
-  /* Profundidad */
-  --fondo: #030711;
-  --fondo-2: #050a16;
-  --superficie: #081121;
-  --superficie-2: #0b1528;
-  --fondo-rgb: 3 7 17;
-  --superficie-rgb: 8 17 33;
+  /* El vacío y el espacio */
+  --vacio: #03050a;
+  --fondo: #050914;
+  --fondo-elevado: #080d18;
+  --vacio-rgb: 3 5 10;
+  --fondo-rgb: 5 9 20;
 
-  /* Luz de la red */
-  --cian: #00e5ff;
-  --turquesa: #00f5d4;
-  --azul: #1677ff;
-  --violeta: #7c3aed;
-  --purpura: #b15cff;
-  --verde: #39ff88;
-  --cian-rgb: 0 229 255;
-  --azul-rgb: 22 119 255;
-  --violeta-rgb: 124 58 237;
-  --purpura-rgb: 177 92 255;
-  --verde-rgb: 57 255 136;
+  /* La arquitectura: grafito que absorbe la luz */
+  --monolito: #0b0e14;
+  --monolito-luz: #171d27;
+  --grafito: #252c37;
+  --monolito-rgb: 11 14 20;
+  --grafito-rgb: 37 44 55;
+
+  /* El metal */
+  --metal: #bfc6d1;
+  --metal-luz: #f2f5fa;
+  --metal-sombra: #596474;
+  --metal-rgb: 191 198 209;
+
+  /* La luz: acentos, nunca grandes superficies */
+  --cian: #55ddf5;
+  --azul: #276bff;
+  --violeta: #8067e8;
+  --verde: #39e6a3;
+  --cian-rgb: 85 221 245;
+  --azul-rgb: 39 107 255;
+  --violeta-rgb: 128 103 232;
+  --verde-rgb: 57 230 163;
 
   /* Texto */
-  --texto: #f5f7ff;
-  --texto-suave: #a8b3c9;
-  --metadato: #71819c;
-  --texto-apagado: #68758d;
-  --texto-rgb: 245 247 255;
-  --metadato-rgb: 113 129 156;
+  --texto: #f4f6fa;
+  --texto-suave: #a4adbd;
+  --metadato: #707b8e;
+  --texto-apagado: #596474;
+  --texto-rgb: 244 246 250;
+  --metadato-rgb: 112 123 142;
 
   /* Estados del formulario */
-  --error: #ff7a8a;
+  --error: #ff8593;
   --error-claro: #ffd0d6;
-  --error-rgb: 255 122 138;
-  --exito-claro: #c8ffdc;
+  --error-rgb: 255 133 147;
+  --exito-claro: #c6f6e4;
 
-  --linea: rgb(var(--texto-rgb) / 0.09);
-  --linea-fuerte: rgb(var(--texto-rgb) / 0.2);
+  --linea: rgb(185 198 220 / 0.14);
+  --linea-fuerte: rgb(185 198 220 / 0.28);
+  --linea-rgb: 185 198 220;
 
-  /* Degradados: siempre en el mismo sentido y solo en fragmentos cortos. */
+  /* Alias de nombres anteriores (los componentes los irán dejando). */
+  --fondo-2: var(--fondo-elevado);
+  --superficie: var(--monolito);
+  --superficie-2: var(--monolito-luz);
+  --superficie-rgb: var(--monolito-rgb);
+  --turquesa: var(--cian);
+  --purpura: var(--violeta);
+  --purpura-rgb: var(--violeta-rgb);
+
+  /* Degradados: solo luz que recorre el metal y fragmentos cortos. */
   --degradado-cian: linear-gradient(100deg, var(--cian), var(--azul));
-  --degradado-violeta: linear-gradient(100deg, var(--azul), var(--violeta));
-  --degradado-red: linear-gradient(100deg, var(--turquesa), var(--cian) 40%, var(--purpura));
   /* Cromo para textos: bandas de luz fría, como los reflejos de la escultura. */
   --cromo: linear-gradient(
     100deg,
-    #8a96ad 0%,
-    #f5f7ff 22%,
-    #9aa6bd 40%,
-    #e3ecff 58%,
-    #7f8aa1 78%,
-    #d6e4ff 100%
+    var(--metal-sombra) 0%,
+    var(--metal-luz) 24%,
+    var(--metal) 42%,
+    var(--metal-luz) 60%,
+    var(--metal-sombra) 82%,
+    var(--metal) 100%
   );
-  /* Gota de cromo de la marca, con un reflejo cian. */
-  --gota: radial-gradient(circle at 35% 30%, #ffffff 0 18%, #8fa0bd 42%, #0b1528 70%, #66f0ff 100%);
-  /* Fondo de la escena WebGL (main en sombreador.ts): halo azul detrás del guía
-     (FONDO + su luz) y resto violeta lejano. Lienzo.astro los reproduce en CSS
-     mientras WebGL carga, para que el relevo no se note. */
-  --halo-escena-rgb: 6 16 39;
-  --violeta-escena-rgb: 5 8 21;
-  /* Atmósfera: luz azul muy contenida, para que el fondo tenga profundidad. */
+  /* El fragmento clave del titular principal: cromo que recoge un poco de luz cian. */
+  --cromo-luz: linear-gradient(
+    100deg,
+    var(--metal-luz) 0%,
+    var(--metal) 30%,
+    var(--cian) 62%,
+    var(--metal-luz) 100%
+  );
+  /* Arista de monolito: una línea de metal que se enciende en el centro. */
+  --arista: linear-gradient(
+    90deg,
+    transparent,
+    rgb(var(--metal-rgb) / 0.55) 30%,
+    rgb(var(--cian-rgb) / 0.7) 50%,
+    rgb(var(--metal-rgb) / 0.55) 70%,
+    transparent
+  );
+  /* Gota de cromo de la marca. */
+  --gota: radial-gradient(
+    circle at 35% 30%,
+    var(--metal-luz) 0 16%,
+    var(--metal) 38%,
+    var(--monolito) 70%,
+    var(--cian) 100%
+  );
+  /* Fondo de la escena WebGL (main en sombreador.ts): halo azul detrás del
+     objetivo (FONDO + su luz) y resto violeta lejano. Lienzo.astro los
+     reproduce en CSS mientras WebGL carga, para que el relevo no se note. */
+  --halo-escena-rgb: 8 18 42;
+  --violeta-escena-rgb: 7 10 24;
+  /* Atmósfera de las páginas interiores: luz azul muy contenida desde arriba. */
   --atmosfera:
-    radial-gradient(ellipse 70% 55% at 72% 40%, rgb(var(--azul-rgb) / 0.09), transparent 70%),
-    radial-gradient(ellipse 50% 40% at 15% 85%, rgb(var(--violeta-rgb) / 0.06), transparent 70%);
+    radial-gradient(ellipse 80% 60% at 70% 0%, rgb(var(--azul-rgb) / 0.08), transparent 70%),
+    radial-gradient(ellipse 60% 45% at 10% 100%, rgb(var(--violeta-rgb) / 0.05), transparent 70%);
 
-  /* Tipografía: una sola familia. */
+  /* Tipografía: una sola familia, editorial y precisa. */
   --fuente-display: var(--fuente-texto);
+  --t--2: 0.75rem;
   --t--1: 0.875rem;
   --t-0: 1rem;
   --t-1: clamp(1.06rem, 0.98rem + 0.35vw, 1.25rem);
-  --t-2: clamp(1.35rem, 1.15rem + 0.85vw, 1.8rem);
-  --t-3: clamp(1.8rem, 1.4rem + 1.7vw, 2.75rem);
-  --t-4: clamp(2.3rem, 1.6rem + 2.9vw, 4.2rem);
+  --t-2: clamp(1.3rem, 1.12rem + 0.8vw, 1.75rem);
+  --t-3: clamp(1.75rem, 1.35rem + 1.6vw, 2.6rem);
+  --t-4: clamp(2.2rem, 1.5rem + 2.8vw, 4rem);
   --t-5: clamp(2.5rem, 1.35rem + 4.6vw, 5.6rem);
   --t-6: clamp(2.8rem, 1.4rem + 5.8vw, 7rem);
-  --rastreo-titular: -0.035em;
+  --rastreo-titular: -0.04em;
+  --rastreo-rotulo: 0.2em;
 
   /* Espacio */
   --margen: clamp(1rem, 5vw, 4.5rem);
   --ancho: 78rem;
-  --bloque: clamp(5rem, 12vh, 9rem);
-  --radio: 10px;
+  --bloque: clamp(5.5rem, 14vh, 10rem);
+  /* Arquitectura: esquinas casi rectas. */
+  --radio: 2px;
 
   /* Movimiento */
   --suave: cubic-bezier(0.22, 1, 0.36, 1);

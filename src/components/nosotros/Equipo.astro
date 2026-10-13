@@ -58,10 +58,13 @@ const iniciales = (nombre: string) =>
     place-items: center;
     width: 4.5rem;
     aspect-ratio: 1;
-    border-radius: 50%;
+    border-radius: var(--radio);
     font-family: var(--fuente-display);
     font-size: 1.6rem;
     color: var(--texto);
+    box-shadow:
+      inset 0 1px 0 rgb(var(--metal-rgb) / 0.3),
+      0 0 0 1px rgb(var(--metal-rgb) / 0.18);
   }
 
   h3 {

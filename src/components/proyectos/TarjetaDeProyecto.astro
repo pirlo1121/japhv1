@@ -1,7 +1,10 @@
 ---
 /**
- * Ficha de un proyecto del portafolio. Con imagen real usa <Image> (AVIF/WebP,
- * varios tamaños, carga diferida); sin ella, una pintura provisional.
+ * Ficha de un proyecto del portafolio: una pieza enmarcada en la galería,
+ * dentro de un marco de grafito con su hueco rehundido. Con imagen real usa
+ * <Image> (AVIF/WebP, varios tamaños, carga diferida); sin ella, una vista
+ * provisional de la arquitectura. Al pasar o enfocar, la arista superior
+ * del marco recoge luz; el texto no se mueve.
  */
 import { Image } from 'astro:assets';
 import SelloEjemplo from '@/components/ui/SelloEjemplo.astro';
@@ -50,33 +53,90 @@ const { proyecto } = Astro.props;
     display: none;
   }
 
+  /* El marco y su hueco: un borde de grafito con la imagen rehundida. */
   .visual {
     position: relative;
     aspect-ratio: 4 / 3;
-    border-radius: 18px;
-    overflow: hidden;
+    padding: 0.55rem;
+    border: 1px solid var(--linea);
+    border-radius: var(--radio);
+    background: linear-gradient(180deg, var(--monolito-luz), var(--monolito));
+    box-shadow: inset 0 1px 0 rgb(var(--metal-rgb) / 0.14);
+    transition:
+      border-color 0.4s var(--suave),
+      box-shadow 0.4s var(--suave);
+  }
+
+  .visual::before {
+    content: '';
+    position: absolute;
+    inset: -1px -1px auto;
+    z-index: 2;
+    height: 1px;
+    background: var(--arista);
+    opacity: 0;
+    transition: opacity 0.4s var(--suave);
+  }
+
+  .visual::after {
+    content: '';
+    position: absolute;
+    inset: 0.55rem;
+    box-shadow:
+      inset 0 0 0 1px rgb(var(--metal-rgb) / 0.1),
+      inset 0 26px 34px -24px rgb(var(--vacio-rgb) / 0.95);
+    pointer-events: none;
   }
 
   .medio {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    transition: scale 1.2s var(--suave);
+    filter: brightness(0.88);
+    transition:
+      scale 1.2s var(--suave),
+      filter 0.6s var(--suave);
   }
 
-  .proyecto:hover .medio {
-    scale: 1.04;
+  .proyecto:hover .visual,
+  .proyecto:focus-within .visual {
+    border-color: rgb(var(--metal-rgb) / 0.32);
+    box-shadow:
+      inset 0 1px 0 rgb(var(--metal-rgb) / 0.22),
+      0 30px 60px -40px rgb(var(--azul-rgb) / 0.6);
+  }
+
+  .proyecto:hover .visual::before,
+  .proyecto:focus-within .visual::before {
+    opacity: 1;
+  }
+
+  .proyecto:hover .medio,
+  .proyecto:focus-within .medio {
+    scale: 1.03;
+    filter: brightness(1);
   }
 
   .sello {
     position: absolute;
-    top: 1rem;
-    left: 1rem;
-    padding: 0.3rem 0.8rem;
-    border-radius: 999px;
-    background: rgb(var(--fondo-rgb) / 0.75);
-    font-size: 0.78rem;
+    top: 1.3rem;
+    left: 1.3rem;
+    z-index: 1;
+    padding: 0.25rem 0.7rem;
+    border: 1px solid var(--linea);
+    border-radius: var(--radio);
+    background: rgb(var(--vacio-rgb) / 0.82);
+    font-size: var(--t--2);
+    letter-spacing: 0.06em;
     color: var(--texto);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .visual,
+    .visual::before,
+    .medio {
+      transition: none;
+    }
   }
 
   .pie {

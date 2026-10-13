@@ -3,10 +3,11 @@
  * Escena 05 · Servicios. Aquí manda la claridad: qué hace JAPH, en una
  * lista editorial con los siete servicios reales (datos/servicios.ts).
  *
- * Cada servicio es una rama de la red: al pasar el puntero, enfocarlo con
- * el teclado o cruzar el centro de la pantalla, su nodo se enciende y un
- * hilo lo une con su texto (scripts/historia/servicios.ts). La escultura
- * queda a la derecha, atenuada: acompaña, no compite con la lectura.
+ * Detrás, la arquitectura forma una columnata de siete losas, una por
+ * servicio. Al pasar el puntero, enfocarlo con el teclado o cruzar el
+ * centro de la pantalla, el servicio se activa: su losa recoge luz cian en
+ * las aristas y su rama de la red se enciende (scripts/historia/servicios.ts).
+ * La escultura queda a la derecha, atenuada: acompaña, no compite.
  */
 import IconoServicio from '@/components/ui/IconoServicio.astro';
 import { servicios } from '@/datos/servicios';
@@ -23,7 +24,7 @@ const dos = (n: number) => String(n).padStart(2, '0');
 >
   <header class="cabecera" data-revelar data-zona-lectura>
     <p class="rotulo">05 · Servicios</p>
-    <h2 id="titulo-servicios" data-gota>
+    <h2 id="titulo-servicios">
       Tecnología que conecta <em>las piezas.</em>
     </h2>
     <p>
@@ -32,7 +33,7 @@ const dos = (n: number) => String(n).padStart(2, '0');
     </p>
   </header>
 
-  <ol class="lista" data-zona-lectura data-liquido>
+  <ol class="lista" data-zona-lectura>
     {servicios.map((servicio, i) => (
       <li class="servicio" id={`servicio-${servicio.id}`} data-rama>
         <span class="icono">
@@ -82,7 +83,7 @@ const dos = (n: number) => String(n).padStart(2, '0');
     align-items: baseline;
     padding: 1.15rem 0.9rem;
     border-bottom: 1px solid var(--linea);
-    background: rgb(var(--fondo-rgb) / 0.55);
+    background: rgb(var(--vacio-rgb) / 0.6);
     transition:
       background-color var(--rapido),
       border-color var(--rapido);
@@ -95,15 +96,19 @@ const dos = (n: number) => String(n).padStart(2, '0');
     left: 0;
     top: 0.75rem;
     bottom: 0.75rem;
-    width: 2px;
-    border-radius: 2px;
-    background: var(--degradado-cian);
+    width: 1px;
+    background: linear-gradient(180deg, var(--metal-luz), var(--cian));
+    box-shadow: 0 0 12px rgb(var(--cian-rgb) / 0.6);
     opacity: 0;
     transition: opacity var(--rapido);
   }
 
   .servicio[data-activa] {
-    background: rgb(var(--superficie-rgb) / 0.85);
+    background: linear-gradient(
+      90deg,
+      rgb(var(--grafito-rgb) / 0.5),
+      rgb(var(--monolito-rgb) / 0.85)
+    );
   }
 
   .servicio[data-activa]::before {
@@ -118,7 +123,9 @@ const dos = (n: number) => String(n).padStart(2, '0');
     width: 2.5rem;
     aspect-ratio: 1;
     border: 1px solid var(--linea);
-    border-radius: 8px;
+    border-radius: var(--radio);
+    background: rgb(var(--monolito-rgb) / 0.8);
+    box-shadow: inset 0 1px 0 rgb(var(--metal-rgb) / 0.1);
     color: var(--metadato);
     transition:
       color var(--rapido),
@@ -126,8 +133,8 @@ const dos = (n: number) => String(n).padStart(2, '0');
   }
 
   .servicio[data-activa] .icono {
-    border-color: rgb(var(--cian-rgb) / 0.45);
-    color: var(--cian);
+    border-color: rgb(var(--metal-rgb) / 0.5);
+    color: var(--metal-luz);
   }
 
   .ordinal {
@@ -161,7 +168,7 @@ const dos = (n: number) => String(n).padStart(2, '0');
   }
 
   .servicio[data-activa] a span[aria-hidden] {
-    color: var(--verde);
+    color: var(--cian);
   }
 
   /* Todo el servicio es clicable sin anidar enlaces: el enlace se estira. */

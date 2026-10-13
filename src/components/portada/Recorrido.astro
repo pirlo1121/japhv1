@@ -1,9 +1,10 @@
 ---
 /**
- * Índice de la portada: una regla vertical en el borde derecho, un nodo por
- * escena ([data-escena]) unido por un filamento, como la red. Son enlaces
- * normales a cada sección, así que funcionan sin JavaScript; el script solo
- * marca la escena actual (el nodo se vuelve verde: el estado activo). En
+ * Índice de la portada: una regla vertical en el borde derecho, como la
+ * escala de un plano de arquitectura: una marca por escena ([data-escena]).
+ * Son enlaces normales a cada sección, así que funcionan sin JavaScript; el
+ * script solo marca la escena actual (su marca se alarga y recoge luz). Al
+ * saltar a una escena, la historia sincroniza la cámara con el scroll. En
  * pantallas estrechas no aparece: allí basta el scroll.
  */
 interface Props {
@@ -89,8 +90,8 @@ const { escenas } = Astro.props;
     background: linear-gradient(
       to bottom,
       transparent,
-      rgb(var(--cian-rgb) / 0.25) 15%,
-      rgb(var(--purpura-rgb) / 0.2) 85%,
+      rgb(var(--metal-rgb) / 0.22) 15%,
+      rgb(var(--metal-rgb) / 0.22) 85%,
       transparent
     );
     pointer-events: none;
@@ -105,32 +106,32 @@ const { escenas } = Astro.props;
     text-decoration: none;
   }
 
+  /* La marca: una línea corta que crece hacia la izquierda desde la regla. */
   .nodo {
     position: relative;
     z-index: 1;
-    width: 0.75rem;
-    aspect-ratio: 1;
+    width: 1.5rem;
+    height: 0.75rem;
     display: grid;
-    place-items: center;
+    place-items: center end;
   }
 
   .nodo::before {
     content: '';
-    width: 5px;
-    aspect-ratio: 1;
-    border-radius: 50%;
+    width: 0.6rem;
+    height: 1px;
     background: var(--texto-apagado);
     transition:
+      width 0.5s var(--suave),
       background-color 0.5s var(--suave),
-      box-shadow 0.5s var(--suave),
-      scale 0.5s var(--suave);
+      box-shadow 0.5s var(--suave);
   }
 
   .nombre {
     padding: 0.2rem 0.6rem;
     border: 1px solid var(--linea);
-    border-radius: 6px;
-    background: rgb(var(--fondo-rgb) / 0.85);
+    border-radius: var(--radio);
+    background: rgb(var(--monolito-rgb) / 0.92);
     font-size: 0.75rem;
     letter-spacing: 0.04em;
     color: var(--texto-suave);
@@ -150,14 +151,14 @@ const { escenas } = Astro.props;
 
   a:hover .nodo::before,
   a:focus-visible .nodo::before {
-    background: var(--cian);
-    box-shadow: 0 0 8px rgb(var(--cian-rgb) / 0.7);
+    width: 1rem;
+    background: var(--metal);
   }
 
   a[aria-current='location'] .nodo::before {
-    background: var(--verde);
-    box-shadow: 0 0 10px rgb(var(--verde-rgb) / 0.75);
-    scale: 1.5;
+    width: 1.5rem;
+    background: linear-gradient(90deg, var(--cian), var(--metal-luz));
+    box-shadow: 0 0 10px rgb(var(--cian-rgb) / 0.6);
   }
 
   a:focus-visible {
@@ -167,7 +168,6 @@ const { escenas } = Astro.props;
   a:focus-visible .nodo {
     outline: 2px solid var(--cian);
     outline-offset: 4px;
-    border-radius: 50%;
   }
 
   @media (prefers-reduced-motion: reduce) {

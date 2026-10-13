@@ -1,8 +1,8 @@
 /**
  * camara.ts
- * La cámara que orbita la escultura y cómo un punto 3D cae en la pantalla.
- * El sombreador construye los rayos con la misma cuenta (función `rayo`),
- * así que estas dos piezas tienen que cambiar juntas.
+ * La cámara que orbita un punto de la arquitectura y cómo un punto 3D cae
+ * en la pantalla. El sombreador construye los rayos con la misma cuenta
+ * (función `rayo`), así que estas dos piezas tienen que cambiar juntas.
  */
 
 export type Vec3 = [number, number, number];
@@ -12,9 +12,13 @@ export interface Orbita {
   azimut: number;
   /** Altura de la cámara (radianes). */
   elevacion: number;
-  /** Distancia al centro de la escultura. */
+  /** Distancia al objetivo. */
   distancia: number;
-  /** Dónde cae el centro de la escultura en pantalla (-1..1, y hacia arriba). */
+  /** El punto que mira y alrededor del que orbita (la escultura está en el origen). */
+  objetivoX: number;
+  objetivoY: number;
+  objetivoZ: number;
+  /** Dónde cae el objetivo en pantalla (-1..1, y hacia arriba). */
   desplazamientoX: number;
   desplazamientoY: number;
 }
@@ -22,7 +26,7 @@ export interface Orbita {
 export interface Camara {
   posicion: Vec3;
   objetivo: Vec3;
-  /** 1 / tan(campo de visión / 2). */
+  /** 1 / tan(campo de visión vertical / 2): menor en pantallas estrechas (más campo). */
   focal: number;
   desplazamiento: [number, number];
 }
@@ -30,7 +34,12 @@ export interface Camara {
 /** Campo de visión vertical de 32°: compresión de teleobjetivo, sin distorsión. */
 export const FOCAL = 1 / Math.tan((32 * Math.PI) / 180 / 2);
 
-/** En pantallas estrechas la cámara se aleja para que la escultura quepa a lo ancho. */
+/**
+ * En pantallas más estrechas que esto el campo de visión se abre para que
+ * la escena quepa a lo ancho. Se abre (zoom) en lugar de alejar la cámara:
+ * así la perspectiva de la arquitectura es la misma en cualquier pantalla y
+ * todo se escala por igual alrededor del objetivo.
+ */
 export const ASPECTO_MINIMO = 0.85;
 
 const resta = (a: Vec3, b: Vec3): Vec3 => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
@@ -46,16 +55,17 @@ const normalizar = (a: Vec3): Vec3 => {
 };
 
 export function calcularCamara(orbita: Orbita, aspecto: number): Camara {
-  const d = orbita.distancia * Math.max(1, ASPECTO_MINIMO / aspecto);
+  const d = orbita.distancia;
   const ce = Math.cos(orbita.elevacion);
+  const objetivo: Vec3 = [orbita.objetivoX, orbita.objetivoY, orbita.objetivoZ];
   return {
     posicion: [
-      Math.sin(orbita.azimut) * ce * d,
-      Math.sin(orbita.elevacion) * d,
-      Math.cos(orbita.azimut) * ce * d
+      objetivo[0] + Math.sin(orbita.azimut) * ce * d,
+      objetivo[1] + Math.sin(orbita.elevacion) * d,
+      objetivo[2] + Math.cos(orbita.azimut) * ce * d
     ],
-    objetivo: [0, 0, 0],
-    focal: FOCAL,
+    objetivo,
+    focal: FOCAL * Math.min(1, aspecto / ASPECTO_MINIMO),
     desplazamiento: [orbita.desplazamientoX, orbita.desplazamientoY]
   };
 }
@@ -114,36 +124,4 @@ export function crearProyector(c: Camara, ancho: number, alto: number) {
     destino.profundidad = z;
     return destino;
   };
-}
-
-/**
- * Píxel del lienzo → punto del mundo en el plano perpendicular a la mirada
- * que pasa por `centro` (por defecto, el centro del robot). Es lo que el
- * brazo del guía alcanza al señalar un elemento de la página.
- */
-export function aMundo(
-  x: number,
-  y: number,
-  c: Camara,
-  ancho: number,
-  alto: number,
-  centro: Vec3 = [0, 0, 0]
-): Vec3 {
-  const [f, r, u] = base(c);
-  const aspecto = ancho / alto;
-  const nx = (x / ancho) * 2 - 1 - c.desplazamiento[0];
-  const ny = 1 - (y / alto) * 2 - c.desplazamiento[1];
-  const dir = normalizar([
-    f[0] * c.focal + nx * aspecto * r[0] + ny * u[0],
-    f[1] * c.focal + nx * aspecto * r[1] + ny * u[1],
-    f[2] * c.focal + nx * aspecto * r[2] + ny * u[2]
-  ]);
-  const t = punto(resta(centro, c.posicion), f) / (punto(dir, f) || 1);
-  return [c.posicion[0] + dir[0] * t, c.posicion[1] + dir[1] * t, c.posicion[2] + dir[2] * t];
-}
-
-/** Derecha y arriba de la cámara en el mundo: para llevar un movimiento en pantalla al mundo. */
-export function ejesDePantalla(c: Camara): [Vec3, Vec3] {
-  const [, r, u] = base(c);
-  return [r, u];
 }

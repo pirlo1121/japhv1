@@ -1,5 +1,9 @@
 ---
-/** Un caso contado en detalle (datos/proyectos.ts → casoDestacado). */
+/**
+ * Un caso contado en detalle (datos/proyectos.ts → casoDestacado), en una
+ * placa de grafito. Sus cifras se inscriben en metal; mientras sea un
+ * ejemplo, cada una lo dice: no se presentan como resultados reales.
+ */
 import SelloEjemplo from '@/components/ui/SelloEjemplo.astro';
 import { casoDestacado as caso } from '@/datos/proyectos';
 ---
@@ -70,7 +74,13 @@ import { casoDestacado as caso } from '@/datos/proyectos';
   dt {
     font-family: var(--fuente-display);
     font-size: var(--t-3);
-    color: var(--metadato);
+    font-weight: 500;
+    letter-spacing: -0.03em;
+    background: var(--cromo);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    -webkit-text-fill-color: transparent;
   }
 
   dd {
@@ -81,6 +91,9 @@ import { casoDestacado as caso } from '@/datos/proyectos';
 
   .visual {
     min-height: 16rem;
-    border-radius: 16px;
+    border-radius: var(--radio);
+    box-shadow:
+      inset 0 0 0 1px rgb(var(--metal-rgb) / 0.12),
+      inset 0 26px 34px -24px rgb(var(--vacio-rgb) / 0.95);
   }
 </style>

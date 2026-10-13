@@ -1,9 +1,10 @@
 ---
 /**
- * Escena 09 · Hagámoslo real. El entorno se calma: la red sigue visible
- * pero casi quieta y el guía queda arriba, señalando la invitación. La
- * invitación lleva a destinos reales: el formulario de contacto y el correo
- * de config/sitio.ts (marcado como ejemplo mientras lo sea).
+ * Escena 09 · Hagámoslo real. El entorno se calma: un último pórtico
+ * monolítico enmarca la cinta, ya en reposo, y una línea de luz en el suelo
+ * lleva la mirada hacia la invitación. La red sigue ahí, sin protagonismo.
+ * La invitación lleva a destinos reales: el formulario de contacto y el
+ * correo de config/sitio.ts (marcados como ejemplo mientras lo sean).
  */
 import Boton from '@/components/ui/Boton.astro';
 import SelloEjemplo from '@/components/ui/SelloEjemplo.astro';
@@ -13,17 +14,15 @@ import { contacto } from '@/config/sitio';
 <section class="llamada" id="llamada" aria-labelledby="titulo-llamada" data-escena="Contacto">
   <div class="contenido" data-zona-lectura>
     <p class="rotulo">09 · Hagámoslo real</p>
-    <h2 id="titulo-llamada" data-gota>
+    <h2 id="titulo-llamada">
       ¿Qué podemos <em>construir juntos?</em>
     </h2>
     <p class="entrada">Cuéntanos tu idea. Exploremos cómo convertirla en una solución digital.</p>
-    <p class="acciones" data-guia>
-      <Boton href="/contacto" variante="solido" seda>
+    <p class="acciones">
+      <Boton href="/contacto" variante="solido">
         Empezar un proyecto
       </Boton>
-      <Boton href={`mailto:${contacto.correo}`} seda>
-        Contactar
-      </Boton>
+      <Boton href={`mailto:${contacto.correo}`}>Contactar</Boton>
     </p>
     <p class="canales">
       <a href={`mailto:${contacto.correo}`}>{contacto.correo}</a>

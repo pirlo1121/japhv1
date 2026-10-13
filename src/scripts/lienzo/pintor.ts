@@ -8,16 +8,11 @@
  * Ambos pintores tienen la misma forma, así la escena no sabe cuál usa.
  */
 import { Renderizador, type EstadoDeEscena } from './renderizador';
-import type { MascaraDeTexto } from './distancias';
 
 export interface Pintor {
   /** alListo cuando el shader está listo; alFallar si no se puede dibujar. */
   preparar(alListo: () => void, alFallar: (error: unknown) => void): void;
   configurar(anchoPx: number, altoPx: number): void;
-  /** Reserva el atlas de los titulares líquidos (y lo vacía). */
-  prepararAtlas(ancho: number, alto: number): void;
-  /** Las letras de un titular líquido en su sitio del atlas (x, y en texels). */
-  subirTitular(x: number, y: number, mascara: MascaraDeTexto): void;
   /** false si el fotograma anterior aún no terminó: este se salta. */
   dibujar(estado: EstadoDeEscena): boolean;
   /** Se llama con los ms transcurridos desde el fotograma pintado anterior. */
@@ -28,8 +23,6 @@ export interface Pintor {
 export type MensajeAlHilo =
   | { tipo: 'iniciar'; lienzo: OffscreenCanvas }
   | { tipo: 'configurar'; anchoPx: number; altoPx: number }
-  | { tipo: 'atlas'; ancho: number; alto: number }
-  | { tipo: 'titular'; x: number; y: number; mascara: MascaraDeTexto }
   | { tipo: 'dibujar'; estado: EstadoDeEscena }
   | { tipo: 'liberar' };
 
@@ -62,14 +55,6 @@ class PintorLocal implements Pintor {
 
   configurar(anchoPx: number, altoPx: number): void {
     this.renderizador.redimensionar(anchoPx, altoPx);
-  }
-
-  prepararAtlas(ancho: number, alto: number): void {
-    this.renderizador.prepararAtlas(ancho, alto);
-  }
-
-  subirTitular(x: number, y: number, mascara: MascaraDeTexto): void {
-    this.renderizador.subirTitular(x, y, mascara);
   }
 
   dibujar(estado: EstadoDeEscena): boolean {
@@ -116,14 +101,6 @@ class PintorEnHilo implements Pintor {
 
   configurar(anchoPx: number, altoPx: number): void {
     this.enviar({ tipo: 'configurar', anchoPx, altoPx });
-  }
-
-  prepararAtlas(ancho: number, alto: number): void {
-    this.enviar({ tipo: 'atlas', ancho, alto });
-  }
-
-  subirTitular(x: number, y: number, mascara: MascaraDeTexto): void {
-    this.enviar({ tipo: 'titular', x, y, mascara }, [mascara.datos.buffer]);
   }
 
   dibujar(estado: EstadoDeEscena): boolean {

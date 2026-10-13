@@ -1,8 +1,10 @@
 ---
 /**
  * Pie de página común: marca, navegación, contacto y enlaces legales.
- * En la portada (body.inmersiva) no es un bloque aparte: la escena final se
- * funde en negro y el pie descansa sobre ella.
+ * Cierra la experiencia como la base de un monolito: una arista de luz en
+ * su borde superior y el nombre como una inscripción de metal. En la
+ * portada (body.inmersiva) no es un bloque aparte: la escena final se funde
+ * en negro y el pie descansa sobre ella.
  */
 import SelloEjemplo from '@/components/ui/SelloEjemplo.astro';
 import { contacto, enlacesLegales, navegacion, sitio } from '@/config/sitio';
@@ -13,8 +15,10 @@ const anio = new Date().getFullYear();
 <footer class="pie">
   <div class="marca">
     <p class="nombre">
-      <span class="semilla" aria-hidden="true"></span>
-      {sitio.nombre}
+      <span class="semilla" aria-hidden="true">
+        <span></span>
+      </span>
+      <span class="inscripcion">{sitio.nombre}</span>
     </p>
     <p class="resumen">{sitio.resumen}</p>
     <a class="boton boton--solido" href="/contacto">
@@ -73,9 +77,19 @@ const anio = new Date().getFullYear();
     display: grid;
     gap: 3rem 2rem;
     padding: var(--bloque) max(var(--margen), (100% - var(--ancho)) / 2) 2rem;
-    border-top: 1px solid var(--linea);
     background:
-      radial-gradient(ellipse at 15% 0%, rgb(var(--azul-rgb) / 0.08), transparent 55%), var(--fondo);
+      radial-gradient(ellipse 70% 50% at 20% 0%, rgb(var(--azul-rgb) / 0.07), transparent 60%),
+      linear-gradient(180deg, var(--fondo), var(--vacio));
+  }
+
+  /* La arista superior: una línea de metal que se enciende en el centro. */
+  .pie::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto;
+    height: 1px;
+    background: var(--arista);
+    opacity: 0.8;
   }
 
   @media (min-width: 52rem) {
@@ -87,12 +101,11 @@ const anio = new Date().getFullYear();
   /* Portada: la escena sigue visible arriba y se funde en negro hacia la base. */
   :global(body.inmersiva) .pie {
     padding-top: clamp(4rem, 12vh, 8rem);
-    border-top: 0;
     background: linear-gradient(
       to bottom,
       transparent,
-      rgb(var(--fondo-rgb) / 0.72) 22%,
-      rgb(var(--fondo-rgb) / 0.94) 60%
+      rgb(var(--vacio-rgb) / 0.76) 22%,
+      rgb(var(--vacio-rgb) / 0.96) 60%
     );
   }
 
@@ -117,14 +130,41 @@ const anio = new Date().getFullYear();
   .nombre {
     display: inline-flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: 1rem;
     font-family: var(--fuente-display);
     font-size: clamp(3rem, 7vw, 5rem);
+    font-weight: 600;
     line-height: 1;
+    letter-spacing: 0.16em;
   }
 
+  /* El nombre, inscrito en metal: bandas de luz fría sobre plata. */
+  .inscripcion {
+    background: var(--cromo);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    -webkit-text-fill-color: transparent;
+  }
+
+  /* El monolito de la marca, con su gota de cromo. */
   .semilla {
-    width: 0.8rem;
+    position: relative;
+    width: 0.32em;
+    height: 0.72em;
+    border-radius: 1px;
+    background: linear-gradient(90deg, var(--monolito-luz), var(--monolito));
+    box-shadow:
+      inset 1px 0 0 rgb(var(--cian-rgb) / 0.7),
+      inset 0 1px 0 rgb(var(--metal-rgb) / 0.5),
+      0 0 0 1px rgb(var(--metal-rgb) / 0.22);
+  }
+
+  .semilla span {
+    position: absolute;
+    left: -0.12em;
+    bottom: 0.1em;
+    width: 0.24em;
     aspect-ratio: 1;
     border-radius: 50%;
     background: var(--gota);
@@ -166,7 +206,7 @@ const anio = new Date().getFullYear();
 
   .columna a:hover,
   .base a:hover {
-    color: var(--metadato);
+    color: var(--texto);
   }
 
   .base {

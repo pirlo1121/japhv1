@@ -1,9 +1,9 @@
 /**
  * servicios.ts
- * Escena 05 · Servicios. Cada servicio es una rama de la red: al activarlo,
- * el guía lo señala (un hilo de luz une su mano con el texto), su nodo se
- * enciende en verde y la energía fluye por su filamento hacia el cuerpo del
- * robot (escena.ts y red.ts leen `estado.foco` y el atributo data-activa).
+ * Escena 05 · Servicios. Cada servicio es un módulo de la arquitectura y
+ * una rama de la red: al activarlo, su módulo recoge luz en las aristas,
+ * su nodo se enciende y la energía fluye por su filamento hacia la cinta
+ * (escena.ts, arquitectura.ts y red.ts leen `estado.foco`).
  *
  * Se activa con el puntero, con el foco del teclado o, al desplazarse, el
  * servicio que cruza el centro de la pantalla: en táctil no hace falta

@@ -1,5 +1,11 @@
 ---
-/** Detalle de los siete servicios: qué es cada uno y qué incluye. */
+/**
+ * Detalle de los siete servicios: qué es cada uno y qué incluye. Cada
+ * servicio es un módulo de la estructura: una placa de grafito con su
+ * número inscrito en metal y una arista que se enciende al visitarlo (al
+ * pasar el puntero o al llegar desde un enlace #servicio). Todo el
+ * contenido está a la vista: nada depende del hover.
+ */
 import { servicios } from '@/datos/servicios';
 
 const dos = (n: number) => String(n).padStart(2, '0');
@@ -39,10 +45,31 @@ const dos = (n: number) => String(n).padStart(2, '0');
   }
 
   .servicio {
+    position: relative;
     display: grid;
     gap: 1.25rem 2.5rem;
     padding: clamp(1.5rem, 3vw, 2.25rem);
     scroll-margin-top: 7rem;
+    transition:
+      border-color 0.35s var(--suave),
+      box-shadow 0.35s var(--suave);
+  }
+
+  /* La arista del módulo: se enciende al visitarlo. */
+  .servicio::before {
+    content: '';
+    position: absolute;
+    inset: -1px auto -1px -1px;
+    width: 1px;
+    background: linear-gradient(180deg, var(--metal-luz), var(--cian) 60%, transparent);
+    box-shadow: 0 0 14px rgb(var(--cian-rgb) / 0.5);
+    opacity: 0;
+    transition: opacity 0.35s var(--suave);
+  }
+
+  .servicio:hover::before,
+  .servicio:target::before {
+    opacity: 1;
   }
 
   @media (min-width: 56rem) {
@@ -53,16 +80,25 @@ const dos = (n: number) => String(n).padStart(2, '0');
   }
 
   .servicio:target {
-    border-color: rgb(var(--metadato-rgb) / 0.6);
-    box-shadow: 0 0 40px rgb(var(--metadato-rgb) / 0.12);
+    border-color: rgb(var(--metal-rgb) / 0.35);
+    box-shadow:
+      inset 0 1px 0 rgb(var(--metal-rgb) / 0.18),
+      0 30px 60px -40px rgb(var(--cian-rgb) / 0.4);
   }
 
+  /* El número, inscrito en metal. */
   .numero {
     margin: 0;
     font-family: var(--fuente-display);
     font-size: 2.5rem;
+    font-weight: 500;
     line-height: 1;
-    color: var(--metadato);
+    letter-spacing: -0.04em;
+    background: var(--cromo);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    -webkit-text-fill-color: transparent;
   }
 
   .texto {
@@ -90,9 +126,9 @@ const dos = (n: number) => String(n).padStart(2, '0');
 
   h3 {
     font-family: var(--fuente-texto);
-    font-size: var(--t--1);
+    font-size: var(--t--2);
     font-weight: 500;
-    letter-spacing: 0.14em;
+    letter-spacing: var(--rastreo-rotulo);
     text-transform: uppercase;
     color: var(--metadato);
   }
@@ -106,11 +142,19 @@ const dos = (n: number) => String(n).padStart(2, '0');
   }
 
   ul li {
-    padding: 0.4rem 0.85rem;
+    padding: 0.4rem 0.8rem;
     border: 1px solid var(--linea);
-    border-radius: 999px;
-    background: rgb(var(--fondo-rgb) / 0.5);
+    border-radius: var(--radio);
+    background: rgb(var(--vacio-rgb) / 0.6);
+    box-shadow: inset 0 1px 0 rgb(var(--metal-rgb) / 0.06);
     font-size: var(--t--1);
     color: var(--texto-suave);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .servicio,
+    .servicio::before {
+      transition: none;
+    }
   }
 </style>

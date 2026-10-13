@@ -1,10 +1,10 @@
 ---
 /**
- * Escena 03 · La red viva. La cámara se aleja y el guía se convierte en el
- * ancla de una red que crece: nodos junto a su cuerpo, filamentos que
- * salen hacia fuera, más nodos que se encienden y energía que empieza a
- * viajar entre ellos (scripts/lienzo/red.ts). Todo con el scroll y de forma
- * escalonada, nunca de golpe.
+ * Escena 03 · La red viva. El espacio se ensancha: losas a distintas
+ * profundidades y, a lo largo de la cinta de cromo, una red que crece:
+ * unos caminos de luz, nodos que se encienden y unas pocas partículas que
+ * viajan entre ellos (scripts/lienzo/red.ts). Escalonada con el scroll,
+ * siempre por debajo de la arquitectura: una red, no una telaraña.
  *
  * El texto se queda en su columna; la red ocupa el centro y la derecha y
  * se aparta de los párrafos ([data-zona-lectura]).
@@ -29,13 +29,13 @@ const capas = [
   <div class="marco">
     <div class="bloque" data-zona-lectura>
       <p class="rotulo">03 · La red viva</p>
-      <h2 id="titulo-red" data-gota>
+      <h2 id="titulo-red">
         Nada funciona <em>de forma aislada.</em>
       </h2>
       <p class="entrada">
         Conectamos productos, datos y procesos para crear sistemas que trabajan juntos.
       </p>
-      <ol class="capas" data-pasos data-guia>
+      <ol class="capas" data-pasos>
         {capas.map(({ titulo, texto }, i) => (
           <li data-paso style={{ '--u': 0.18 + i * 0.22 }}>
             <span class="nodo" aria-hidden="true" />
@@ -80,8 +80,8 @@ const capas = [
     bottom: 0.6rem;
     left: 3px;
     width: 1px;
-    background: linear-gradient(to bottom, var(--cian), var(--azul), var(--purpura));
-    opacity: 0.45;
+    background: linear-gradient(to bottom, var(--metal), var(--cian), var(--azul), transparent);
+    opacity: 0.5;
   }
 
   .capas li {
@@ -108,8 +108,8 @@ const capas = [
   }
 
   .capas li:nth-child(3) .nodo {
-    background: var(--purpura);
-    box-shadow: 0 0 10px rgb(var(--purpura-rgb) / 0.7);
+    background: var(--violeta);
+    box-shadow: 0 0 10px rgb(var(--violeta-rgb) / 0.7);
   }
 
   h3 {

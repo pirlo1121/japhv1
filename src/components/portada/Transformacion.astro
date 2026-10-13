@@ -1,20 +1,18 @@
 ---
 /**
- * Escena 02 · La transformación. La cámara se acerca y rodea al guía, que
- * señala el manifiesto; los primeros filamentos de la red nacen de su
- * cuerpo.
+ * Escena 02 · La transformación. Una idea encuentra estructura: el
+ * monolito se abre en un pórtico y la gota se estira en una cinta de cromo
+ * que lo cruza; la cámara se acerca y lo rodea. La rigidez del pórtico es
+ * la referencia contra la que el líquido se vuelve expresivo.
  *
- * El titular nace de la gota: al llegar a la escena, antes de que el resto
- * se vuelva robot, se le desprende una burbuja que cruza la pantalla y se
- * extiende en sus letras (data-gota, scripts/lienzo/titular.ts).
  * Los tres estados de la materia (líquido, forma, sólido), que cuentan lo
- * mismo que la escena (de la idea al producto), van en una tarjeta que
- * llega como metal líquido (data-liquido) y cuya piel se deforma un poco
- * con el cursor (data-tarjeta-liquida, scripts/historia/tarjeta.ts).
+ * mismo que la escena (de la idea al producto), van en una placa de tres
+ * celdas: una interfaz de la arquitectura, no una tarjeta de cristal. El
+ * manifiesto es un bloque editorial con espacio para leerse.
  *
- * Con movimiento, mientras la escena pasa por la pantalla la cámara lo
- * rodea y cada cláusula del manifiesto y cada estado se encienden con el
- * progreso (--p). Nunca se queda fija: el scroll baja la página.
+ * Con movimiento, cada estado y cada cláusula del manifiesto se encienden
+ * con el progreso de la escena (--p) mientras pasa por la pantalla. Nunca
+ * se queda fija: el scroll baja la página.
  */
 const estados = [
   { estado: 'Líquido', que: 'la idea', forma: 'liquido' },
@@ -41,25 +39,22 @@ const clausulas = [
   <div class="marco">
     <div class="bloque" data-zona-lectura>
       <p class="rotulo">02 · La transformación</p>
-      <h2 id="titulo-transformacion" data-gota="burbuja">
+      <h2 id="titulo-transformacion">
         Las ideas <em>toman forma.</em>
       </h2>
       <p class="entrada">
         Convertimos conceptos en experiencias digitales diseñadas para funcionar, conectar y crecer.
       </p>
-      <div class="tarjeta" data-liquido data-tarjeta-liquida>
-        <span class="piel" aria-hidden="true"></span>
-        <ol class="estados" aria-label="De la idea al producto">
-          {estados.map(({ estado, que, forma }, i) => (
-            <li data-paso style={{ '--u': 0.08 + i * 0.2 }}>
-              <span class:list={['muestra', forma]} aria-hidden="true" />
-              <span class="estado">{estado}</span>
-              <span class="que">{que}</span>
-            </li>
-          ))}
-        </ol>
-      </div>
-      <p class="manifiesto" data-pasos data-guia>
+      <ol class="estados lamina" aria-label="De la idea al producto">
+        {estados.map(({ estado, que, forma }, i) => (
+          <li data-paso style={{ '--u': 0.08 + i * 0.18 }}>
+            <span class:list={['glifo', forma]} aria-hidden="true" />
+            <span class="estado">{estado}</span>
+            <span class="que">{que}</span>
+          </li>
+        ))}
+      </ol>
+      <p class="manifiesto" data-pasos>
         {clausulas.map((clausula, i) => (
           <>
             <span data-paso style={{ '--u': 0.12 + (i / clausulas.length) * 0.62 }}>
@@ -75,7 +70,7 @@ const clausulas = [
 <style>
   .bloque {
     display: grid;
-    gap: 1.4rem;
+    gap: 1.6rem;
     max-width: 36rem;
   }
 
@@ -87,72 +82,32 @@ const clausulas = [
     font-size: var(--t-1);
   }
 
-  /* Tarjeta líquida: la caja no se mueve (es [data-liquido]); lo que se
-     deforma con el cursor es su piel, por debajo del contenido. */
-  .tarjeta {
-    position: relative;
-    isolation: isolate;
-    border-radius: 18px;
-  }
-
-  .piel {
-    position: absolute;
-    inset: 0;
-    z-index: -1;
-    border: 1px solid rgb(var(--cian-rgb) / 0.16);
-    border-radius: inherit;
-    background:
-      radial-gradient(
-        circle at var(--mx, 30%) var(--my, 0%),
-        rgb(var(--cian-rgb) / calc(0.06 + var(--brillo, 0) * 0.12)),
-        transparent 60%
-      ),
-      linear-gradient(160deg, var(--superficie-2), rgb(var(--superficie-rgb) / 0.86));
-    box-shadow:
-      inset 0 1px 0 rgb(var(--texto-rgb) / 0.14),
-      inset 0 -1px 0 rgb(var(--purpura-rgb) / 0.12),
-      0 18px 40px -26px rgb(var(--cian-rgb) / 0.4);
-    transform-origin: center;
-    will-change: transform;
-  }
-
-  /* Tres estados de la materia unidos por un filamento: líquido → forma → sólido. */
+  /* Tres celdas separadas por aristas: de la gota al bloque. */
   .estados {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    margin: 0;
-    padding: 1.1rem 0.4rem;
+    margin: 0.4rem 0 0;
+    padding: 0;
     list-style: none;
   }
 
   .estados li {
-    position: relative;
     display: grid;
-    justify-items: center;
-    gap: 0.3rem;
-    padding: 0 0.6rem;
-    text-align: center;
-    font-size: var(--t--1);
+    gap: 0.25rem;
+    padding: 1.15rem 1.1rem 1.2rem;
   }
 
-  .estados li + li::before {
-    content: '';
-    position: absolute;
-    left: -1.1rem;
-    top: 0.7rem;
-    width: 2.2rem;
-    height: 1px;
-    background: linear-gradient(90deg, var(--cian), var(--purpura));
-    opacity: 0.6;
+  .estados li + li {
+    border-left: 1px solid var(--linea);
   }
 
-  /* La muestra pasa de gota a bloque: la misma materia en tres estados. */
-  .muestra {
-    width: 1.4rem;
-    margin-bottom: 0.2rem;
+  /* El glifo de cada estado: la misma materia, cada vez más rígida. */
+  .glifo {
+    width: 1.1rem;
     aspect-ratio: 1;
+    margin-bottom: 0.65rem;
     background: var(--gota);
-    box-shadow: 0 0 8px rgb(var(--cian-rgb) / 0.45);
+    box-shadow: 0 0 14px -2px rgb(var(--cian-rgb) / 0.35);
   }
 
   .liquido {
@@ -160,12 +115,16 @@ const clausulas = [
   }
 
   .forma {
-    border-radius: 35%;
+    border-radius: 30%;
+    background: linear-gradient(140deg, var(--metal-luz), var(--metal-sombra));
   }
 
   .solido {
-    border-radius: 2px;
-    background: linear-gradient(135deg, var(--texto), var(--metadato) 55%, var(--superficie-2));
+    border-radius: 1px;
+    background: linear-gradient(140deg, var(--metal), var(--grafito) 70%);
+    box-shadow:
+      inset 0 1px 0 rgb(var(--metal-rgb) / 0.6),
+      0 0 0 1px rgb(var(--metal-rgb) / 0.2);
   }
 
   .estado {
@@ -174,16 +133,26 @@ const clausulas = [
   }
 
   .que {
+    font-size: var(--t--1);
     color: var(--metadato);
   }
 
+  /* El manifiesto: un bloque editorial con una arista de luz a su izquierda. */
   .manifiesto {
-    padding-left: 1.25rem;
-    border-left: 1px solid rgb(var(--cian-rgb) / 0.3);
+    position: relative;
+    padding-left: 1.5rem;
     font-size: var(--t-2);
     line-height: 1.3;
-    letter-spacing: -0.015em;
+    letter-spacing: -0.02em;
     color: var(--texto);
+  }
+
+  .manifiesto::before {
+    content: '';
+    position: absolute;
+    inset: 0.35em auto 0.35em 0;
+    width: 1px;
+    background: linear-gradient(180deg, var(--metal), rgb(var(--cian-rgb) / 0.5), transparent);
   }
 
   .manifiesto span {
@@ -191,10 +160,14 @@ const clausulas = [
     transition: opacity 0.3s linear;
   }
 
-  /* Móvil: la escultura arriba, el texto debajo con espacio para verla. */
+  /* Móvil o vertical: la escultura arriba, el texto debajo con espacio para verla. */
   @media (max-aspect-ratio: 85/100), (max-width: 47.99rem) {
     .marco {
-      padding-top: 40svh;
+      padding-top: 38svh;
+    }
+
+    .estados li {
+      padding: 1rem 0.8rem;
     }
   }
 </style>

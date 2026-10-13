@@ -1,36 +1,31 @@
 /**
  * sombreador.ts
- * El guía de metal líquido en un único fragment shader, dibujado sobre un
- * triángulo que cubre la pantalla. Sin mallas ni texturas descargadas.
+ * The Digital Monolith × Liquid Technology en un único fragment shader,
+ * dibujado sobre un triángulo que cubre la pantalla. Sin mallas ni
+ * texturas descargadas.
  *
- * - Forma: el robot (escultura.ts), hecho de funciones de distancia con
- *   unión suave (smin): cuerpo, cabeza, brazos, cola y la estela de gotas
- *   que deja al viajar se funden como líquido. Nace de una gota que flota
- *   (formación, en PIEZA.viaje): al bajar a la segunda escena la gota
- *   adelgaza mientras el robot crece dentro de ella. Antes, de la gota se
- *   desprende una burbuja que viaja al titular (PIEZA.desprendida).
- * - Material: cromo. Refleja un estudio procedural de paredes azul
- *   medianoche con luces diseñadas: una caja cenital blanca (el cromo sigue
- *   leyéndose como cromo), un filo cian, una tira azul eléctrico, contraluz
- *   violeta y una luz blanca que barre la superficie. El visor brilla cian;
- *   en la escena del núcleo se encienden circuitos de luz en el cuerpo.
- * - Paneles líquidos: algunas piezas de la página ([data-liquido]) nacen
- *   como metal líquido que se solidifica en su forma exacta antes de que
- *   aparezca su contenido. Son un campo de distancias 2D con relieve (no
- *   marchan rayos): baratas también en móvil. Se dibujan detrás del robot.
+ * - Arquitectura (arquitectura.ts): monolitos, losas y marcos con hueco de
+ *   grafito oscuro o cromo negro. Se intersecan analíticamente (rayo contra
+ *   caja, sin marchar): bordes exactos y coste fijo por pieza. Absorben casi
+ *   toda la luz; una luz principal con caída los modela y unas aristas
+ *   metálicas finas (de grosor constante en píxeles) revelan su escala. Las
+ *   tiras de luz son líneas emisivas con halo. La niebla de profundidad
+ *   funde lo lejano en el azul de fondo.
+ * - Metal líquido (escultura.ts): una gota que se estira en una cinta curva
+ *   (dos Bézier cuadráticas con grosor variable), unidas con unión suave.
+ *   Se marcha solo dentro de su esfera límite. Es cromo: refleja un estudio
+ *   procedural (caja cenital blanca, filo cian, tira azul, contraluz
+ *   violeta) y, de verdad, la arquitectura que tiene alrededor.
+ * - La gota, el cromo, el estudio y el fondo son los mismos que pintan el
+ *   póster de la gota (Lienzo.astro): con la arquitectura aún oculta, el
+ *   primer fotograma coincide con él.
  * - Rayos: la misma cámara que camara.ts (función `rayo`).
  */
-import { FOCAL } from './camara';
-import { ALTURA, GOTAS_DE_ESTELA, MAX_PIEZAS, PIEZA, RADIO_LIMITE } from './escultura';
+import { MAX_CAJAS, TIPO, VEC4_POR_CAJA } from './arquitectura';
+import { LIQUIDO, MAX_LIQUIDO } from './escultura';
 
-/** Bloques de texto delante de los que la escultura baja sus brillos. */
+/** Bloques de texto delante de los que la escena baja sus brillos. */
 export const MAX_ZONAS_DE_LECTURA = 3;
-/** Paneles líquidos que se dibujan a la vez (solo los visibles que están cambiando). */
-export const MAX_PANELES = 4;
-/** Px CSS de campo alrededor de las letras de los titulares líquidos: lo que alcanza la unión con la gota. */
-export const RANGO_TITULAR = 28;
-/** Titulares líquidos que se dibujan a la vez (solo los visibles que están cambiando). */
-export const MAX_TITULARES = 2;
 
 export const VERTICE = /* glsl */ `#version 300 es
 void main() {
@@ -39,59 +34,54 @@ void main() {
   gl_Position = vec4(p * 2.0 - 1.0, 0.0, 1.0);
 }`;
 
-const f = (n: number) => n.toFixed(4);
+const L = (k: number) => `uLiquido[${k}]`;
 
 export const FRAGMENTO = /* glsl */ `#version 300 es
 precision highp float;
 
-#define MAX_PIEZAS ${MAX_PIEZAS}
-#define GOTAS ${GOTAS_DE_ESTELA}
+#define MAX_CAJAS ${MAX_CAJAS}
+#define VEC4_CAJA ${VEC4_POR_CAJA}
 #define MAX_ZONAS ${MAX_ZONAS_DE_LECTURA}
-#define MAX_PANELES ${MAX_PANELES}
-#define MAX_TITULARES ${MAX_TITULARES}
+#define EMISIVO ${TIPO.emisivo}.0
+#define MARCO ${TIPO.marco}.0
 
 uniform vec2 uRes;
-uniform float uTiempo;
+uniform float uTiempo;      // segundos desde que WebGL pinta (la luz que barre el estudio)
 uniform float uDetalle;     // 1 completo; 0 ligero (menos pasos, sin oclusión)
 uniform vec3 uCamara;
 uniform vec3 uObjetivo;
 uniform vec2 uDesplazamiento;
+uniform float uFocal;       // 1 / tan(campo de visión / 2) (camara.ts)
 uniform float uFase;        // tiempo del movimiento interno (integrado con su velocidad)
-uniform float uAtenuacion;  // 0..1: apaga la escena para que mande el contenido
+uniform float uAtenuacion;  // 0..1: apaga la escultura para que mande el contenido
 uniform float uRed;         // 0..1: la red despierta; tiñe el borde del cromo
-uniform float uGrietas;     // 0..1: circuitos de luz dentro del cuerpo
-uniform vec4 uPiezas[MAX_PIEZAS]; // robot: articulaciones, pose, viaje y estela (escultura.ts)
+uniform vec4 uLiquido[${MAX_LIQUIDO}];           // gota, cinta y esfera límite (escultura.ts)
+uniform vec4 uCajas[MAX_CAJAS * VEC4_CAJA];    // piezas de la arquitectura (arquitectura.ts)
+uniform int uNumCajas;
+uniform vec4 uLuz;                             // luz principal: posición e intensidad
 uniform vec4 uZonas[MAX_ZONAS];
 uniform int uNumZonas;
-uniform vec4 uPaneles[MAX_PANELES];      // rectángulo en uv (x0, y0, x1, y1; y hacia arriba)
-uniform vec4 uEstadosPanel[MAX_PANELES]; // x: solidez 0..1, y: semilla, z: radio de esquina (px CSS)
-uniform int uNumPaneles;
-uniform float uPxCss;                    // píxeles del lienzo por píxel CSS
-// Titulares que nacen de una gota (titular.ts). En px del lienzo, y hacia arriba.
-uniform sampler2D uTitularMapa;                // atlas: distancia a las letras (0.5 = borde, ±RANGO px CSS)
-uniform vec4 uTitularCaja[MAX_TITULARES];      // lo que cubre su mapa (x0, y0, x1, y1)
-uniform vec4 uTitularAtlas[MAX_TITULARES];     // su sitio en el atlas (u izq, v arriba, u der, v abajo)
-uniform vec4 uTitularGota[MAX_TITULARES];      // gota 2D: centro y radio
-uniform vec4 uTitularFrente[MAX_TITULARES];    // x, y: donde aterriza; z: alcance del frente; w: 0..1 visible
-uniform int uNumTitulares;
 
 out vec4 color;
 
 const float PI = 3.14159265;
 const float TAU = 6.28318531;
-const float LIMITE = ${f(RADIO_LIMITE)};
-const float FOCAL = ${f(FOCAL)};
-const float ALTURA = ${f(ALTURA)};
-const float RANGO_TITULAR = ${f(RANGO_TITULAR)};
 
-// Paleta (tokens.css), en lineal aproximado para la luz.
-const vec3 FONDO = vec3(0.0118, 0.0275, 0.0667);
-const vec3 CIAN = vec3(0.0, 0.9, 1.0);
-const vec3 AZUL = vec3(0.086, 0.467, 1.0);
-const vec3 VIOLETA = vec3(0.486, 0.227, 0.929);
-const vec3 PURPURA = vec3(0.694, 0.361, 1.0);
+// Paleta (tokens.css). FONDO es exactamente --fondo: el lienzo y la página
+// son el mismo espacio. Los acentos, en lineal aproximado para la luz.
+const vec3 FONDO = vec3(0.0196, 0.0353, 0.0784);
+const vec3 CIAN = vec3(0.333, 0.867, 0.961);
+const vec3 AZUL = vec3(0.153, 0.42, 1.0);
+const vec3 VIOLETA = vec3(0.502, 0.404, 0.91);
+const vec3 PURPURA = vec3(0.62, 0.52, 0.96);
+// Arquitectura: grafito que absorbe la luz, su cara iluminada y el metal de sus aristas.
+const vec3 GRAFITO = vec3(0.03, 0.038, 0.054);
+const vec3 GRAFITO_LUZ = vec3(0.1, 0.125, 0.165);
+const vec3 METAL = vec3(0.75, 0.79, 0.86);
+const vec3 LUZ_CIAN = vec3(0.33, 0.87, 0.96);
 
 float T; // tiempo del movimiento interno
+float PIXEL; // unidades del mundo por píxel a distancia 1
 
 // ---------------------------------------------------------------- utilidades
 
@@ -101,188 +91,89 @@ float hash(vec2 p) {
   return fract(p.x * p.y);
 }
 
-mat2 rot(float a) {
-  float c = cos(a), s = sin(a);
-  return mat2(c, -s, s, c);
-}
-
 // Unión suave: dos superficies se funden como gotas.
 float smin(float a, float b, float k) {
   float h = max(k - abs(a - b), 0.0) / k;
   return min(a, b) - h * h * k * 0.25;
 }
 
-float sdCapsula(vec3 p, vec3 a, vec3 b, float r) {
-  vec3 pa = p - a, ba = b - a;
-  float h = clamp(dot(pa, ba) / dot(ba, ba), 0.0, 1.0);
-  return length(pa - ba * h) - r;
+// Distancia a una Bézier cuadrática (x) y su parámetro más cercano (y). Inigo Quilez.
+vec2 sdBezier(vec3 pos, vec3 A, vec3 B, vec3 C) {
+  vec3 a = B - A;
+  vec3 b = A - 2.0 * B + C;
+  vec3 c = a * 2.0;
+  vec3 d = A - pos;
+  float kk = 1.0 / dot(b, b);
+  float kx = kk * dot(a, b);
+  float ky = kk * (2.0 * dot(a, a) + dot(d, b)) / 3.0;
+  float kz = kk * dot(d, a);
+  float p = ky - kx * kx;
+  float p3 = p * p * p;
+  float q = kx * (2.0 * kx * kx - 3.0 * ky) + kz;
+  float h = q * q + 4.0 * p3;
+  vec2 res;
+  if (h >= 0.0) {
+    h = sqrt(h);
+    vec2 x = (vec2(h, -h) - q) / 2.0;
+    vec2 uv = sign(x) * pow(abs(x), vec2(1.0 / 3.0));
+    float t = clamp(uv.x + uv.y - kx, 0.0, 1.0);
+    vec3 r = d + (c + b * t) * t;
+    res = vec2(dot(r, r), t);
+  } else {
+    float z = sqrt(-p);
+    float v = acos(q / (p * z * 2.0)) / 3.0;
+    float m = cos(v);
+    float n = sin(v) * 1.732050808;
+    vec3 t = clamp(vec3(m + m, -n - m, n - m) * z - kx, 0.0, 1.0);
+    vec3 rx = d + (c + b * t.x) * t.x;
+    vec3 ry = d + (c + b * t.y) * t.y;
+    float dx = dot(rx, rx);
+    float dy = dot(ry, ry);
+    res = dx < dy ? vec2(dx, t.x) : vec2(dy, t.y);
+  }
+  return vec2(sqrt(res.x), res.y);
 }
 
-float sdCaja(vec3 p, vec3 b, float r) {
-  vec3 q = abs(p) - b + r;
-  return length(max(q, 0.0)) + min(max(q.x, max(q.y, q.z)), 0.0) - r;
-}
+// ---------------------------------------------------------------- el líquido
 
-// Elipsoide aproximado (distancia acotada, suficiente para relieves pequeños).
-float sdElipsoide(vec3 p, vec3 r) {
-  float k0 = length(p / r);
-  float k1 = length(p / (r * r));
-  return k0 * (k0 - 1.0) / k1;
-}
-
-// ---------------------------------------------------------------- la gota
-
-// La gota de la que nace el robot: una masa con otra gota que se separa y
-// vuelve. Flota con el cuerpo (pose.y lleva la flotación de escultura.ts).
+// La gota: una masa con otra gota que se separa y vuelve. Flota (su centro
+// lo pone escultura.ts). Es la misma que pinta el póster.
 float gota(vec3 p) {
-  p.y -= uPiezas[${PIEZA.pose}].y - ALTURA;
+  p -= ${L(LIQUIDO.gota)}.xyz;
   float d = length(p) - 1.05;
   d += 0.07 * sin(1.7 * p.x + T * 0.9) * sin(1.9 * p.y + T * 0.7) * sin(1.6 * p.z + T * 1.1);
   vec3 g = vec3(0.92 * cos(T * 0.35), 0.62 + 0.1 * sin(T * 0.5), 0.45 * sin(T * 0.35));
   return smin(d, length(p - g) - 0.36, 0.55);
 }
 
-// ---------------------------------------------------------------- el guía
-
-// Del mundo al espacio del robot: deshace el giro, la flotación, la
-// inclinación y el estiramiento que aplica la página (alMundo en escultura.ts).
-vec3 espacioRobot(vec3 p) {
-  vec4 pose = uPiezas[${PIEZA.pose}];
-  float c = cos(pose.z), s = sin(pose.z);
-  vec3 q = vec3(p.x * c - p.z * s, p.y - pose.y, p.x * s + p.z * c);
-  q.x -= q.y * uPiezas[${PIEZA.viaje}].x;
-  float alto = 1.0 + pose.x;
-  float ancho = 1.0 - pose.x * 0.5;
-  return q / vec3(ancho, alto, ancho);
+// Grosor a lo largo de un tramo: Bézier cuadrática de los tres grosores.
+float grosor(float a, float b, float c, float t) {
+  return mix(mix(a, b, t), mix(b, c, t), t);
 }
 
-// Abdominales: seis relieves bajos que se funden con el cuerpo.
-float abdominales(vec3 q, float d) {
-  for (int i = 0; i < 6; i++) {
-    float lado = (i - 2 * (i / 2)) == 0 ? -1.0 : 1.0;
-    float fila = float(i / 2);
-    vec3 centro = vec3(lado * (0.1 - fila * 0.006), 0.21 - fila * 0.15, 0.36 - fila * 0.006);
-    vec3 radio = vec3(0.084, 0.066, 0.05) * (1.0 - fila * 0.07);
-    d = smin(d, sdElipsoide(q - centro, radio), 0.05);
-  }
-  return d;
+// La cinta: dos tramos de Bézier con grosor variable, unidos sin costura.
+float cinta(vec3 p) {
+  vec4 p0 = ${L(LIQUIDO.cinta)};
+  vec4 p1 = ${L(LIQUIDO.cinta + 1)};
+  vec4 p2 = ${L(LIQUIDO.cinta + 2)};
+  vec4 p3 = ${L(LIQUIDO.cinta + 3)};
+  vec4 p4 = ${L(LIQUIDO.cinta + 4)};
+  vec2 a = sdBezier(p, p0.xyz, p1.xyz, p2.xyz);
+  vec2 b = sdBezier(p, p2.xyz, p3.xyz, p4.xyz);
+  float da = a.x - grosor(p0.w, p1.w, p2.w, a.y);
+  float db = b.x - grosor(p2.w, p3.w, p4.w, b.y);
+  float d = smin(da, db, 0.12);
+  // Una ondulación finísima: el metal es líquido, no un tubo torneado.
+  return d + 0.012 * sin(p.x * 5.0 + T * 1.1) * sin(p.y * 4.3 - T * 0.8) * sin(p.z * 4.7 + T * 0.6);
 }
 
-// Cola de animal: nace de la gota del cuerpo, baja hacia un lado y se curva
-// arriba en la punta. Se balancea con retraso, y más cuando el robot viaja.
-float cola(vec3 q, float velocidad) {
-  const int TRAMOS = 6;
-  float agite = 0.1 + 0.12 * velocidad;
-  vec3 previo = vec3(0.0, -0.66, -0.04);
-  float d = 1e3;
-  for (int i = 1; i <= TRAMOS; i++) {
-    float u = float(i) / float(TRAMOS);
-    float vaiven = agite * sin(T * 1.6 - u * 2.4) * u;
-    vec3 punto = vec3(
-      0.42 * u * u + vaiven,
-      -0.66 - 0.62 * u + 0.62 * u * u * u,
-      -0.04 - 0.22 * u + 0.08 * cos(T * 1.1 - u * 2.0) * u
-    );
-    float grosor = mix(0.12, 0.032, u);
-    d = smin(d, sdCapsula(q, previo, punto, grosor), 0.04);
-    previo = punto;
-  }
-  return smin(d, length(q - previo) - 0.06, 0.05);
-}
-
-// Visor de la cabeza: el hueco que se talla en ella (y que brilla).
-float visor(vec3 q) {
-  return sdCaja(q - vec3(0.0, 1.1, 0.36), vec3(0.24, 0.08, 0.1), 0.07);
-}
-
-// Cada pieza solo se evalúa si el punto está cerca de ella: lejos, una
-// cota barata basta para avanzar el rayo (volúmenes envolventes). Los
-// márgenes cubren el radio de las uniones suaves, así que la forma no cambia.
-float robot(vec3 p) {
-  vec4 pose = uPiezas[${PIEZA.pose}];
-  // Lejos de todo el robot (cuerpo, brazos extendidos y antena): una esfera.
-  vec3 centro = vec3(0.0, pose.y + 0.45, 0.0);
-  float lejos = length(p - centro) - 1.95;
-  float estela = 1e3;
-  for (int k = 0; k < GOTAS; k++) {
-    vec4 g = uPiezas[${PIEZA.estela} + k];
-    if (g.w < 0.005) continue;
-    estela = min(estela, length(p - g.xyz) - g.w);
-  }
-  if (lejos > 0.3 && estela > 0.3) return min(lejos, estela);
-
-  float alto = 1.0 + pose.x;
-  float ancho = 1.0 - pose.x * 0.5;
-  vec3 q = espacioRobot(p);
-
-  // Cuerpo atlético pero blando: cintura de huevo, pecho más ancho, dos
-  // pectorales apenas marcados y una gota abajo, como si flotara.
-  float cuerpo = sdCapsula(q, vec3(0.0), vec3(0.0, 0.28, 0.0), 0.4);
-  cuerpo = smin(cuerpo, sdElipsoide(q - vec3(0.0, 0.42, 0.0), vec3(0.56, 0.3, 0.42)), 0.16);
-  vec3 pecho = vec3(abs(q.x), q.y, q.z);
-  cuerpo = smin(cuerpo, sdElipsoide(pecho - vec3(0.17, 0.46, 0.33), vec3(0.17, 0.1, 0.08)), 0.07);
-  cuerpo = smin(cuerpo, length(q - vec3(0.0, -0.6, 0.0)) - 0.15, 0.36);
-  // Abdominales solo delante del vientre; cola solo cerca de su recorrido.
-  bool vientre = abs(q.x) < 0.42 && q.y > -0.2 && q.y < 0.45 && q.z > 0.12;
-  if (uDetalle > 0.5 && vientre) cuerpo = abdominales(q, cuerpo);
-  if (length(q - vec3(0.22, -0.98, -0.16)) < 0.85) cuerpo = smin(cuerpo, cola(q, pose.w), 0.08);
-  // Cabeza pequeña y redonda, con una visera hundida que recoge la luz.
-  float cabeza = sdCaja(q - vec3(0.0, 1.08, 0.0), vec3(0.34, 0.25, 0.3), 0.22);
-  cabeza = max(cabeza, -visor(q));
-  float cuello = sdCapsula(q, vec3(0.0, 0.66, 0.0), vec3(0.0, 0.95, 0.0), 0.13);
-  float d = smin(smin(cuerpo, cuello, 0.1), cabeza, 0.1) * min(alto, ancho);
-
-  // Brazos y antena, en el mundo: cápsulas blandas fundidas con el cuerpo.
-  vec3 hombroI = uPiezas[${PIEZA.hombroIzq}].xyz;
-  vec3 codoI = uPiezas[${PIEZA.codoIzq}].xyz;
-  vec4 manoI = uPiezas[${PIEZA.manoIzq}];
-  vec3 hombroD = uPiezas[${PIEZA.hombroDer}].xyz;
-  vec3 codoD = uPiezas[${PIEZA.codoDer}].xyz;
-  vec4 manoD = uPiezas[${PIEZA.manoDer}];
-  float radioHombro = uPiezas[${PIEZA.hombroIzq}].w;
-  // Cada brazo, solo si el punto está cerca de él (hombro → mano).
-  if (sdCapsula(p, hombroI, manoI.xyz, 0.42) < d + 0.12) {
-    d = smin(d, length(p - hombroI) - radioHombro, 0.12);
-    d = smin(d, sdCapsula(p, hombroI, codoI, 0.105), 0.1);
-    d = smin(d, sdCapsula(p, codoI, manoI.xyz, 0.082), 0.08);
-    d = smin(d, length(p - manoI.xyz) - manoI.w, 0.1);
-  }
-  if (sdCapsula(p, hombroD, manoD.xyz, 0.42) < d + 0.12) {
-    d = smin(d, length(p - hombroD) - radioHombro, 0.12);
-    d = smin(d, sdCapsula(p, hombroD, codoD, 0.105), 0.1);
-    d = smin(d, sdCapsula(p, codoD, manoD.xyz, 0.082), 0.08);
-    d = smin(d, length(p - manoD.xyz) - manoD.w, 0.1);
-  }
-  vec4 antena = uPiezas[${PIEZA.antena}];
-  d = smin(d, sdCapsula(p, uPiezas[${PIEZA.cabeza}].xyz, antena.xyz, 0.028), 0.05);
-  d = smin(d, length(p - antena.xyz) - antena.w, 0.06);
-
-  // La estela: gotas que lo siguen al viajar y se funden con él.
-  for (int k = 0; k < GOTAS; k++) {
-    vec4 g = uPiezas[${PIEZA.estela} + k];
-    if (g.w < 0.005) continue;
-    d = smin(d, length(p - g.xyz) - g.w, 0.3);
-  }
-  return d;
-}
-
-// El cuerpo: el robot, o la gota condensándose en él.
-float cuerpo(vec3 p) {
-  float s = uPiezas[${PIEZA.viaje}].y;
-  if (s >= 0.999) return robot(p);
-  if (s <= 0.001) return gota(p);
-  s = s * s * (3.0 - 2.0 * s);
-  // La gota adelgaza mientras el robot crece dentro de ella, unidos como líquido.
-  return smin(gota(p) + s * 0.6, robot(p) + (1.0 - s) * 0.6, 0.3);
-}
-
-// La distancia a la escena: el cuerpo y la burbuja que se desprende de él
-// hacia el titular, unidas como líquido hasta que se separan.
+// La gota se estira en la cinta: adelgaza mientras la cinta crece desde ella.
 float mapa(vec3 p) {
-  float d = cuerpo(p);
-  vec4 b = uPiezas[${PIEZA.desprendida}];
-  if (b.w < 0.005) return d;
-  return smin(d, length(p - b.xyz) - b.w, 0.3);
+  float s = ${L(LIQUIDO.gota)}.w;
+  if (s <= 0.001) return gota(p);
+  if (s >= 0.999) return cinta(p);
+  s = s * s * (3.0 - 2.0 * s);
+  return smin(gota(p) + s * 0.9, cinta(p) + (1.0 - s) * 0.5, 0.45);
 }
 
 // El paso crece con la distancia (t): las uniones suaves no son distancias
@@ -368,30 +259,194 @@ float zonaDeLectura() {
   return zona;
 }
 
+// ---------------------------------------------------------------- arquitectura
+
+struct Golpe {
+  float t;
+  int i;
+  vec3 n;   // normal en el espacio de la pieza
+  vec3 q;   // punto en el espacio de la pieza
+};
+
+// Del mundo al espacio de una pieza (deshace su giro alrededor del eje vertical).
+vec3 alLocal(vec3 v, float giro) {
+  float c = cos(giro), s = sin(giro);
+  return vec3(c * v.x - s * v.z, v.y, s * v.x + c * v.z);
+}
+
+vec3 alMundo(vec3 v, float giro) {
+  float c = cos(giro), s = sin(giro);
+  return vec3(c * v.x + s * v.z, v.y, -s * v.x + c * v.z);
+}
+
+// Rayo contra la pieza i (caja, o marco con un hueco que la atraviesa en z).
+// Devuelve t > 0 si la toca. Las tiras de luz no se tocan: son halo.
+float tocar(vec3 ro, vec3 rd, int i, out vec3 nl, out vec3 ql) {
+  vec4 A = uCajas[i * VEC4_CAJA];
+  vec4 B = uCajas[i * VEC4_CAJA + 1];
+  nl = vec3(0.0);
+  ql = vec3(0.0);
+  if (B.w == EMISIVO) return -1.0;
+  vec3 o = alLocal(ro - A.xyz, A.w);
+  vec3 d = alLocal(rd, A.w);
+  vec3 m = 1.0 / d;
+  vec3 n = m * o;
+  vec3 k = abs(m) * B.xyz;
+  vec3 t1 = -n - k;
+  vec3 t2 = -n + k;
+  float tN = max(max(t1.x, t1.y), t1.z);
+  float tF = min(min(t2.x, t2.y), t2.z);
+  if (tN > tF || tN < 0.0) return -1.0;
+  nl = -sign(d) * step(t1.yzx, t1.xyz) * step(t1.zxy, t1.xyz);
+  ql = o + d * tN;
+  if (B.w == MARCO) {
+    vec2 hueco = uCajas[i * VEC4_CAJA + 3].xy;
+    if (abs(ql.x) < hueco.x && abs(ql.y) < hueco.y) {
+      // Entra por el hueco: o choca con una pared del túnel o lo atraviesa.
+      vec3 kh = abs(m) * vec3(hueco, B.z + 1.0);
+      vec3 sal = -n + kh;
+      float tS = min(sal.x, sal.y);
+      vec3 qs = o + d * tS;
+      if (abs(qs.z) >= B.z) return -1.0;
+      nl = sal.x < sal.y ? vec3(-sign(d.x), 0.0, 0.0) : vec3(0.0, -sign(d.y), 0.0);
+      ql = qs;
+      return tS;
+    }
+  }
+  return tN;
+}
+
+Golpe arquitecturaMasCercana(vec3 ro, vec3 rd, float tMax) {
+  Golpe g;
+  g.t = tMax;
+  g.i = -1;
+  g.n = vec3(0.0);
+  g.q = vec3(0.0);
+  for (int i = 0; i < MAX_CAJAS; i++) {
+    if (i >= uNumCajas) break;
+    vec3 nl, ql;
+    float t = tocar(ro, rd, i, nl, ql);
+    if (t > 0.0 && t < g.t) {
+      g.t = t;
+      g.i = i;
+      g.n = nl;
+      g.q = ql;
+    }
+  }
+  return g;
+}
+
+// Distancia del punto a la arista más cercana de su cara (espacio de la pieza).
+float distanciaAArista(vec3 q, vec3 n, vec3 h, vec2 hueco, bool marco) {
+  vec3 a = h - abs(q);
+  float e;
+  if (abs(n.x) > 0.5) e = min(a.y, a.z);
+  else if (abs(n.y) > 0.5) e = min(a.x, a.z);
+  else e = min(a.x, a.y);
+  if (marco) {
+    // Cara frontal: el borde del hueco también es arista.
+    if (abs(n.z) > 0.5) e = min(e, length(max(abs(q.xy) - hueco, 0.0)));
+    // Paredes del túnel: aristas en la boca y en el fondo.
+    else if (abs(q.x) <= hueco.x + 0.001 && abs(q.y) <= hueco.y + 0.001) e = min(e, h.z - abs(q.z));
+  }
+  return e;
+}
+
+// El grafito de la arquitectura: casi negro, modelado por la luz principal,
+// satinado o cromo negro según "pulido", con aristas de metal fino.
+vec3 sombrearPieza(Golpe g, vec3 ro, vec3 rd, float ancho, bool enReflejo) {
+  int b = g.i * VEC4_CAJA;
+  vec4 A = uCajas[b];
+  vec4 B = uCajas[b + 1];
+  vec4 C = uCajas[b + 2];
+  vec2 hueco = uCajas[b + 3].xy;
+  bool marco = B.w == MARCO;
+  vec3 p = ro + rd * g.t;
+  vec3 n = alMundo(g.n, A.w);
+  bool tunel = marco && abs(g.n.z) < 0.5 && abs(g.q.x) <= hueco.x + 0.001 && abs(g.q.y) <= hueco.y + 0.001;
+
+  vec3 l = uLuz.xyz - p;
+  float d2 = dot(l, l);
+  l *= inversesqrt(d2);
+  float caida = uLuz.w * 90.0 / (d2 + 40.0);
+  float difusa = max(dot(n, l), 0.0);
+  // La cara que mira a la luz se aclara hacia el grafito iluminado; la que
+  // no, se queda casi negra. Un degradado cenital (más luz arriba, sombra
+  // abajo) da peso a los volúmenes; las caras de arriba reciben el cielo.
+  float cenital = smoothstep(-7.0, 8.0, p.y);
+  float luz = clamp(difusa * caida * 1.35, 0.0, 1.0) * (0.45 + 0.55 * cenital);
+  vec3 col = mix(GRAFITO * (0.45 + 0.55 * cenital), GRAFITO_LUZ, luz);
+  col += GRAFITO_LUZ * 0.45 * max(n.y, 0.0);
+
+  float pulido = C.w;
+  vec3 v = -rd;
+  vec3 hv = normalize(l + v);
+  float brillo = pow(max(dot(n, hv), 0.0), mix(16.0, 120.0, pulido));
+  col += vec3(0.6, 0.68, 0.82) * brillo * caida * mix(0.05, 0.5, pulido);
+  if (!enReflejo && pulido > 0.01) {
+    float fres = 0.04 + 0.96 * pow(1.0 - max(dot(n, v), 0.0), 5.0);
+    col += estudio(reflect(rd, n), 0.08) * fres * pulido * 0.22;
+  }
+
+  // Aristas: una línea de metal de grosor constante en pantalla.
+  float e = distanciaAArista(g.q, g.n, B.xyz, hueco, marco);
+  float linea = 1.0 - smoothstep(ancho * 0.6, ancho * 1.9, e);
+  float bisel = exp(-e / (ancho * 6.0 + 0.02)) * 0.18;
+  float recoge = C.x * (0.35 + 0.9 * caida * (0.5 + 0.5 * dot(n, l)));
+  col += mix(METAL, LUZ_CIAN, 0.2) * (linea + bisel) * recoge;
+
+  // Marcos con luz interior: el túnel se baña de cian frío hacia el fondo.
+  if (tunel && C.y > 0.0) {
+    float fondo = smoothstep(-B.z, B.z, -g.q.z);
+    col += LUZ_CIAN * C.y * (0.08 + 0.35 * fondo) * (0.6 + 0.4 * linea);
+  }
+  // Una pieza encendida (el módulo del servicio activo): sus aristas se
+  // vuelven cian y su cara recoge un velo de luz que sube desde abajo.
+  if (!marco && C.y > 0.0) {
+    float velo = smoothstep(B.y, -B.y, g.q.y) * 0.06;
+    col += LUZ_CIAN * C.y * ((linea + bisel) * 1.4 + velo);
+  }
+  return col;
+}
+
+// Distancia mínima entre el rayo y un segmento: (distancia, t sobre el rayo).
+vec2 rayoSegmento(vec3 ro, vec3 rd, vec3 a, vec3 b) {
+  vec3 ba = b - a;
+  vec3 oa = ro - a;
+  float bb = dot(ba, ba);
+  float rb = dot(rd, ba);
+  float ro2 = dot(oa, rd);
+  float ob = dot(oa, ba);
+  float den = bb - rb * rb;
+  float s = den > 1e-5 ? clamp((ob - ro2 * rb) / den, 0.0, 1.0) : 0.0;
+  vec3 punto = a + ba * s;
+  float t = max(dot(punto - ro, rd), 0.0);
+  return vec2(length(ro + rd * t - punto), t);
+}
+
+// Las tiras de luz: una línea emisiva nítida y un halo que ilumina el aire.
+vec3 tirasDeLuz(vec3 ro, vec3 rd, float tMax, float escala) {
+  vec3 luz = vec3(0.0);
+  for (int i = 0; i < MAX_CAJAS; i++) {
+    if (i >= uNumCajas) break;
+    vec4 B = uCajas[i * VEC4_CAJA + 1];
+    if (B.w != EMISIVO) continue;
+    vec4 A = uCajas[i * VEC4_CAJA];
+    vec4 C = uCajas[i * VEC4_CAJA + 2];
+    // El eje largo de la tira.
+    vec3 eje = B.x > B.y && B.x > B.z ? vec3(B.x, 0.0, 0.0) : (B.y > B.z ? vec3(0.0, B.y, 0.0) : vec3(0.0, 0.0, B.z));
+    eje = alMundo(eje, A.w);
+    vec2 r = rayoSegmento(ro, rd, A.xyz - eje, A.xyz + eje);
+    if (r.y > tMax) continue;
+    float ancho = PIXEL * r.y * escala;
+    float nucleo = exp(-pow(r.x / (ancho * 1.1), 2.0));
+    float halo = exp(-r.x / 0.16) * 0.18 + exp(-r.x / 0.9) * 0.05;
+    luz += mix(LUZ_CIAN, vec3(0.9, 0.98, 1.0), 0.35 * nucleo) * (nucleo * 1.6 + halo) * C.y * C.z;
+  }
+  return luz;
+}
+
 // ---------------------------------------------------------------- materiales
-
-// Circuitos: los ceros de un campo suave forman una red de líneas finas.
-float campoDeCircuitos(vec3 q) {
-  return sin(q.x * 6.1 + sin(q.y * 4.3) * 1.2) * sin(q.y * 5.7 + sin(q.z * 5.3)) * sin(q.z * 5.9 + sin(q.x * 3.7));
-}
-
-// Se dibujan en el espacio del robot (viajan con él) y se encienden de
-// arriba abajo con uGrietas. Distancia a la línea = valor / pendiente:
-// grosor uniforme, sin manchas donde se cruzan.
-float circuito(vec3 q) {
-  float n = campoDeCircuitos(q);
-  const float e = 0.01;
-  vec3 g = vec3(
-    campoDeCircuitos(q + vec3(e, 0.0, 0.0)),
-    campoDeCircuitos(q + vec3(0.0, e, 0.0)),
-    campoDeCircuitos(q + vec3(0.0, 0.0, e))
-  ) - n;
-  float distancia = abs(n) / max(length(g) / e, 0.5);
-  float linea = 1.0 - smoothstep(0.003, 0.011, distancia);
-  float avance = uGrietas * 1.4 - 0.2;
-  float revelado = smoothstep(avance, avance - 0.3, 0.6 - q.y * 0.5 + 0.1 * sin(q.x * 4.0));
-  return linea * revelado;
-}
 
 vec3 cromo(vec3 p, vec3 n, vec3 rd, float ndv) {
   vec3 r = reflect(rd, n);
@@ -400,244 +455,112 @@ vec3 cromo(vec3 p, vec3 n, vec3 rd, float ndv) {
   float borde = pow(1.0 - ndv, 5.0);
   vec3 fresnel = f0 + (1.0 - f0) * borde;
   float aspereza = 0.008 + 0.03 * (0.5 + 0.5 * sin(p.x * 3.1 + p.y * 2.3) * sin(p.z * 2.7 - p.y));
-  vec3 metal = estudio(r, aspereza) * fresnel;
+  vec3 reflejo = estudio(r, aspereza);
+  // El cromo refleja la arquitectura que tiene alrededor: las piezas tapan
+  // el estudio y sus aristas y tiras de luz se ven en la superficie.
+  if (uNumCajas > 0) {
+    vec3 ro = p + n * 0.02;
+    Golpe g = arquitecturaMasCercana(ro, r, 60.0);
+    if (g.i >= 0) {
+      float presencia = uCajas[g.i * VEC4_CAJA + 2].z;
+      vec3 pieza = sombrearPieza(g, ro, r, 0.02, true);
+      reflejo = mix(reflejo, pieza, presencia);
+    }
+    reflejo += tirasDeLuz(ro, r, g.t, 3.0);
+  }
+  vec3 metal = reflejo * fresnel;
   // Con la red despierta, el borde del metal recoge un poco de su luz.
   metal += CIAN * 0.12 * uRed * pow(1.0 - ndv, 3.0);
   return metal + vec3(0.016, 0.02, 0.03) * (0.5 + 0.5 * n.y);
 }
 
-// ---------------------------------------------------------------- cromo 2D
-
-// Metal líquido visto de frente para una forma plana (paneles, titular):
-// x es la profundidad relativa dentro de su relieve (0 borde, 1 cara) y
-// gradiente, el de su campo de distancias.
-vec3 cromoPlano(float x, vec2 gradiente, float semilla) {
-  float borde = 1.0 - x;
-  vec2 hacia = normalize(gradiente + 1e-5);
-  vec3 n = normalize(vec3(hacia * borde * 2.2, 1.0 - borde * 0.55));
-  vec3 reflejo = reflect(vec3(0.0, 0.0, -1.0), n);
-  // El estudio es el mismo que refleja el robot: es del mismo metal. Se
-  // mira inclinado hacia arriba: la cara plana refleja la pared azul y los
-  // bordes curvos recorren las tiras de luz.
-  vec3 hacia3 = normalize(vec3(reflejo.x, reflejo.y + 0.55, reflejo.z * 0.55));
-  // Algo más contenido que el robot: no debe competir con el contenido.
-  vec3 metal = estudio(hacia3, 0.012) * (0.62 + 0.25 * pow(borde, 3.0));
-  metal += CIAN * 0.25 * pow(borde, 4.0) * (0.6 + 0.4 * sin(uFase * 2.0 + semilla));
-  return metal / (1.0 + metal * 0.55) * 1.2;
-}
-
-// ---------------------------------------------------------------- paneles líquidos
-
-// Distancia a un rectángulo redondeado (2D).
-float sdRect(vec2 p, vec2 b, float r) {
-  vec2 q = abs(p) - b + r;
-  return length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - r;
-}
-
-// Dónde termina cada gota cuando el panel se extiende (en el rectángulo, de -1 a 1).
-const vec2 HOGARES[7] = vec2[7](
-  vec2(-0.66, -0.5), vec2(0.0, -0.55), vec2(0.66, -0.5),
-  vec2(-0.66, 0.5), vec2(0.0, 0.55), vec2(0.66, 0.5), vec2(0.0)
-);
-
-// El campo del panel en el píxel px: una gota que crece junto a su borde
-// superior, el que entra primero en pantalla (solidez 0 → 0.18), se divide
-// en gotas que bajan, se extienden y se funden (→ 0.65) y se solidifica en
-// el rectángulo exacto del elemento (→ 0.92).
-float campoPanel(vec2 px, vec2 centro, vec2 mitad, vec4 estado) {
-  float s = estado.x;
-  float semilla = estado.y;
-  float lado = min(mitad.x, mitad.y);
-  float crece = smoothstep(0.0, 0.18, s);
-  float extiende = smoothstep(0.1, 0.65, s);
-  float solido = smoothstep(0.55, 0.92, s);
-  float d = 1e5;
-  float k = mix(0.35, 0.6, extiende) * lado;
-  vec2 origen = vec2(centro.x, centro.y + mitad.y - lado * 0.55);
-  for (int j = 0; j < 7; j++) {
-    float fj = float(j) + semilla;
-    vec2 temblor = vec2(sin(uFase * 1.3 + fj * 2.1), cos(uFase * 1.1 + fj * 1.7)) * lado * 0.12 * (1.0 - solido);
-    vec2 liquido = origen + HOGARES[j] * lado * 0.35 + temblor;
-    vec2 destino = centro + HOGARES[j] * mitad * 0.62;
-    vec2 c = mix(liquido, destino, extiende);
-    float r = mix(lado * 0.22, max(mitad.x * 0.42, mitad.y * 0.6), extiende) * crece * (0.82 + 0.18 * sin(fj * 1.7));
-    float dj = length(px - c) - r;
-    float h = max(k - abs(d - dj), 0.0) / k;
-    d = min(d, dj) - h * h * k * 0.25;
-  }
-  float radio = estado.z * uPxCss;
-  return mix(d, sdRect(px - centro, mitad, radio), solido);
-}
-
-// Pinta los paneles sobre el fondo: cromo líquido con relieve que se
-// convierte en una placa azul profunda con borde de cromo. Al final se
-// desvanece y queda el elemento HTML (que aparece encima a la vez).
-vec3 pintarPaneles(vec3 col) {
-  vec2 px = gl_FragCoord.xy;
-  for (int i = 0; i < MAX_PANELES; i++) {
-    if (i >= uNumPaneles) break;
-    vec4 r = uPaneles[i] * vec4(uRes, uRes);
-    vec4 estado = uEstadosPanel[i];
-    vec2 centro = (r.xy + r.zw) * 0.5;
-    vec2 mitad = (r.zw - r.xy) * 0.5;
-    // Fuera de su caja (con margen para las gotas) no hay nada que pintar.
-    vec2 fuera = abs(px - centro) - mitad;
-    if (max(fuera.x, fuera.y) > min(mitad.x, mitad.y) * 0.2 + 4.0) continue;
-
-    float d = campoPanel(px, centro, mitad, estado);
-    if (d > 2.0 * uPxCss) continue;
-    float solido = smoothstep(0.55, 0.92, estado.x);
-    float lado = min(mitad.x, mitad.y);
-    // Relieve: gotas redondas en estado líquido; un bisel fino al solidificarse.
-    float bisel = mix(lado * 0.5, 7.0 * uPxCss, solido);
-    float x = clamp(-d / bisel, 0.0, 1.0);
-    float e = max(1.0, uPxCss);
-    vec2 gradiente = vec2(
-      campoPanel(px + vec2(e, 0.0), centro, mitad, estado) - d,
-      campoPanel(px + vec2(0.0, e), centro, mitad, estado) - d
-    );
-    vec3 metal = cromoPlano(x, gradiente, estado.y);
-    // La cara se vuelve la superficie del panel (--superficie) al solidificarse.
-    vec3 cara = vec3(0.031, 0.067, 0.13) + vec3(0.0, 0.03, 0.06) * (px.y - r.y) / max(r.w - r.y, 1.0);
-    vec3 color = mix(metal, cara, solido * smoothstep(0.15, 0.6, x));
-    float cobertura = 1.0 - smoothstep(-uPxCss, uPxCss, d);
-    float visible = 1.0 - smoothstep(0.88, 1.0, estado.x);
-    col = mix(col, color, cobertura * visible);
-  }
-  return col;
-}
-
-// ---------------------------------------------------------------- titulares líquidos
-
-// Distancia (px del lienzo) a las letras del titular i, ya extendidas hasta
-// el frente: más allá del frente aún no han llegado (crecen desde la gota).
-float letras(vec2 px, int i) {
-  vec4 caja = uTitularCaja[i];
-  vec4 atlas = uTitularAtlas[i];
-  vec2 uv = clamp((px - caja.xy) / (caja.zw - caja.xy), 0.0, 1.0);
-  // En el atlas cada mapa va con la fila de arriba primero.
-  vec2 enAtlas = mix(atlas.xy, atlas.zw, vec2(uv.x, 1.0 - uv.y));
-  float d = (texture(uTitularMapa, enAtlas).r - 0.5) * 2.0 * RANGO_TITULAR * uPxCss;
-  // Fuera del mapa: lejos, sin bordes falsos en su límite.
-  vec2 fuera = max(max(caja.xy - px, px - caja.zw), 0.0);
-  d += length(fuera);
-  vec4 frente = uTitularFrente[i];
-  return d + max(length(px - frente.xy) - frente.z, 0.0) * 0.45;
-}
-
-// El campo del titular i: su gota 2D fundida con las letras que van naciendo.
-float campoTitular(vec2 px, int i) {
-  vec4 g = uTitularGota[i];
-  float gota = g.z > 0.5 ? length(px - g.xy) - g.z : 1e5;
-  if (uTitularFrente[i].z <= 0.0) return gota;
-  float texto = letras(px, i);
-  float k = g.z * 0.8 + 6.0 * uPxCss;
-  float h = max(k - abs(gota - texto), 0.0) / k;
-  return min(gota, texto) - h * h * k * 0.25;
-}
-
-// Pinta cada gota en camino y sus letras de cromo, solo dentro de su alcance.
-vec3 pintarTitulares(vec3 col) {
-  vec2 px = gl_FragCoord.xy;
-  for (int i = 0; i < MAX_TITULARES; i++) {
-    if (i >= uNumTitulares) break;
-    vec4 g = uTitularGota[i];
-    vec4 caja = uTitularCaja[i];
-    bool enGota = length(px - g.xy) < g.z * 1.8 + 4.0;
-    vec2 fuera = max(max(caja.xy - px, px - caja.zw), 0.0);
-    bool enCaja = uTitularFrente[i].z > 0.0 && max(fuera.x, fuera.y) <= 0.0;
-    if (!enGota && !enCaja) continue;
-    float d = campoTitular(px, i);
-    if (d > 2.0 * uPxCss) continue;
-    float e = max(1.0, uPxCss);
-    vec2 gradiente = vec2(campoTitular(px + vec2(e, 0.0), i) - d, campoTitular(px + vec2(0.0, e), i) - d);
-    // Relieve de esfera en la gota, que se afina hasta el grosor del trazo de las letras.
-    float bisel = max(g.z, 4.0 * uPxCss);
-    vec3 metal = cromoPlano(clamp(-d / bisel, 0.0, 1.0), gradiente, 1.3 + float(i));
-    float cobertura = 1.0 - smoothstep(-uPxCss, uPxCss, d);
-    col = mix(col, metal, cobertura * uTitularFrente[i].w);
-  }
-  return col;
-}
-
 // ---------------------------------------------------------------- composición
 
-// Rayo de la cámara (igual que camara.ts): el centro del robot cae en uDesplazamiento.
+// Rayo de la cámara (igual que camara.ts): el objetivo cae en uDesplazamiento.
 vec3 rayo(vec2 ndc) {
   vec3 f = normalize(uObjetivo - uCamara);
   vec3 r = normalize(cross(f, vec3(0.0, 1.0, 0.0)));
   vec3 u = cross(r, f);
   float aspecto = uRes.x / uRes.y;
-  return normalize(f * FOCAL + (ndc.x - uDesplazamiento.x) * aspecto * r + (ndc.y - uDesplazamiento.y) * u);
+  return normalize(f * uFocal + (ndc.x - uDesplazamiento.x) * aspecto * r + (ndc.y - uDesplazamiento.y) * u);
+}
+
+// Fondo: azul medianoche con un halo azul muy contenido detrás del objetivo
+// y un resto violeta lejano. Es el mismo color que la página (Lienzo.astro).
+vec3 fondo(vec2 ndc) {
+  vec2 alCentro = (ndc - uDesplazamiento) * vec2(uRes.x / uRes.y, 1.0);
+  vec3 col = FONDO + vec3(0.012, 0.035, 0.085) * exp(-dot(alCentro, alCentro) * 0.9) * (1.0 - 0.5 * uAtenuacion);
+  col += VIOLETA * 0.018 * exp(-dot(alCentro + vec2(1.2, 0.9), alCentro + vec2(1.2, 0.9)) * 0.6);
+  return col;
 }
 
 void main() {
   T = uFase;
   vec2 ndc = gl_FragCoord.xy / uRes * 2.0 - 1.0;
+  PIXEL = 2.0 / (uRes.y * uFocal);
   vec3 ro = uCamara;
   vec3 rd = rayo(ndc);
+  vec3 cielo = fondo(ndc);
+  vec3 col = cielo;
+  float lectura = zonaDeLectura();
 
-  // Fondo: azul medianoche con un halo azul muy contenido detrás del guía y
-  // un resto violeta lejano. Es el mismo color que la página.
-  vec2 alCentro = (ndc - uDesplazamiento) * vec2(uRes.x / uRes.y, 1.0);
-  vec3 col = FONDO + vec3(0.012, 0.035, 0.085) * exp(-dot(alCentro, alCentro) * 0.9) * (1.0 - 0.5 * uAtenuacion);
-  col += VIOLETA * 0.018 * exp(-dot(alCentro + vec2(1.2, 0.9), alCentro + vec2(1.2, 0.9)) * 0.6);
+  // La arquitectura: la pieza más cercana, fundida en la niebla con la distancia.
+  Golpe g = arquitecturaMasCercana(ro, rd, 1e4);
+  if (g.i >= 0) {
+    float ancho = PIXEL * g.t * 1.2;
+    vec3 pieza = sombrearPieza(g, ro, rd, ancho, false);
+    float presencia = uCajas[g.i * VEC4_CAJA + 2].z;
+    // Perspectiva atmosférica: lo lejano se aclara hacia el azul del aire.
+    float niebla = 1.0 - exp(-max(g.t - 7.0, 0.0) * 0.05);
+    vec3 aire = cielo * 1.6 + vec3(0.006, 0.012, 0.026);
+    // Detrás del texto, las aristas se apagan: manda la lectura.
+    pieza = mix(pieza, GRAFITO * 0.35, lectura * 0.55);
+    col = mix(cielo, mix(pieza, aire, niebla), presencia);
+  }
 
-  if (uNumPaneles > 0) col = pintarPaneles(col);
-  if (uNumTitulares > 0) col = pintarTitulares(col);
-
-  // Solo se marcha dentro de la esfera que contiene al robot y su estela.
-  float b = dot(ro, rd);
-  float disc = b * b - dot(ro, ro) + LIMITE * LIMITE;
+  // El líquido: solo se marcha dentro de su esfera límite y antes de la arquitectura.
+  vec4 esfera = ${L(LIQUIDO.esfera)};
+  vec3 oc = ro - esfera.xyz;
+  float b = dot(oc, rd);
+  float disc = b * b - dot(oc, oc) + esfera.w * esfera.w;
   if (disc > 0.0) {
     float raiz = sqrt(disc);
     float t = max(-b - raiz, 0.0);
-    float fin = -b + raiz;
-    int pasos = uDetalle > 0.5 ? 100 : 64;
+    float fin = min(-b + raiz, g.t);
+    int pasos = uDetalle > 0.5 ? 110 : 70;
     bool toca = false;
     float d = 1.0;
-    for (int i = 0; i < 100; i++) {
-      if (i >= pasos) break;
+    for (int i = 0; i < 110; i++) {
+      if (i >= pasos || t > fin) break;
       d = mapa(ro + rd * t);
       if (d < 0.0008 * t) { toca = true; break; }
-      // Pasos cortos: las uniones suaves no son distancias exactas.
+      // Pasos cortos: las uniones suaves y la cinta no son distancias exactas.
       t += d * 0.65;
-      if (t > fin) break;
     }
     // Los rayos que rozan la silueta pueden quedarse sin pasos justo antes
     // de tocarla: si acabaron pegados a la superficie, cuentan como impacto.
     if (!toca && d < 0.01 && t < fin) toca = true;
-    if (toca) t += d;
     if (toca) {
+      t += d;
       vec3 p = ro + rd * t;
       vec3 n = normal(p, t);
       float ndv = clamp(dot(n, -rd), 0.0, 1.0);
       vec3 metal = cromo(p, n, rd, ndv);
-
-      // Ya formado: el visor brilla cian y, en el núcleo, los circuitos.
-      float formado = smoothstep(0.6, 1.0, uPiezas[${PIEZA.viaje}].y);
-      if (formado > 0.0) {
-        vec3 q = espacioRobot(p);
-        float enVisor = (1.0 - smoothstep(-0.004, 0.025, visor(q))) * step(0.22, q.z);
-        float franja = exp(-pow((q.y - 1.1) / 0.035, 2.0));
-        metal += mix(CIAN, vec3(1.0), 0.25) * 1.6 * enVisor * (0.35 + franja) * formado;
-        if (uGrietas > 0.01 && q.y < 0.95) {
-          vec3 luz = mix(CIAN, PURPURA, smoothstep(-0.6, 0.7, q.y));
-          metal += luz * 1.3 * circuito(q) * formado;
-        }
-      }
-
       // En la silueta misma el reflejo cambia de un píxel a otro: se apaga suavemente.
       metal *= 0.35 + 0.65 * smoothstep(0.0, 0.22, ndv);
       if (uDetalle > 0.5) metal *= oclusion(p, n);
-      // Detrás del texto, el guía baja sus brillos.
-      metal *= 1.0 - 0.6 * zonaDeLectura();
+      // Detrás del texto, la escultura baja sus brillos.
+      metal *= 1.0 - 0.6 * lectura;
       // Curva suave: los brillos no se queman.
       metal = metal / (1.0 + metal * 0.55) * 1.2;
-      // La atenuación apaga al guía, no el fondo: la página no cambia de color.
+      // La atenuación apaga la escultura, no el fondo.
       col = mix(metal, mix(col, metal, 0.22), uAtenuacion);
+      g.t = t;
     }
   }
+
+  // Las tiras de luz y su halo, delante de lo que tapan.
+  col += tirasDeLuz(ro, rd, g.t, 1.0) * (1.0 - 0.6 * lectura);
 
   // Grano finísimo: evita bandas en los degradados oscuros.
   col += (hash(gl_FragCoord.xy + fract(uTiempo)) - 0.5) * 0.008;

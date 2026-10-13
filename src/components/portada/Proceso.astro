@@ -1,13 +1,17 @@
 ---
 /**
  * Escena 06 · El proceso. Las cuatro fases reales de trabajo
- * (datos/proceso.ts) son nodos de un camino orgánico: se curva, se divide
- * un momento y vuelve a unirse, pero el orden de lectura siempre es obvio.
+ * (datos/proceso.ts) son cuatro puertas en un camino: detrás, la
+ * arquitectura levanta cuatro marcos que se adentran en el espacio y
+ * enciende el de la fase actual; aquí, un camino de luz pasa por cuatro
+ * umbrales cuadrados. Se curva, se divide un momento y vuelve a unirse,
+ * pero el orden de lectura siempre es obvio.
  *
  * Con movimiento en escritorio las fases van en fila sobre el camino, que
- * se ilumina mientras la escena sube por la pantalla hasta la fase actual y una partícula viaja hacia la siguiente
- * (scripts/historia/proceso.ts). En móvil es una lista vertical con un
- * filamento que se llena. Las fases son HTML: el dibujo solo acompaña.
+ * se ilumina mientras la escena sube por la pantalla hasta la fase actual
+ * y una partícula viaja hacia la siguiente (scripts/historia/proceso.ts).
+ * En móvil es una lista vertical con una arista que se llena. Las fases son
+ * HTML: el dibujo solo acompaña.
  */
 import { fases } from '@/datos/proceso';
 
@@ -44,7 +48,7 @@ const desvio =
   <div class="marco">
     <header class="cabecera" data-zona-lectura>
       <p class="rotulo">06 · El proceso</p>
-      <h2 id="titulo-proceso" data-gota>
+      <h2 id="titulo-proceso">
         De la idea <em>al ecosistema.</em>
       </h2>
       <p>Un proceso claro para transformar objetivos en productos digitales sostenibles.</p>
@@ -57,9 +61,9 @@ const desvio =
       <svg viewBox="0 0 1000 200" preserveAspectRatio="none">
         <defs>
           <linearGradient id="degradado-camino" x1="0" x2="1" y1="0" y2="0">
-            <stop offset="0" style="stop-color: var(--turquesa)" />
+            <stop offset="0" style="stop-color: var(--metal-luz)" />
             <stop offset="0.45" style="stop-color: var(--cian)" />
-            <stop offset="1" style="stop-color: var(--purpura)" />
+            <stop offset="1" style="stop-color: var(--azul)" />
           </linearGradient>
         </defs>
         <path class="base" d={camino} />
@@ -131,7 +135,7 @@ const desvio =
   .fases::after {
     bottom: auto;
     height: calc((100% - 1rem) * var(--avance, 1));
-    background: linear-gradient(to bottom, var(--turquesa), var(--cian), var(--purpura));
+    background: linear-gradient(to bottom, var(--metal-luz), var(--cian), var(--azul));
     box-shadow: 0 0 8px rgb(var(--cian-rgb) / 0.5);
   }
 
@@ -148,9 +152,9 @@ const desvio =
     top: 0.35rem;
     width: 7px;
     aspect-ratio: 1;
-    border-radius: 50%;
-    background: var(--cian);
-    box-shadow: 0 0 8px rgb(var(--cian-rgb) / 0.6);
+    border-radius: 1px;
+    background: var(--metal);
+    box-shadow: 0 0 8px rgb(var(--cian-rgb) / 0.45);
     transition:
       background-color 0.4s var(--suave),
       box-shadow 0.4s var(--suave),
@@ -191,8 +195,8 @@ const desvio =
   }
 
   .en-escena .fase.activa .nodo {
-    background: var(--verde);
-    box-shadow: 0 0 12px rgb(var(--verde-rgb) / 0.8);
+    background: var(--cian);
+    box-shadow: 0 0 14px rgb(var(--cian-rgb) / 0.9);
     scale: 1.4;
   }
 
@@ -231,7 +235,7 @@ const desvio =
   }
 
   .desvio {
-    stroke: rgb(var(--purpura-rgb) / 0.35);
+    stroke: rgb(var(--violeta-rgb) / 0.35);
     stroke-width: 1;
     stroke-dasharray: 2 6;
   }
@@ -260,24 +264,26 @@ const desvio =
     pointer-events: none;
   }
 
+  /* Cada fase es un umbral: un marco mínimo, como las puertas de la escena. */
   .punto {
     position: absolute;
-    width: 11px;
-    aspect-ratio: 1;
-    border: 1px solid rgb(var(--cian-rgb) / 0.6);
-    border-radius: 50%;
+    width: 14px;
+    height: 20px;
+    border: 1px solid rgb(var(--metal-rgb) / 0.7);
+    border-radius: 1px;
     background: var(--fondo);
+    box-shadow: inset 0 1px 0 rgb(var(--metal-rgb) / 0.3);
     translate: -50% -50%;
   }
 
-  /* El nodo se enciende cuando la luz lo alcanza. */
+  /* El umbral se enciende cuando la luz lo alcanza. */
   .punto::after {
     content: '';
     position: absolute;
-    inset: 2px;
-    border-radius: 50%;
-    background: var(--cian);
-    box-shadow: 0 0 10px var(--cian);
+    inset: 3px;
+    border-radius: 0;
+    background: linear-gradient(180deg, var(--metal-luz), var(--cian));
+    box-shadow: 0 0 12px var(--cian);
     opacity: clamp(0, (var(--avance, 0) * var(--fases) - var(--i)) * 8, 1);
   }
 

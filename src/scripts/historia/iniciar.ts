@@ -5,14 +5,15 @@
  *
  * - Escritorio y móvil tienen su propia configuración (gsap.matchMedia), que
  *   se desmonta y rehace sola al cambiar de tamaño o de orientación.
- * - Ninguna escena se queda fija: scroll = bajar la página. La escena (el
- *   guía, la cámara, la red) y los pasos del texto cambian mientras la
- *   página baja. Escritorio y móvil solo cambian dónde termina cada tramo.
- * - Con "reducir movimiento" no hay tramos: el guía y la red cambian de
- *   estado, sin animación, al cruzar cada escena. El texto es un documento
- *   normal.
- * - Lenis solo con ratón o trackpad; en táctil, el scroll nativo. Las
- *   tarjetas líquidas solo siguen al cursor con ratón o trackpad.
+ * - Ninguna escena se queda fija: scroll = bajar la página. La escena (la
+ *   cámara, la arquitectura, la escultura, la red) y los pasos del texto
+ *   cambian mientras la página baja. Escritorio y móvil solo cambian dónde
+ *   termina cada tramo.
+ * - Un solo controlador para la escena: los tramos (escenarios.ts) escriben
+ *   el estado narrativo en el orden de la historia; nadie más lo anima.
+ * - Con "reducir movimiento" no hay tramos: la escena cambia de estado, sin
+ *   animación, al cruzar cada escena. El texto es un documento normal.
+ * - Lenis solo con ratón o trackpad; en táctil, el scroll nativo.
  */
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
@@ -20,17 +21,11 @@ import type { EstadoNarrativo } from '@/scripts/lienzo/narrativa';
 import { crearEscenarios, crearTramos, escenarioDe, type Tramo } from './escenarios';
 import { iniciarProceso } from './proceso';
 import { iniciarServicios } from './servicios';
-import { iniciarTarjetas } from './tarjeta';
 
 /** Segundos que tarda la escena en alcanzar al scroll: suaviza sin despegarse. */
 const INERCIA = 0.8;
-/** Por debajo de esta proporción ancho/alto el guía va arriba y el texto debajo. */
+/** Por debajo de esta proporción ancho/alto la escultura va arriba y el texto debajo. */
 const ASPECTO_VERTICAL = 0.85;
-/**
- * La burbuja del titular empieza con la llegada a la escena 02 (a la vez que
- * la gota se vuelve robot) y termina de formar las letras aquí (fin del tramo).
- */
-const TRAMO_DEL_TITULAR = { escritorio: 'top 15%', movil: 'top top' };
 /** Tramo en que se encienden los pasos: de asomar la escena a que su final pasa por aquí. */
 const PASOS = { inicio: 'top 70%', fin: 'bottom 80%' };
 /** Escenas cuyo texto se enciende por pasos ([data-paso]) según su progreso. */
@@ -62,7 +57,7 @@ function iniciarDesplazamiento(suave: boolean): () => void {
   };
 }
 
-/** Mueve al guía y la red de un escenario al siguiente, tramo a tramo. */
+/** Mueve la cámara, la arquitectura, la escultura y la red de un escenario al siguiente, tramo a tramo. */
 function moverEscena(estado: EstadoNarrativo, tramos: Tramo[]): void {
   for (const tramo of tramos) {
     if (!document.querySelector(tramo.disparador)) continue;
@@ -92,30 +87,6 @@ function salidaDelVacio(): void {
     ease: 'none',
     scrollTrigger: { trigger: '.vacio', start: 'top top', end: 'bottom 15%', scrub: true }
   });
-}
-
-/**
- * 02 · La burbuja que se desprende de la gota y toma la forma del titular.
- * Empieza con la llegada a la escena, cuando la gota aún no es robot: se
- * suelta al principio y vuela hacia el titular mientras sube a su sitio.
- */
-function gotaDelTitular(estado: EstadoNarrativo, escritorio: boolean): void {
-  if (!document.querySelector('#transformacion [data-gota]')) return;
-  gsap.fromTo(
-    estado,
-    { titular: 0 },
-    {
-      titular: 1,
-      ease: 'none',
-      immediateRender: false,
-      scrollTrigger: {
-        trigger: '#transformacion',
-        start: 'top bottom',
-        end: escritorio ? TRAMO_DEL_TITULAR.escritorio : TRAMO_DEL_TITULAR.movil,
-        scrub: INERCIA
-      }
-    }
-  );
 }
 
 /**
@@ -175,7 +146,7 @@ function revelarBloques(): void {
 
 /**
  * Sin movimiento: cada escena fija su estado al cruzar el centro de la
- * pantalla, sin interpolar. El guía repinta al desplazarse (escena.ts).
+ * pantalla, sin interpolar. La escena repinta al desplazarse (escena.ts).
  */
 function escenasSinMovimiento(
   estado: EstadoNarrativo,
@@ -237,13 +208,13 @@ export function iniciarHistoria(estado: EstadoNarrativo): void {
       movil:
         '((max-width: 47.99rem) or (max-height: 33.99rem)) and (prefers-reduced-motion: no-preference)',
       punteroFino: '(pointer: fine)',
-      // El guía cambia de sitio (al lado del texto o encima) con la proporción.
+      // La escultura cambia de sitio (al lado del texto o encima) con la proporción.
       apaisado: `(min-aspect-ratio: ${ASPECTO_VERTICAL * 100}/100) and (min-width: 48rem)`
     },
     (contexto) => {
       const { escritorio, movil, punteroFino, apaisado } = contexto.conditions ?? {};
       const escenarios = crearEscenarios(!apaisado);
-      const inicial = { ...escenarios.vacio, foco: -1, titular: 0 };
+      const inicial = { ...escenarios.vacio, foco: -1, etapa: 0 };
       Object.assign(estado, inicial);
       const detenerServicios = iniciarServicios(estado);
 
@@ -262,10 +233,8 @@ export function iniciarHistoria(estado: EstadoNarrativo): void {
 
       const detenerDesplazamiento = iniciarDesplazamiento(Boolean(escritorio && punteroFino));
       const detenerProgreso = progresoDeEscenas();
-      const detenerProceso = iniciarProceso(Boolean(escritorio));
-      const detenerTarjetas = punteroFino ? iniciarTarjetas() : () => {};
+      const detenerProceso = iniciarProceso(estado, Boolean(escritorio));
       salidaDelVacio();
-      gotaDelTitular(estado, Boolean(escritorio));
       revelarProyectos();
       revelarBloques();
       // Todo lo que mueve la escena, en el orden de la historia: si varios
@@ -277,7 +246,6 @@ export function iniciarHistoria(estado: EstadoNarrativo): void {
       return () => {
         detenerProgreso();
         detenerProceso();
-        detenerTarjetas();
         detenerServicios();
         detenerDesplazamiento();
         for (const s of porPasos) s?.classList.remove('en-escena');

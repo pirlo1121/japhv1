@@ -11,7 +11,8 @@
  *   saltos, y se asienta con un leve rebote;
  * - al viajar se estira como una gota, se inclina hacia donde va, agita la
  *   cola y deja una estela de gotas que se reabsorbe al frenar;
- * - al cargar, la gota se condensa en el robot.
+ * - empieza como una gota que flota y toma forma de robot cuando la
+ *   historia lo pide (`forma`, ligado al scroll), con algo de inercia.
  *
  * El guía señala la página: el servicio activo ([data-rama][data-activa]) o,
  * si no hay, el [data-guia] visible más cercano al centro. Lo alcanza con el
@@ -65,8 +66,12 @@ const HISTERESIS_BRAZO = 40;
 const GIRO_AL_SENALAR = 0.2;
 /** Viaje: estiramiento e inclinación máximos y velocidad (pantallas/s) que los alcanza. */
 const VIAJE = { estiramiento: 0.12, inclinacion: 0.2, velocidadPlena: 1.1 };
-/** Segundos que tarda la gota en condensarse en el robot, y espera antes de empezar. */
-const FORMACION = { duracion: 1.8, espera: 0.35 };
+/**
+ * Formación (gota → robot): sigue a `forma` con esta rapidez (por segundo),
+ * tras esperar un momento cuando WebGL queda listo. Al recargar a media
+ * página, o en las interiores, la gota se condensa nada más aparecer.
+ */
+const FORMACION = { rapidez: 3.2, espera: 0.35 };
 /** Qué tan rápido se enciende y se apaga la rama destacada (por segundo). */
 const RAPIDEZ_DEL_FOCO = 5;
 /** Con la escena así de apagada se dibuja un fotograma de cada dos. */
@@ -159,7 +164,7 @@ export class Escena {
   private giro = 0;
   private senalado: HTMLElement | null = null;
   private rebote = -Infinity;
-  /** 0 gota, 1 robot. Empieza a contar cuando WebGL está listo. */
+  /** 0 gota, 1 robot: sigue a historia.forma desde que WebGL está listo. */
   private formacion = 0;
   private inicioFormacion = Infinity;
 
@@ -186,7 +191,6 @@ export class Escena {
     etiquetas: string[]
   ) {
     this.sinMovimiento = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (this.sinMovimiento) this.formacion = 1;
     this.respaldo = contenedor.querySelector<HTMLElement>('[data-respaldo]');
     this.liquidos = [...document.querySelectorAll<HTMLElement>('[data-liquido]')].map(
       (elemento, i) => ({
@@ -605,11 +609,13 @@ export class Escena {
       this.extra.elevacion +=
         (this.puntero.y * PARALAJE_PUNTERO * 0.5 - this.extra.elevacion) * seguir;
       this.fase += dt * h.flujo;
-      if (this.webglListo && this.formacion < 1) {
-        this.formacion = suave((tiempo - this.inicioFormacion) / FORMACION.duracion);
-      }
+      // El scroll ya llega suavizado (scrub); esto solo absorbe saltos (anclas, recargas).
+      const meta = tiempo < this.inicioFormacion ? 0 : h.forma;
+      this.formacion += (meta - this.formacion) * Math.min(1, dt * FORMACION.rapidez);
+      if (Math.abs(meta - this.formacion) < 0.001) this.formacion = meta;
     } else {
       this.fase = TIEMPO_ESTATICO * h.flujo;
+      this.formacion = h.forma;
     }
     // Sin WebGL no hay gota que condensar: la red se ancla al cuerpo del guía.
     if (!this.pintor) this.formacion = 1;

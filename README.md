@@ -18,12 +18,12 @@ npm run build   # astro check + build estático en dist/
 La página se cuenta con cuatro capas que conviven. Cada una tiene su sitio, su atributo y
 sus perillas:
 
-| Capa                 | Qué es                                                                                  | Dónde                                          | Se activa con                     |
-| -------------------- | --------------------------------------------------------------------------------------- | ---------------------------------------------- | --------------------------------- |
-| **Guía**             | Robot de metal líquido (WebGL2) que nace de una gota, recorre la página y señala.       | `scripts/lienzo/` (escena, escultura, shader)  | `data-guia`, `data-rama`          |
-| **Red viva**         | Filamentos, nodos y energía (Canvas 2D) que nacen del cuerpo del guía.                  | `scripts/lienzo/red.ts`                        | estado `red` / `orden` por escena |
-| **Paneles líquidos** | Piezas que llegan como metal líquido y se solidifican en su forma (en el mismo shader). | `sombreador.ts` (`pintarPaneles`), `escena.ts` | `data-liquido`                    |
-| **Hilos de seda**    | Hebras que navegan sobre la página y cosen el contorno de titulares y componentes.      | `scripts/seda/`, `Seda.astro`                  | `data-seda`, `<Boton seda>`       |
+| Capa                 | Qué es                                                                                    | Dónde                                          | Se activa con                     |
+| -------------------- | ----------------------------------------------------------------------------------------- | ---------------------------------------------- | --------------------------------- |
+| **Guía**             | Gota flotante (WebGL2) que toma forma de robot con el scroll, recorre la página y señala. | `scripts/lienzo/` (escena, escultura, shader)  | `data-guia`, `data-rama`          |
+| **Red viva**         | Filamentos, nodos y energía (Canvas 2D) que nacen del cuerpo del guía.                    | `scripts/lienzo/red.ts`                        | estado `red` / `orden` por escena |
+| **Paneles líquidos** | Piezas que llegan como metal líquido y se solidifican en su forma (en el mismo shader).   | `sombreador.ts` (`pintarPaneles`), `escena.ts` | `data-liquido`                    |
+| **Hilos de seda**    | Hebras que navegan sobre la página y cosen el contorno de titulares y componentes.        | `scripts/seda/`, `Seda.astro`                  | `data-seda`, `<Boton seda>`       |
 
 El guía, la red y los paneles comparten un solo bucle y una sola cámara (`escena.ts`), en
 un lienzo fijo detrás del contenido (solo en la portada; las interiores lo tienen en su
@@ -32,17 +32,17 @@ páginas, y su propio bucle.
 
 ## La historia (portada)
 
-| Escena               | Componente       | Guía y red                                                                         | Otras capas                           |
-| -------------------- | ---------------- | ---------------------------------------------------------------------------------- | ------------------------------------- |
-| 01 El vacío          | `Vacio`          | La gota se condensa en el robot, que señala el titular; la red duerme al fondo.    | Seda: titular y botones (al cargar)   |
-| 02 La transformación | `Transformacion` | (fija) La cámara lo rodea; señala el manifiesto; nacen los primeros filamentos.    | Seda: titular y estados de la materia |
-| 03 La red viva       | `RedViva`        | (fija) La cámara se aleja y la red crece escalonada desde su cuerpo.               | Seda: titular                         |
-| 04 El núcleo         | `Nucleo`         | (fija) De cerca, se encienden circuitos de luz dentro de su cuerpo.                | Líquido: principios. Seda: titular    |
-| 05 Servicios         | `Servicios`      | Señala el servicio activo; un hilo une su mano con el texto y su rama se enciende. | Líquido: la lista. Seda: titular      |
-| 06 El proceso        | `Proceso`        | (fija) Arriba a la derecha, señala la fase actual del camino orgánico (SVG).       | Seda: titular                         |
-| 07 Proyectos         | `Proyectos`      | Presenta cada proyecto según pasa por el centro; la red empieza a ordenarse.       | Líquido: tarjetas. Seda: titular      |
-| 08 Ecosistema        | `Ecosistema`     | En el centro de la red completa y ordenada; el movimiento se calma.                | Seda: titular                         |
-| 09 Hagámoslo real    | `Llamada`        | Arriba y al centro, señala la invitación, que lleva a destinos reales.             | Seda: titular y botones               |
+| Escena               | Componente       | Guía y red                                                                                                              | Otras capas                           |
+| -------------------- | ---------------- | ----------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
+| 01 El vacío          | `Vacio`          | Una gota de metal líquido flota junto al titular; la red duerme al fondo.                                               | Seda: titular y botones (al cargar)   |
+| 02 La transformación | `Transformacion` | Al llegar, la gota toma forma de robot. (fija) La cámara lo rodea; señala el manifiesto; nacen los primeros filamentos. | Seda: titular y estados de la materia |
+| 03 La red viva       | `RedViva`        | (fija) La cámara se aleja y la red crece escalonada desde su cuerpo.                                                    | Seda: titular                         |
+| 04 El núcleo         | `Nucleo`         | (fija) De cerca, se encienden circuitos de luz dentro de su cuerpo.                                                     | Líquido: principios. Seda: titular    |
+| 05 Servicios         | `Servicios`      | Señala el servicio activo; un hilo une su mano con el texto y su rama se enciende.                                      | Líquido: la lista. Seda: titular      |
+| 06 El proceso        | `Proceso`        | (fija) Arriba a la derecha, señala la fase actual del camino orgánico (SVG).                                            | Seda: titular                         |
+| 07 Proyectos         | `Proyectos`      | Presenta cada proyecto según pasa por el centro; la red empieza a ordenarse.                                            | Líquido: tarjetas. Seda: titular      |
+| 08 Ecosistema        | `Ecosistema`     | En el centro de la red completa y ordenada; el movimiento se calma.                                                     | Seda: titular                         |
+| 09 Hagámoslo real    | `Llamada`        | Arriba y al centro, señala la invitación, que lleva a destinos reales.                                                  | Seda: titular y botones               |
 
 "(fija)": en escritorio la sección queda pegada a la pantalla (CSS sticky) mientras avanza.
 En móvil, sin movimiento o sin JavaScript, todas son bloques normales. Las páginas
@@ -58,7 +58,9 @@ Las decisiones visuales están en constantes con nombre, no repartidas por el c�
 | Colores, degradados, tipografía, espacios      | `styles/tokens.css` (nunca colores sueltos fuera de ahí)                              |
 | Dónde está el guía en cada escena, cámara, red | `scripts/historia/escenarios.ts` (un `Escenario` por escena; `vertical()` para móvil) |
 | Qué tramo de scroll lleva de una escena a otra | `crearTramos` en `escenarios.ts`; inercia del scroll: `INERCIA` en `iniciar.ts`       |
-| Cómo viaja y fluye el guía                     | `escena.ts`: `MUELLE_POSICION`, `VIAJE`, `REBOTE`, `FORMACION`                        |
+| Cómo viaja y fluye el guía                     | `escena.ts`: `MUELLE_POSICION`, `VIAJE`, `REBOTE`                                     |
+| Cuándo la gota toma forma de robot             | `forma` en `escenarios.ts` (hoy: tramo de llegada a 02); inercia: `FORMACION`         |
+| Cuánto flota la gota (y el robot)              | `FLOTACION` en `escultura.ts`                                                         |
 | Cómo señala                                    | `escena.ts`: `RAPIDEZ_DEL_BRAZO`, `RAPIDEZ_DE_LA_MANO`, `GIRO_AL_SENALAR`             |
 | Forma del robot (cuerpo, cabeza, cola, estela) | `robot()` en `sombreador.ts` y `escultura.ts` (las dos cuentas deben coincidir)       |
 | Luz y reflejos del cromo                       | `estudio()` en `sombreador.ts`                                                        |
@@ -77,8 +79,13 @@ Para ver un cambio en el estado del guía sin hacer scroll, en desarrollo están
 
 ### Guía (robot)
 
-- **Formación:** al cargar, la gota se condensa en el robot (unión suave entre las dos
-  formas). Con "reducir movimiento" aparece ya formado.
+- **Formación:** en la primera escena es una gota de metal líquido que flota (sube y baja
+  más que el robot, con una gota menor que se separa y vuelve). Al bajar a la segunda
+  escena toma forma de robot (unión suave entre las dos formas), ligado al scroll y
+  reversible: al subir vuelve a ser gota. Lo decide `forma` en el estado narrativo; la
+  escena la sigue con algo de inercia (`FORMACION`), así que al recargar a media página o
+  saltar con un ancla se condensa sin saltos. En las páginas interiores (`forma: 1`) se
+  condensa al cargar. Con "reducir movimiento" cambia por saltos con la escena.
 - **Viaje:** su posición en pantalla sigue a la historia con un muelle algo
   subamortiguado. La velocidad de ese muelle lo estira, lo inclina hacia donde va (una
   cizalla que también aplica el GLSL), agita la cola y suelta una estela de tres gotas que
@@ -182,6 +189,8 @@ robot en segundos por fotograma. Tampoco LCP, INP y CLS, ni móviles reales.
 
 Para no volver a recorrerlas sin motivo:
 
+- **La gota se condensa en el robot al cargar** (temporizador de 1,8 s): ahora la gota
+  flota en la primera escena y toma forma con el scroll.
 - **Escultura que cambia de forma** (gota → cinta → núcleo de obsidiana → portal →
   ecosistema): se sustituyó por el robot guía. El núcleo vive ahora como circuitos de luz
   dentro del robot.

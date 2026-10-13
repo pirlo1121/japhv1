@@ -23,6 +23,8 @@ export interface Escenario extends Readonly<Orbita> {
   readonly orden: number;
   /** 0..1: circuitos de luz encendidos dentro del cuerpo (escena del núcleo). */
   readonly grietas: number;
+  /** 0..1: de gota flotante a robot. La gota toma forma al bajar a la segunda escena. */
+  readonly forma: number;
 }
 
 export type EstadoNarrativo = { -readonly [K in keyof Escenario]: Escenario[K] } & {
@@ -33,7 +35,7 @@ export type EstadoNarrativo = { -readonly [K in keyof Escenario]: Escenario[K] }
   foco: number;
 };
 
-/** Escena 01 · El vacío: el guía, a la derecha del titular, mirando a la cámara. */
+/** Escena 01 · El vacío: el guía, aún gota, flota a la derecha del titular. */
 export const ESCENARIO_INICIAL: Escenario = {
   // Mira a la cámara: su giro coincide con el azimut.
   giro: 0.5,
@@ -46,7 +48,8 @@ export const ESCENARIO_INICIAL: Escenario = {
   atenuacion: 0,
   red: 0.06,
   orden: 0,
-  grietas: 0
+  grietas: 0,
+  forma: 0
 };
 
 export const crearEstadoNarrativo = (): EstadoNarrativo => ({ ...ESCENARIO_INICIAL, foco: -1 });

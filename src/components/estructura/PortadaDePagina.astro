@@ -48,7 +48,9 @@ const { id, rotulo, titulo, completa = false } = Astro.props;
     desplazamientoY: estrecha ? 0.4 : 0.05,
     atenuacion: estrecha ? 0.35 : 0.08,
     flujo: 0.5,
-    red: 0.62
+    red: 0.62,
+    // Aquí no hay historia que lo forme: la gota se condensa en el robot al cargar.
+    forma: 1
   };
   const arrancar = () => iniciarLienzo(estado);
   if ('requestIdleCallback' in window) requestIdleCallback(arrancar, { timeout: 600 });

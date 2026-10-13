@@ -6,7 +6,8 @@
  * un muelle); en cada una se coloca junto al contenido y lo señala.
  *
  * La historia: materia → energía → conexiones → sistema → productos →
- * crecimiento. La gota se condensa en el guía, de su cuerpo nace la red,
+ * crecimiento. Una gota flota en el vacío y, al bajar a la segunda escena,
+ * toma forma de guía (`forma`); de su cuerpo nace la red,
  * dentro de él se encienden sus circuitos, presenta los servicios, recorre
  * el proceso y los proyectos y termina en el centro de un ecosistema ordenado.
  *
@@ -18,9 +19,9 @@
 import { ESCENARIO_INICIAL, type Escenario } from '@/scripts/lienzo/narrativa';
 
 export interface Escenarios {
-  /** 01 · El vacío: a la derecha del titular, lo señala. */
+  /** 01 · El vacío: una gota flota a la derecha del titular. */
   vacio: Escenario;
-  /** 02 · La transformación: la cámara se acerca... */
+  /** 02 · La transformación: la cámara se acerca y la gota ya es el robot... */
   transformacionInicio: Escenario;
   /** 02 · ...y lo rodea mientras señala el manifiesto. Aparecen los primeros filamentos. */
   transformacion: Escenario;
@@ -69,7 +70,9 @@ export function crearEscenarios(estrecha: boolean): Escenarios {
     desplazamientoY: 0.02,
     flujo: 0.75,
     atenuacion: 0.04,
-    red: 0.1
+    red: 0.1,
+    // Al llegar a esta escena la gota ya tomó forma de robot (todo el tramo de llegada).
+    forma: 1
   });
   const transformacion = frente(
     {

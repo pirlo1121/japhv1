@@ -5,8 +5,9 @@
  *
  * - Forma: el robot (escultura.ts), hecho de funciones de distancia con
  *   unión suave (smin): cuerpo, cabeza, brazos, cola y la estela de gotas
- *   que deja al viajar se funden como líquido. Al cargar, nace de una gota
- *   (uFormacion): la gota adelgaza mientras el robot crece dentro de ella.
+ *   que deja al viajar se funden como líquido. Nace de una gota que flota
+ *   (formación, en PIEZA.viaje): al bajar a la segunda escena la gota
+ *   adelgaza mientras el robot crece dentro de ella.
  * - Material: cromo. Refleja un estudio procedural de paredes azul
  *   medianoche con luces diseñadas: una caja cenital blanca (el cromo sigue
  *   leyéndose como cromo), un filo cian, una tira azul eléctrico, contraluz
@@ -19,7 +20,7 @@
  * - Rayos: la misma cámara que camara.ts (función `rayo`).
  */
 import { FOCAL } from './camara';
-import { GOTAS_DE_ESTELA, MAX_PIEZAS, PIEZA, RADIO_LIMITE } from './escultura';
+import { ALTURA, GOTAS_DE_ESTELA, MAX_PIEZAS, PIEZA, RADIO_LIMITE } from './escultura';
 
 /** Bloques de texto delante de los que la escultura baja sus brillos. */
 export const MAX_ZONAS_DE_LECTURA = 3;
@@ -67,6 +68,7 @@ const float PI = 3.14159265;
 const float TAU = 6.28318531;
 const float LIMITE = ${f(RADIO_LIMITE)};
 const float FOCAL = ${f(FOCAL)};
+const float ALTURA = ${f(ALTURA)};
 
 // Paleta (tokens.css), en lineal aproximado para la luz.
 const vec3 FONDO = vec3(0.0118, 0.0275, 0.0667);
@@ -116,8 +118,10 @@ float sdElipsoide(vec3 p, vec3 r) {
 
 // ---------------------------------------------------------------- la gota
 
-// La gota de la que nace el robot: una masa con otra gota que se separa y vuelve.
+// La gota de la que nace el robot: una masa con otra gota que se separa y
+// vuelve. Flota con el cuerpo (pose.y lleva la flotación de escultura.ts).
 float gota(vec3 p) {
+  p.y -= uPiezas[${PIEZA.pose}].y - ALTURA;
   float d = length(p) - 1.05;
   d += 0.07 * sin(1.7 * p.x + T * 0.9) * sin(1.9 * p.y + T * 0.7) * sin(1.6 * p.z + T * 1.1);
   vec3 g = vec3(0.92 * cos(T * 0.35), 0.62 + 0.1 * sin(T * 0.5), 0.45 * sin(T * 0.35));

@@ -65,13 +65,15 @@ export interface Pose {
   inclinacion: number;
   /** Dirección del viaje en el mundo (unitaria o nula): la estela queda detrás. */
   direccion: Vec3;
-  /** 0 gota, 1 robot: la gota se condensa en el robot al cargar la página. */
+  /** 0 gota, 1 robot: la gota flotante toma forma de robot al bajar a la segunda escena. */
   formacion: number;
   tiempo: number;
 }
 
 /** Altura a la que flota el robot: su centro visual queda en el origen. */
-const ALTURA = -0.3;
+export const ALTURA = -0.3;
+/** Vaivén vertical al flotar: más amplio de gota que de robot. */
+const FLOTACION = { gota: 0.16, robot: 0.06 };
 const HOMBRO_IZQ: Vec3 = [-0.6, 0.48, 0];
 const HOMBRO_DER: Vec3 = [0.6, 0.48, 0];
 const CABEZA: Vec3 = [0, 1.08, 0];
@@ -141,8 +143,10 @@ function colgar(hombro: Vec3, lado: number, t: number): [Vec3, Vec3] {
 /** Coloca las piezas del robot para esta pose (x, y, z, radio; ver PIEZA). */
 export function robot(pose: Pose, destino = new Float32Array(MAX_PIEZAS * 4)): Float32Array {
   const t = pose.tiempo;
-  const flotacion = 0.06 * Math.sin(t * 1.3);
   const suave = (g: number) => g * g * (3 - 2 * g);
+  // La gota (centrada en pose.y - ALTURA en el sombreador) sube y baja con la misma cuenta.
+  const amplitud = FLOTACION.gota + (FLOTACION.robot - FLOTACION.gota) * suave(pose.formacion);
+  const flotacion = amplitud * Math.sin(t * 1.3);
 
   // Cada brazo pasa de colgar a alcanzar el objetivo según su gesto: al
   // cambiar de lado, uno baja mientras el otro sube, sin saltos.
@@ -199,7 +203,7 @@ export const manoDe = (brazo: Brazo) => (brazo < 0 ? PIEZA.manoIzq : PIEZA.manoD
 /**
  * Las siete anclas de la red en el cuerpo del robot, una por servicio:
  * antena, cabeza, las dos manos, los dos hombros y la gota de abajo.
- * Mientras es gota, salen de su superficie.
+ * Mientras es gota, salen de su superficie (que flota con el cuerpo).
  */
 const PIEZAS_ANCLA = [
   PIEZA.antena,
@@ -227,7 +231,7 @@ export function anclas(piezas: Float32Array, destino: Vec3[] = []): Vec3[] {
       indice < 0
         ? [0, alturaCuerpo - 0.75, 0]
         : [piezas[indice * 4] ?? 0, piezas[indice * 4 + 1] ?? 0, piezas[indice * 4 + 2] ?? 0];
-    const enGota = escala(DIRECCIONES[i] ?? [0, 1, 0], 1.05);
+    const enGota = suma(escala(DIRECCIONES[i] ?? [0, 1, 0], 1.05), [0, alturaCuerpo - ALTURA, 0]);
     destino[i] = mezcla(enGota, enRobot, formacion);
   }
   return destino;

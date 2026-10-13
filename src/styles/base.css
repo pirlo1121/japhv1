@@ -52,9 +52,9 @@ em {
   font-style: normal;
 }
 
-/* El énfasis de los titulares es de cromo frío: bandas de luz sobre plata,
-   como los reflejos de la escultura. El titular principal recoge un poco
-   de luz cian en su fragmento clave. */
+/* El énfasis de los titulares es de cromo: bandas de luz sobre plata, como
+   los reflejos de la escultura. El titular principal recoge un reflejo
+   frío en su fragmento clave. */
 :is(h1, h2) em {
   background: var(--cromo);
   -webkit-background-clip: text;
@@ -98,7 +98,7 @@ img {
 }
 
 :focus-visible {
-  outline: 2px solid var(--cian);
+  outline: 2px solid var(--frio);
   outline-offset: 3px;
 }
 
@@ -135,7 +135,7 @@ img {
   content: '';
   width: 2.25rem;
   height: 1px;
-  background: linear-gradient(90deg, var(--metal), rgb(var(--cian-rgb) / 0.6) 60%, transparent);
+  background: linear-gradient(90deg, var(--metal), rgb(var(--metal-rgb) / 0.35) 60%, transparent);
   box-shadow: -0.55rem 0 0 0 var(--metal);
 }
 
@@ -171,9 +171,7 @@ img {
 .boton:hover {
   border-color: rgb(var(--metal-rgb) / 0.6);
   background: rgb(var(--grafito-rgb) / 0.55);
-  box-shadow:
-    inset 0 1px 0 rgb(var(--metal-rgb) / 0.22),
-    0 0 0 1px rgb(var(--cian-rgb) / 0.08);
+  box-shadow: inset 0 1px 0 rgb(var(--metal-rgb) / 0.22);
 }
 
 .boton:active {
@@ -195,7 +193,7 @@ img {
   background: linear-gradient(180deg, var(--metal-luz), var(--metal));
   box-shadow:
     inset 0 1px 0 rgb(var(--texto-rgb) / 0.6),
-    0 10px 30px -14px rgb(var(--cian-rgb) / 0.55);
+    0 10px 30px -14px rgb(var(--vacio-rgb) / 0.9);
   color: var(--vacio);
 }
 
@@ -204,7 +202,7 @@ img {
   background: linear-gradient(180deg, var(--metal-luz), var(--metal-luz));
   box-shadow:
     inset 0 1px 0 rgb(var(--texto-rgb) / 0.7),
-    0 12px 36px -12px rgb(var(--cian-rgb) / 0.7);
+    0 12px 36px -12px rgb(var(--metal-rgb) / 0.25);
 }
 
 .boton--solido:active {
@@ -248,7 +246,7 @@ body:not(.inmersiva) main > section + section {
 /* Sin movimiento (o sin JavaScript) la escultura es un fotograma fijo y no
    se atenúa con la historia: un velo oscuro detrás de cada escena mantiene
    el texto legible. */
-html:not(.movimiento) body.inmersiva main > section:not(.vacio) {
+html:not(.movimiento) body.inmersiva main > section:not(.presencia) {
   background: rgb(var(--fondo-rgb) / 0.74);
 }
 
@@ -294,7 +292,7 @@ main small {
 
 /* Las páginas interiores dejan sitio a la cabecera flotante (el lienzo fijo
    de la portada no: sus medidas son fracciones de su propia caja). */
-main > :first-child:not(.vacio, .portada-pagina, .lienzo) {
+main > :first-child:not(.presencia, .portada-pagina, .lienzo) {
   padding-top: calc(var(--bloque) + 6rem);
 }
 
@@ -313,11 +311,11 @@ main > :first-child:not(.vacio, .portada-pagina, .lienzo) {
       rgb(var(--metal-rgb) / 0.35) calc(var(--a, 30%) + 0.4%),
       transparent calc(var(--a, 30%) + 1.2%),
       transparent var(--b, 62%),
-      rgb(var(--cian-rgb) / 0.12) calc(var(--b, 62%) + 4%),
+      rgb(var(--metal-rgb) / 0.07) calc(var(--b, 62%) + 4%),
       transparent calc(var(--b, 62%) + 14%)
     ),
     linear-gradient(180deg, rgb(var(--grafito-rgb) / 0.55), transparent 55%),
-    radial-gradient(ellipse at var(--luz, 70% 30%), rgb(var(--azul-rgb) / 0.16), transparent 65%),
+    radial-gradient(ellipse at var(--luz, 70% 30%), rgb(var(--metal-rgb) / 0.08), transparent 65%),
     linear-gradient(160deg, var(--monolito-luz), var(--vacio));
 }
 
@@ -358,6 +356,20 @@ main > :first-child:not(.vacio, .portada-pagina, .lienzo) {
   clip-path: inset(0 calc((1 - var(--revelado, 1)) * 100%) 0 0);
 }
 
+/* Un monolito en CSS: grafito con la cara izquierda algo más clara (la luz
+   viene de la izquierda), su canto superior y sus aristas de metal. Lo usan
+   el encabezado de las páginas interiores (PortadaDePagina) y la portada
+   sin WebGL (Lienzo): la misma pieza que pinta el sombreador, quieta. */
+.monolito-css {
+  position: absolute;
+  border-radius: 1px;
+  background: linear-gradient(90deg, var(--monolito-luz), var(--monolito) 46%, var(--vacio));
+  box-shadow:
+    inset 1px 0 0 rgb(var(--metal-rgb) / 0.45),
+    inset 0 1px 0 rgb(var(--metal-rgb) / 0.35),
+    inset -1px 0 0 rgb(var(--metal-rgb) / 0.12);
+}
+
 /* Placa de grafito: borde fino y el canto superior iluminado, como la
    arista de un monolito. */
 .lamina {
@@ -394,12 +406,13 @@ main > :first-child:not(.vacio, .portada-pagina, .lienzo) {
   white-space: nowrap;
 }
 
-/* ---------------------------------------------------------------- escenas de la portada */
+/* ---------------------------------------------------------------- capítulos de la portada */
 
-/* Pasos: cada uno se enciende con el progreso de su escena (--p, 0..1) a
-   partir de su umbral (--u). Sin JavaScript --p no existe y todo se ve. */
+/* Pasos: cada uno se enciende con el progreso de su capítulo (--p, 0..1) a
+   partir de su umbral (--u). Nunca se ocultan: antes de su turno quedan a
+   media luz, legibles. Sin JavaScript --p no existe y todo se ve. */
 .en-escena [data-paso] {
-  opacity: clamp(0.2, calc((var(--p, 1) - var(--u, 0)) * 7 + 0.2), 1);
+  opacity: clamp(0.45, calc((var(--p, 1) - var(--u, 0)) * 7 + 0.45), 1);
   translate: 0 calc(clamp(0, (var(--u, 0) - var(--p, 1)) * 7 + 1, 1) * 0.5rem);
 }
 

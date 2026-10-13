@@ -5,10 +5,11 @@
  *
  * - Escritorio y móvil tienen su propia configuración (gsap.matchMedia), que
  *   se desmonta y rehace sola al cambiar de tamaño o de orientación.
- * - Ninguna escena se queda fija: scroll = bajar la página. La escena (la
- *   cámara, la arquitectura, la escultura, la red) y los pasos del texto
- *   cambian mientras la página baja. Escritorio y móvil solo cambian dónde
- *   termina cada tramo.
+ * - Ningún capítulo se queda fijo: scroll = bajar la página. La escena (la
+ *   cámara, la arquitectura, la escultura) cambia en un tramo corto
+ *   mientras entra cada capítulo; luego se queda quieta para leer.
+ *   Escritorio y móvil solo cambian los escenarios y dónde termina cada
+ *   tramo.
  * - Un solo controlador para la escena: los tramos (escenarios.ts) escriben
  *   el estado narrativo en el orden de la historia; nadie más lo anima.
  * - Con "reducir movimiento" no hay tramos: la escena cambia de estado, sin
@@ -26,10 +27,19 @@ import { iniciarServicios } from './servicios';
 const INERCIA = 0.8;
 /** Por debajo de esta proporción ancho/alto la escultura va arriba y el texto debajo. */
 const ASPECTO_VERTICAL = 0.85;
+/**
+ * Ancho desde el que las cuatro fases del método caben en fila sobre su
+ * camino; por debajo (tablet vertical) se apretaban: lista vertical.
+ */
+const ANCHO_FASES_EN_FILA = '60rem';
 /** Tramo en que se encienden los pasos: de asomar la escena a que su final pasa por aquí. */
 const PASOS = { inicio: 'top 70%', fin: 'bottom 80%' };
-/** Escenas cuyo texto se enciende por pasos ([data-paso]) según su progreso. */
-const ESCENAS_POR_PASOS = ['#transformacion', '#red', '#nucleo'];
+/**
+ * Capítulos cuyo texto acompaña a la escena por pasos ([data-paso]) según su
+ * progreso: solo la transformación, donde los tres estados de la materia
+ * son los de la gota. Nunca ocultan: solo cambian el énfasis.
+ */
+const ESCENAS_POR_PASOS = ['#transformacion'];
 
 /**
  * Lenis con ratón o trackpad; en táctil, el scroll nativo. Lenis se descarga
@@ -57,7 +67,7 @@ function iniciarDesplazamiento(suave: boolean): () => void {
   };
 }
 
-/** Mueve la cámara, la arquitectura, la escultura y la red de un escenario al siguiente, tramo a tramo. */
+/** Mueve la cámara, la arquitectura y la escultura de un escenario al siguiente, tramo a tramo. */
 function moverEscena(estado: EstadoNarrativo, tramos: Tramo[]): void {
   for (const tramo of tramos) {
     if (!document.querySelector(tramo.disparador)) continue;
@@ -79,20 +89,23 @@ function moverEscena(estado: EstadoNarrativo, tramos: Tramo[]): void {
   }
 }
 
-/** 01 · El mensaje principal sube y se desvanece mientras la gota empieza a estirarse. */
-function salidaDelVacio(): void {
-  gsap.to('.vacio .contenido', {
-    yPercent: -10,
-    opacity: 0,
+/**
+ * 01 · El mensaje principal se aparta mientras la gota empieza a
+ * estirarse; sin desaparecer del todo hasta salir de pantalla.
+ */
+function salidaDePresencia(): void {
+  gsap.to('.presencia .contenido', {
+    yPercent: -8,
+    opacity: 0.25,
     ease: 'none',
-    scrollTrigger: { trigger: '.vacio', start: 'top top', end: 'bottom 15%', scrub: true }
+    scrollTrigger: { trigger: '.presencia', start: 'top top', end: 'bottom 15%', scrub: true }
   });
 }
 
 /**
- * 02 · 03 · 04 · El texto de cada escena aparece por pasos según su
- * progreso (el CSS lee --p, 0..1) mientras pasa por la pantalla. Siempre
- * queda legible: solo cambia el énfasis, nunca el contenido.
+ * 02 · Los estados de la materia acompañan a la gota por pasos según el
+ * progreso del capítulo (el CSS lee --p, 0..1). Siempre quedan legibles:
+ * solo cambia el énfasis, nunca el contenido.
  */
 function progresoDeEscenas(): () => void {
   const secciones = ESCENAS_POR_PASOS.map((s) => document.querySelector<HTMLElement>(s)).filter(
@@ -114,7 +127,7 @@ function progresoDeEscenas(): () => void {
   };
 }
 
-/** 07 · Cada proyecto se revela con un barrido de luz, una sola vez. */
+/** 05 · Cada proyecto se revela con un barrido de luz, una sola vez y breve. */
 function revelarProyectos(): void {
   gsap.utils.toArray<HTMLElement>('[data-reflejo]').forEach((visual) => {
     gsap.fromTo(
@@ -122,7 +135,7 @@ function revelarProyectos(): void {
       { '--revelado': 0 },
       {
         '--revelado': 1,
-        duration: 1.4,
+        duration: 0.9,
         ease: 'power2.out',
         scrollTrigger: { trigger: visual, start: 'top 88%', once: true }
       }
@@ -145,7 +158,7 @@ function revelarBloques(): void {
 }
 
 /**
- * Sin movimiento: cada escena fija su estado al cruzar el centro de la
+ * Sin movimiento: cada capítulo fija su estado al cruzar el centro de la
  * pantalla, sin interpolar. La escena repinta al desplazarse (escena.ts).
  */
 function escenasSinMovimiento(
@@ -208,13 +221,14 @@ export function iniciarHistoria(estado: EstadoNarrativo): void {
       movil:
         '((max-width: 47.99rem) or (max-height: 33.99rem)) and (prefers-reduced-motion: no-preference)',
       punteroFino: '(pointer: fine)',
+      fasesEnFila: `(min-width: ${ANCHO_FASES_EN_FILA})`,
       // La escultura cambia de sitio (al lado del texto o encima) con la proporción.
       apaisado: `(min-aspect-ratio: ${ASPECTO_VERTICAL * 100}/100) and (min-width: 48rem)`
     },
     (contexto) => {
-      const { escritorio, movil, punteroFino, apaisado } = contexto.conditions ?? {};
+      const { escritorio, movil, punteroFino, apaisado, fasesEnFila } = contexto.conditions ?? {};
       const escenarios = crearEscenarios(!apaisado);
-      const inicial = { ...escenarios.vacio, foco: -1, etapa: 0 };
+      const inicial = { ...escenarios.presencia, foco: -1, etapa: 0 };
       Object.assign(estado, inicial);
       const detenerServicios = iniciarServicios(estado);
 
@@ -233,8 +247,8 @@ export function iniciarHistoria(estado: EstadoNarrativo): void {
 
       const detenerDesplazamiento = iniciarDesplazamiento(Boolean(escritorio && punteroFino));
       const detenerProgreso = progresoDeEscenas();
-      const detenerProceso = iniciarProceso(estado, Boolean(escritorio));
-      salidaDelVacio();
+      const detenerProceso = iniciarProceso(estado, Boolean(escritorio && fasesEnFila));
+      salidaDePresencia();
       revelarProyectos();
       revelarBloques();
       // Todo lo que mueve la escena, en el orden de la historia: si varios

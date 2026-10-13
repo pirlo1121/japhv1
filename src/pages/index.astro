@@ -1,63 +1,51 @@
 ---
 /**
- * Portada: The Digital Monolith × Liquid Technology. Un recorrido en nueve
- * escenas por una estructura digital monumental: monolitos de grafito que
- * se abren, se ordenan y revelan su interior, y una gota de cromo líquido
- * que se estira en una cinta y la recorre. Misterio → descubrimiento →
- * transformación → estructura → conexión → creación → resolución. El orden
- * de este archivo es el orden de la historia; cada escena es una <section>
- * con id propio, y scripts/historia/escenarios.ts dice dónde están la
- * cámara y la arquitectura en cada una (scripts/lienzo/arquitectura.ts).
+ * Portada: Monumental Architecture + Editorial Storytelling. Una intención
+ * adquiere forma, esa forma encuentra estructura y la estructura revela un
+ * sistema de capacidades y resultados. Seis capítulos, un protagonista
+ * visual por capítulo: la arquitectura de monolitos manda; la gota de
+ * cromo (la intención) es secundaria y solo aparece donde cuenta algo.
+ * El orden de este archivo es el orden de la historia; cada capítulo es una
+ * <section> con id propio, y scripts/historia/escenarios.ts dice dónde
+ * están la cámara y la arquitectura en cada uno (scripts/lienzo/arquitectura.ts).
  *
- *   01 El vacío             Vacio           plano general: el monolito y la gota
- *   02 La transformación    Transformacion  el monolito se abre en pórtico; la gota se estira en cinta
- *   03 La red viva          RedViva         el espacio se ensancha; la red crece desde la cinta
- *   04 El núcleo            Nucleo          la cámara avanza hacia la cámara interior
- *   05 Servicios            Servicios       siete módulos; se enciende el del servicio activo
- *   06 El proceso           Proceso         cuatro puertas; se enciende la de la fase actual
- *   07 Proyectos            Proyectos       una galería de nichos; la red se ordena
- *   08 Ecosistema           Ecosistema      plano amplio: todo alineado y conectado
- *   09 Hagámoslo real       Llamada         un último pórtico; la escultura en calma
+ *   01 Presencia       Presencia       el monolito y la gota; titular y acción
+ *   02 Transformación  Transformacion  el monolito se abre; la gota, estirada, lo atraviesa
+ *   03 Capacidades     Capacidades     siete módulos; se enciende el del servicio activo
+ *   04 Método          Metodo          cuatro puertas; se enciende la de la fase actual
+ *   05 Evidencia       Evidencia       una galería de nichos; hablan los proyectos
+ *   06 Apertura        Apertura        el pórtico del principio, en calma; la invitación
  */
-import Ecosistema from '@/components/portada/Ecosistema.astro';
+import Apertura from '@/components/portada/Apertura.astro';
+import Capacidades from '@/components/portada/Capacidades.astro';
+import Evidencia from '@/components/portada/Evidencia.astro';
 import Lienzo from '@/components/portada/Lienzo.astro';
-import Llamada from '@/components/portada/Llamada.astro';
-import Nucleo from '@/components/portada/Nucleo.astro';
-import Proceso from '@/components/portada/Proceso.astro';
-import Proyectos from '@/components/portada/Proyectos.astro';
+import Metodo from '@/components/portada/Metodo.astro';
+import Presencia from '@/components/portada/Presencia.astro';
 import Recorrido from '@/components/portada/Recorrido.astro';
-import RedViva from '@/components/portada/RedViva.astro';
-import Servicios from '@/components/portada/Servicios.astro';
 import Transformacion from '@/components/portada/Transformacion.astro';
-import Vacio from '@/components/portada/Vacio.astro';
 import Base from '@/layouts/Base.astro';
 import { sitio } from '@/config/sitio';
 
-const escenas = [
+const capitulos = [
   { id: 'inicio', nombre: 'Inicio' },
   { id: 'transformacion', nombre: 'Transformación' },
-  { id: 'red', nombre: 'Red viva' },
-  { id: 'nucleo', nombre: 'Núcleo' },
   { id: 'servicios', nombre: 'Servicios' },
-  { id: 'proceso', nombre: 'Proceso' },
+  { id: 'proceso', nombre: 'Método' },
   { id: 'proyectos-destacados', nombre: 'Proyectos' },
-  { id: 'ecosistema', nombre: 'Ecosistema' },
   { id: 'llamada', nombre: 'Contacto' }
 ];
 ---
 
 <Base titulo={`${sitio.nombre} · ${sitio.lema}`} descripcion={sitio.descripcion} inmersiva>
   <Lienzo />
-  <Vacio />
-  <Recorrido escenas={escenas} />
+  <Presencia />
+  <Recorrido escenas={capitulos} />
   <Transformacion />
-  <RedViva />
-  <Nucleo />
-  <Servicios />
-  <Proceso />
-  <Proyectos />
-  <Ecosistema />
-  <Llamada />
+  <Capacidades />
+  <Metodo />
+  <Evidencia />
+  <Apertura />
 </Base>
 
 <script>
@@ -70,11 +58,9 @@ const escenas = [
   // Solo en desarrollo: inspeccionar y ajustar la escena desde la consola.
   if (import.meta.env.DEV) Object.assign(window, { __estado: estado });
 
-  // Los nombres de las ramas de la red son los de los servicios, tal como están en la página.
-  const ramas = [...document.querySelectorAll('[data-rama] h3')].map((h) => h.textContent ?? '');
   // La escultura compila su shader después de la primera pintura del texto.
   const arrancar = () => {
-    const escena = iniciarLienzo(estado, ramas);
+    const escena = iniciarLienzo(estado);
     if (import.meta.env.DEV) Object.assign(window, { __escena: escena });
   };
   if ('requestIdleCallback' in window) requestIdleCallback(arrancar, { timeout: 600 });

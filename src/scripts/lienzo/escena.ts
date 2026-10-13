@@ -1,13 +1,13 @@
 /**
  * escena.ts
  * Une las piezas del lienzo: ajusta el tamaño, mueve la cámara, compone la
- * arquitectura y la escultura y dibuja en un único bucle la escena (WebGL2,
- * pintor.ts) y la red viva (Canvas 2D, red.ts), con la misma cámara.
+ * arquitectura y la escultura y las dibuja en un único bucle (WebGL2,
+ * pintor.ts).
  *
  * Lo que cambia con la historia (la cámara, el plano de la arquitectura,
- * la forma de la escultura, la red, el servicio activo, la fase del
- * proceso) llega en un EstadoNarrativo que anima el scroll; aquí se le suma
- * lo que lo hace vivo y suave:
+ * la forma de la escultura, el servicio activo, la fase del método) llega
+ * en un EstadoNarrativo que anima el scroll; aquí se le suma lo que lo hace
+ * vivo y suave:
  * - un muelle en la posición en pantalla del objetivo: sigue al scroll con
  *   inercia, sin saltos;
  * - la escultura flota y ondula (escultura.ts);
@@ -19,18 +19,19 @@
  * La escena se aparta de los textos marcados con [data-zona-lectura]: baja
  * los brillos de la escultura y apaga las aristas detrás de ellos.
  *
- * Si WebGL no está disponible la red sigue viva y el póster de la gota se
- * coloca donde estaría la escultura. El bucle se detiene cuando el lienzo
- * sale de pantalla o la pestaña se oculta. Con "reducir movimiento" no hay
- * bucle: se dibuja un fotograma fijo y solo se repinta cuando algo cambia.
+ * Si WebGL no está disponible el póster de la gota se coloca donde estaría
+ * la escultura, delante de un monolito en CSS (Lienzo.astro). El bucle se
+ * detiene cuando el lienzo sale de pantalla o la pestaña se oculta; con la
+ * escena apagada detrás del texto (REPOSO) solo pinta cuando algo cambia.
+ * Con "reducir movimiento" no hay animación: el bucle solo comprueba si el
+ * capítulo cambió y entonces pinta un fotograma fijo.
  */
 import { arquitectura, type Arquitectura } from './arquitectura';
-import { calcularCamara, crearProyector, type Camara, type Proyeccion, type Vec3 } from './camara';
+import { calcularCamara, crearProyector, type Camara, type Proyeccion } from './camara';
 import { Calidad, esTactil } from './calidad';
-import { anclas, liquido, MAX_LIQUIDO } from './escultura';
+import { liquido, MAX_LIQUIDO } from './escultura';
 import type { EstadoNarrativo } from './narrativa';
 import { crearPintor, type Pintor } from './pintor';
-import { Red, type Densidad } from './red';
 import { MAX_ZONAS_DE_LECTURA } from './sombreador';
 
 /** Cuánto gira la cámara siguiendo al puntero (radianes). */
@@ -64,13 +65,15 @@ const FORMACION = { rapidez: 3.2, espera: 0.35 };
 const RAPIDEZ_DEL_FOCO = 5;
 /** Con la escultura así de apagada se dibuja un fotograma de cada dos. */
 const ATENUACION_PARA_MEDIA_FRECUENCIA = 0.5;
+/**
+ * Reposo: con la escultura así de apagada (los capítulos de lectura en
+ * móvil) la escena solo se pinta cuando cambia algo que se ve (el scroll,
+ * el tamaño, el servicio activo) y se queda quieta mientras se lee: la
+ * gota deja de flotar, que apenas se ve, y la GPU descansa.
+ */
+const REPOSO = { atenuacion: 0.85, umbral: 1e-4 };
 /** Momento fijo que se dibuja con "reducir movimiento" (la gota en la fase 0, la del póster). */
 const TIEMPO_ESTATICO = 0;
-/** La red se dibuja con menos resolución que la pantalla: son líneas finas y luz. */
-const TOPE_DPR_RED = { tactil: 1.25, escritorio: 1.5 };
-/** Y con un tope de píxeles: en tablets y pantallas grandes entregar el lienzo pesa más que dibujarlo. */
-const TOPE_PIXELES_RED = { tactil: 0.7e6, escritorio: 1.4e6 };
-const MAX_ZONAS_RED = 6;
 
 const acotar = (v: number, min: number, max: number) => Math.min(Math.max(v, min), max);
 const suave = (x: number) => {
@@ -78,17 +81,11 @@ const suave = (x: number) => {
   return t * t * (3 - 2 * t);
 };
 
-/** Menos red y menos arquitectura en pantallas pequeñas o táctiles: misma historia, menos piezas. */
-function densidad(): Densidad {
-  const ancho = window.innerWidth;
-  if (ancho < 768 || (esTactil() && ancho < 1024)) return 'ligera';
-  if (ancho < 1180) return 'media';
-  return 'completa';
-}
+/** Menos arquitectura en pantallas pequeñas o táctiles: misma historia, menos piezas. */
+const esLigera = () => window.innerWidth < 768 || (esTactil() && window.innerWidth < 1024);
 
 export class Escena {
   private pintor: Pintor | null = null;
-  private readonly red: Red | null = null;
   private webglListo = false;
   private readonly calidad = new Calidad();
   private readonly sinMovimiento: boolean;
@@ -100,8 +97,6 @@ export class Escena {
   /** Giro suavizado que añaden el puntero y la deriva. */
   private readonly extra = { azimut: 0, elevacion: 0 };
   private puntero = { x: 0, y: 0 };
-  /** Puntero en px del lienzo (para los nodos); null fuera de la ventana. */
-  private punteroPx: { x: number; y: number } | null = null;
   private visible = true;
   private cuadro = 0;
   private saltar = false;
@@ -124,11 +119,17 @@ export class Escena {
   private posterOculto = false;
 
   private readonly piezas = new Float32Array(MAX_LIQUIDO * 4);
-  private anclas: Vec3[] = [];
   private estructura: Arquitectura | undefined;
   private brilloFoco = 0;
   private focoVisible = -1;
-  private focoDelPuntero = false;
+  /**
+   * Reposo: lo que se vio en el último fotograma pintado, si ese fotograma
+   * ya no movió nada (los valores suavizados llegaron a su meta) y si hay
+   * que repintar igualmente (tamaño, WebGL listo).
+   */
+  private readonly firma = new Float64Array(18);
+  private quieto = false;
+  private pendiente = true;
   /** Textos que la escena despeja; se miden en cada fotograma. */
   private readonly lecturas = [...document.querySelectorAll<HTMLElement>('[data-zona-lectura]')];
   private readonly zonas = new Float32Array(MAX_ZONAS_DE_LECTURA * 4);
@@ -140,22 +141,12 @@ export class Escena {
   constructor(
     private readonly contenedor: HTMLElement,
     lienzo: HTMLCanvasElement,
-    lienzoRed: HTMLCanvasElement | null,
-    private readonly historia: EstadoNarrativo,
-    etiquetas: string[]
+    private readonly historia: EstadoNarrativo
   ) {
     this.sinMovimiento = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     this.respaldo = contenedor.querySelector<HTMLElement>('[data-respaldo]');
-    this.ligera = densidad() === 'ligera';
+    this.ligera = esLigera();
     const { signal } = this.limpieza;
-
-    if (lienzoRed) {
-      try {
-        this.red = new Red(lienzoRed, densidad(), etiquetas);
-      } catch (error) {
-        console.warn('[lienzo] La red no se puede dibujar:', error);
-      }
-    }
 
     try {
       this.pintor = crearPintor(lienzo);
@@ -182,19 +173,10 @@ export class Escena {
             x: (e.clientX / window.innerWidth - 0.5) * 2,
             y: (e.clientY / window.innerHeight - 0.5) * 2
           };
-          const caja = this.contenedor.getBoundingClientRect();
-          this.punteroPx = { x: e.clientX - caja.left, y: e.clientY - caja.top };
-          if (this.sinMovimiento) this.solicitar();
         },
         { passive: true, signal }
       );
-      document.addEventListener('pointerleave', () => (this.punteroPx = null), { signal });
     }
-    // Sin bucle, se repinta al desplazarse (cambia la escena).
-    if (this.sinMovimiento) {
-      window.addEventListener('scroll', () => this.solicitar(), { passive: true, signal });
-    }
-
     if (this.pintor) {
       // Cada fotograma pintado informa de su duración; la escena se muestra con el primero.
       this.pintor.alPintar = (ms) => {
@@ -218,7 +200,7 @@ export class Escena {
     this.ajustar();
   }
 
-  /** Sin WebGL: el póster de la gota queda como respaldo y la red sigue viva. */
+  /** Sin WebGL: el póster de la gota queda como respaldo, delante de un monolito en CSS. */
   private sinWebgl(error: unknown): void {
     console.warn('[lienzo] Se mantiene la gota de respaldo:', error);
     this.webglListo = false;
@@ -240,25 +222,18 @@ export class Escena {
     if (caja.width === 0 || caja.height === 0) return;
     this.ancho = caja.width;
     this.alto = caja.height;
-    this.ligera = densidad() === 'ligera';
+    this.ligera = esLigera();
     if (this.pintor && this.webglListo) {
       const [anchoPx, altoPx] = this.calidad.tamano(this.ancho, this.alto);
       this.pintor.configurar(anchoPx, altoPx);
     }
-    const tipo = esTactil() ? 'tactil' : 'escritorio';
-    const dpr = Math.min(
-      window.devicePixelRatio || 1,
-      TOPE_DPR_RED[tipo],
-      Math.sqrt(TOPE_PIXELES_RED[tipo] / (this.ancho * this.alto))
-    );
-    this.red?.redimensionar(this.ancho, this.alto, dpr);
+    this.pendiente = true;
     this.solicitar();
     this.reanudar();
   }
 
   private reanudar(): void {
     if (!this.iniciado) return;
-    if (this.sinMovimiento) return this.solicitar();
     const activa = this.visible && document.visibilityState === 'visible';
     if (activa && !this.cuadro) {
       this.calidad.pausa();
@@ -270,14 +245,14 @@ export class Escena {
     }
   }
 
-  /** Dibuja un fotograma suelto (modo sin movimiento o tras un cambio de tamaño). */
+  /** Dibuja un fotograma suelto (tras un cambio de tamaño o sin WebGL) y reanuda el bucle. */
   private solicitar(): void {
     if (this.cuadro || !this.iniciado) return;
     this.cuadro = requestAnimationFrame((t) => {
       this.cuadro = 0;
       this.dibujar(this.sinMovimiento ? 0 : 1 / 60);
       this.anterior = t;
-      if (!this.sinMovimiento) this.reanudar();
+      this.reanudar();
     });
   }
 
@@ -291,23 +266,59 @@ export class Escena {
     }
     const dt = Math.min((t - this.anterior) / 1000, 0.1);
     this.anterior = t;
-    this.dibujar(dt);
+    // En reposo (y siempre sin movimiento o sin WebGL: no hay nada que
+    // animar), solo se pinta si algo que se ve ha cambiado.
+    const enReposo =
+      this.sinMovimiento || !this.pintor || this.historia.atenuacion >= REPOSO.atenuacion;
+    if (!enReposo || this.cambio()) this.dibujar(dt);
     this.cuadro = requestAnimationFrame(this.paso);
   };
 
-  /** Textos visibles que la escena despeja: en uv para el sombreador y en px para la red. */
-  private medirZonas(): { numZonas: number; cajas: DOMRect[] } {
+  /** Lo que se ve de un fotograma: la historia y los valores que la siguen suavizados. */
+  private visibles(): number[] {
+    const h = this.historia;
+    const [x, y] = this.posicion ?? [0, 0];
+    return [
+      h.escena,
+      h.atenuacion,
+      h.azimut,
+      h.elevacion,
+      h.distancia,
+      h.objetivoX,
+      h.objetivoY,
+      h.objetivoZ,
+      h.desplazamientoX,
+      h.desplazamientoY,
+      h.forma,
+      h.foco,
+      h.etapa,
+      x,
+      y,
+      this.brilloFoco,
+      this.revelado,
+      this.formacion
+    ];
+  }
+
+  private distinto(valores: number[]): boolean {
+    return valores.some((v, i) => Math.abs(v - (this.firma[i] ?? 0)) > REPOSO.umbral);
+  }
+
+  /** ¿Hay algo que pintar? Un cambio de la historia, algo que aún se asienta o una petición. */
+  private cambio(): boolean {
+    return this.pendiente || !this.quieto || this.distinto(this.visibles());
+  }
+
+  /** Textos visibles que la escena despeja, en uv para el sombreador. */
+  private medirZonas(): number {
     const lienzo = this.contenedor.getBoundingClientRect();
-    const cajas: DOMRect[] = [];
     let n = 0;
     for (const el of this.lecturas) {
-      if (cajas.length >= MAX_ZONAS_RED) break;
+      if (n >= MAX_ZONAS_DE_LECTURA) break;
       const caja = el.getBoundingClientRect();
       const arriba = caja.top - lienzo.top;
       const abajo = caja.bottom - lienzo.top;
       if (abajo < 0 || arriba > this.alto || caja.width === 0) continue;
-      cajas.push(new DOMRect(caja.left - lienzo.left, arriba, caja.width, caja.height));
-      if (n >= MAX_ZONAS_DE_LECTURA) continue;
       this.zonas.set(
         [
           (caja.left - lienzo.left) / this.ancho,
@@ -319,7 +330,7 @@ export class Escena {
       );
       n += 1;
     }
-    return { numZonas: n, cajas };
+    return n;
   }
 
   /** La posición en pantalla del objetivo sigue a la historia con un muelle: viaja con inercia. */
@@ -371,7 +382,7 @@ export class Escena {
     const tiempo = this.ahora();
     const h = this.historia;
     // Lecturas del DOM antes de cualquier escritura.
-    const { numZonas, cajas } = this.medirZonas();
+    const numZonas = this.medirZonas();
     const desde = tiempo - this.entrada;
 
     if (!this.sinMovimiento) {
@@ -395,18 +406,9 @@ export class Escena {
       this.formacion = h.forma;
       this.revelado = 1;
     }
-    // Sin WebGL no hay gota que estirar: la red se ancla a la cinta.
-    if (!this.pintor) this.formacion = 1;
-
-    // Servicio destacado: el activo manda; si no hay, el nodo bajo el puntero.
-    const bajoPuntero =
-      this.punteroPx && this.red ? this.red.ramaBajo(this.punteroPx.x, this.punteroPx.y, h) : -1;
-    const deseado = h.foco >= 0 ? h.foco : bajoPuntero;
-    // Se enciende y se apaga despacio; al cambiar de rama, primero se apaga.
-    if (deseado !== this.focoVisible && this.brilloFoco < 0.05) {
-      this.focoVisible = deseado;
-      this.focoDelPuntero = h.foco < 0;
-    }
+    // Servicio destacado: se enciende y se apaga despacio; al cambiar de módulo, primero se apaga.
+    const deseado = h.foco;
+    if (deseado !== this.focoVisible && this.brilloFoco < 0.05) this.focoVisible = deseado;
     const metaFoco = deseado >= 0 && deseado === this.focoVisible ? 1 : 0;
     this.brilloFoco = this.sinMovimiento
       ? metaFoco
@@ -428,7 +430,7 @@ export class Escena {
     this.estructura = arquitectura(
       {
         escena: h.escena,
-        foco: this.focoDelPuntero ? -1 : this.focoVisible,
+        foco: this.focoVisible,
         brilloFoco: this.brilloFoco,
         etapa: h.etapa,
         revelado: this.revelado,
@@ -444,22 +446,11 @@ export class Escena {
       },
       this.piezas
     );
-    this.anclas = anclas(this.piezas, this.anclas);
-
-    this.red?.dibujar({
-      tiempo,
-      dt: this.sinMovimiento ? 0 : dt,
-      fase: this.fase,
-      camara: this.camara,
-      estado: h,
-      foco: this.focoVisible,
-      brilloFoco: this.brilloFoco,
-      etiquetarFoco: this.focoDelPuntero,
-      anclas: this.anclas,
-      zonas: cajas,
-      movimiento: !this.sinMovimiento
-    });
     this.colocarRespaldo();
+    const visibles = this.visibles();
+    this.quieto = !this.distinto(visibles);
+    this.firma.set(visibles);
+    this.pendiente = false;
 
     // Si el fotograma anterior aún se está pintando, este se salta.
     if (this.pintor && this.webglListo) {
@@ -469,7 +460,6 @@ export class Escena {
         camara: this.camara,
         fase: this.sinMovimiento ? 0 : this.fase,
         atenuacion: h.atenuacion,
-        red: h.red,
         liquido: this.piezas,
         cajas: this.estructura.cajas,
         numCajas: this.estructura.numCajas,
@@ -486,21 +476,16 @@ export class Escena {
     this.observador.disconnect();
     this.vigia.disconnect();
     this.pintor?.liberar();
-    this.red?.liberar();
   }
 }
 
-/**
- * Arranca la escena. Sin WebGL queda el póster de la gota y, si hay Canvas
- * 2D, la red. `etiquetas` son los nombres de las ramas (los servicios).
- */
-export function iniciarLienzo(historia: EstadoNarrativo, etiquetas: string[] = []): Escena | null {
+/** Arranca la escena. Sin WebGL queda el póster de la gota delante de un monolito en CSS. */
+export function iniciarLienzo(historia: EstadoNarrativo): Escena | null {
   const contenedor = document.querySelector<HTMLElement>('[data-lienzo]');
   const lienzo = contenedor?.querySelector<HTMLCanvasElement>('canvas[data-escultura]');
-  const lienzoRed = contenedor?.querySelector<HTMLCanvasElement>('canvas[data-red]') ?? null;
   if (!contenedor || !lienzo) return null;
   try {
-    return new Escena(contenedor, lienzo, lienzoRed, historia, etiquetas);
+    return new Escena(contenedor, lienzo, historia);
   } catch (error) {
     console.warn('[lienzo] Se mantiene la imagen de respaldo:', error);
     return null;

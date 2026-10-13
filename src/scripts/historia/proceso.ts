@@ -1,11 +1,10 @@
 /**
  * proceso.ts
- * Escena 06 · El proceso. Las fases son nodos de un camino orgánico (un
- * SVG que se curva entre ellos). Con el scroll el camino se ilumina hasta
- * la fase actual, que brilla; las anteriores quedan encendidas a medias y
- * una partícula viaja hacia la siguiente. Todo deriva del scroll: es
- * reversible. La fase actual enciende su puerta en la arquitectura
- * (estado.etapa, arquitectura.ts).
+ * Capítulo 04 · Método. Las fases son umbrales de un camino (un SVG que se
+ * curva entre ellos). Con el scroll el camino se ilumina hasta la fase
+ * actual, que se enciende; las anteriores quedan a medias. Todo deriva del
+ * scroll: es reversible. La fase actual enciende su puerta en la
+ * arquitectura (estado.etapa, arquitectura.ts).
  *
  * En escritorio las fases van en fila sobre el camino, que se ilumina
  * mientras la escena sube por la pantalla (nunca se queda fija: el scroll
@@ -16,8 +15,15 @@
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import type { EstadoNarrativo } from '@/scripts/lienzo/narrativa';
 
-/** Tramo del camino en escritorio: de que la escena asome a que su final pasa por aquí. */
-const CAMINO = { inicio: 'top 45%', fin: 'bottom 85%' };
+/**
+ * Tramo del camino, medido sobre la fila de fases (no sobre el capítulo,
+ * que sigue con los principios): en escritorio, de que la fila asome a que
+ * pasa la mitad de la pantalla; en móvil, cada fase al cruzar el centro.
+ */
+const CAMINO = {
+  horizontal: { inicio: 'top 80%', fin: 'bottom 45%' },
+  vertical: { inicio: 'top 60%', fin: 'bottom 60%' }
+};
 
 export function iniciarProceso(estado: EstadoNarrativo, horizontal: boolean): () => void {
   const seccion = document.querySelector<HTMLElement>('[data-proceso]');
@@ -25,10 +31,7 @@ export function iniciarProceso(estado: EstadoNarrativo, horizontal: boolean): ()
 
   const fases = [...seccion.querySelectorAll<HTMLElement>('[data-fase]')];
   const actual = seccion.querySelector<HTMLElement>('[data-proceso-actual]');
-  const camino = seccion.querySelector<SVGPathElement>('[data-camino]');
-  const energia = seccion.querySelector<HTMLElement>('[data-energia]');
   const total = fases.length;
-  let largo = 0;
 
   const marcar = (activa: number) => {
     fases.forEach((fase, i) => {
@@ -47,28 +50,17 @@ export function iniciarProceso(estado: EstadoNarrativo, horizontal: boolean): ()
     // La escena enciende la puerta de la fase actual (continuo: se enciende al llegar).
     estado.etapa = progreso * total;
     marcar(activa);
-    if (!camino || !energia || largo === 0) return;
-    // La partícula avanza dentro del tramo actual, de una fase a la siguiente.
-    const tramo = (progreso * total) % 1;
-    const desde = activa / Math.max(1, total - 1);
-    const hasta = Math.min(1, (activa + 1) / Math.max(1, total - 1));
-    const punto = camino.getPointAtLength(largo * (desde + (hasta - desde) * tramo));
-    // El dibujo mide 1000 × 200: la partícula se coloca en porcentaje, sin deformarse.
-    energia.style.left = `${(punto.x / 10).toFixed(2)}%`;
-    energia.style.top = `${(punto.y / 2).toFixed(2)}%`;
-    energia.style.opacity = activa < total - 1 ? String(Math.sin(tramo * Math.PI)) : '0';
   };
 
   const disparadores: ScrollTrigger[] = [];
   seccion.classList.add('en-escena');
-  if (horizontal) seccion.classList.add('horizontal');
   // El camino dibujado solo existe en escritorio; en móvil la línea es CSS.
-  if (horizontal && camino) largo = camino.getTotalLength();
+  if (horizontal) seccion.classList.add('horizontal');
   disparadores.push(
     ScrollTrigger.create({
-      trigger: horizontal ? seccion : seccion.querySelector('.fases'),
-      start: horizontal ? CAMINO.inicio : 'top 60%',
-      end: horizontal ? CAMINO.fin : 'bottom 60%',
+      trigger: seccion.querySelector('.fases'),
+      start: CAMINO[horizontal ? 'horizontal' : 'vertical'].inicio,
+      end: CAMINO[horizontal ? 'horizontal' : 'vertical'].fin,
       onUpdate: (self) => pintar(self.progress),
       onRefresh: (self) => pintar(self.progress)
     })

@@ -18,7 +18,6 @@ export interface EstadoDeEscena {
   /** Tiempo del movimiento interno: se integra con el flujo para que cambiar de velocidad no dé saltos. */
   fase: number;
   atenuacion: number;
-  red: number;
   /** La gota, la cinta y su esfera límite (escultura.ts). */
   liquido: Float32Array;
   /** Las piezas de la arquitectura (arquitectura.ts) y cuántas hay. */
@@ -41,7 +40,6 @@ const UNIFORMS = [
   'uFocal',
   'uFase',
   'uAtenuacion',
-  'uRed',
   'uLiquido',
   'uCajas',
   'uNumCajas',
@@ -144,7 +142,6 @@ export class Renderizador {
     gl.uniform1f(u.uFocal, camara.focal);
     gl.uniform1f(u.uFase, estado.fase);
     gl.uniform1f(u.uAtenuacion, estado.atenuacion);
-    gl.uniform1f(u.uRed, estado.red);
     gl.uniform4fv(u.uLiquido, estado.liquido);
     gl.uniform4fv(u.uCajas, estado.cajas);
     gl.uniform1i(u.uNumCajas, Math.min(estado.numCajas, MAX_CAJAS));

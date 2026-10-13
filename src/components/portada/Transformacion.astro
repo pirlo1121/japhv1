@@ -1,18 +1,17 @@
 ---
 /**
- * Escena 02 · La transformación. Una idea encuentra estructura: el
- * monolito se abre en un pórtico y la gota se estira en una cinta de cromo
- * que lo cruza; la cámara se acerca y lo rodea. La rigidez del pórtico es
- * la referencia contra la que el líquido se vuelve expresivo.
+ * Capítulo 02 · Transformación. Una intención adquiere forma: el monolito
+ * se abre en un pórtico y la gota se estira en una curva de cromo que
+ * atraviesa la abertura (principio: la gota; desarrollo: se estira
+ * mientras el monolito se abre; final: la curva cruza el pórtico). La
+ * rigidez del pórtico es la referencia contra la que el líquido se vuelve
+ * expresivo.
  *
- * Los tres estados de la materia (líquido, forma, sólido), que cuentan lo
- * mismo que la escena (de la idea al producto), van en una placa de tres
- * celdas: una interfaz de la arquitectura, no una tarjeta de cristal. El
- * manifiesto es un bloque editorial con espacio para leerse.
- *
- * Con movimiento, cada estado y cada cláusula del manifiesto se encienden
- * con el progreso de la escena (--p) mientras pasa por la pantalla. Nunca
- * se queda fija: el scroll baja la página.
+ * Los tres estados de la materia (líquido, forma, sólido) cuentan lo mismo
+ * que la escena (de la idea al producto) en una placa de tres celdas. Con
+ * movimiento se encienden con el progreso del capítulo (--p), al ritmo de
+ * la gota; nunca se ocultan. El manifiesto es un bloque editorial que se
+ * lee entero desde que aparece.
  */
 const estados = [
   { estado: 'Líquido', que: 'la idea', forma: 'liquido' },
@@ -54,24 +53,17 @@ const clausulas = [
           </li>
         ))}
       </ol>
-      <p class="manifiesto" data-pasos>
-        {clausulas.map((clausula, i) => (
-          <>
-            <span data-paso style={{ '--u': 0.12 + (i / clausulas.length) * 0.62 }}>
-              {clausula}
-            </span>{' '}
-          </>
-        ))}
-      </p>
+      <p class="manifiesto">{clausulas.join(' ')}</p>
     </div>
   </div>
 </section>
 
 <style>
+  /* Nunca más ancho que la mitad de la pantalla: la otra mitad es del pórtico. */
   .bloque {
     display: grid;
     gap: 1.6rem;
-    max-width: 36rem;
+    max-width: min(36rem, 52vw);
   }
 
   .bloque > * {
@@ -107,7 +99,6 @@ const clausulas = [
     aspect-ratio: 1;
     margin-bottom: 0.65rem;
     background: var(--gota);
-    box-shadow: 0 0 14px -2px rgb(var(--cian-rgb) / 0.35);
   }
 
   .liquido {
@@ -152,18 +143,18 @@ const clausulas = [
     position: absolute;
     inset: 0.35em auto 0.35em 0;
     width: 1px;
-    background: linear-gradient(180deg, var(--metal), rgb(var(--cian-rgb) / 0.5), transparent);
-  }
-
-  .manifiesto span {
-    display: inline;
-    transition: opacity 0.3s linear;
+    background: linear-gradient(180deg, var(--metal), rgb(var(--metal-rgb) / 0.3), transparent);
   }
 
   /* Móvil o vertical: la escultura arriba, el texto debajo con espacio para verla. */
   @media (max-aspect-ratio: 85/100), (max-width: 47.99rem) {
     .marco {
       padding-top: 38svh;
+    }
+
+    /* Aquí el pórtico va encima, no al lado: todo el ancho. */
+    .bloque {
+      max-width: 36rem;
     }
 
     .estados li {

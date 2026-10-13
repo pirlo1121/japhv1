@@ -1,8 +1,9 @@
 ---
 /**
- * Escena 09 · Hagámoslo real. El entorno se calma: un último pórtico
- * monolítico enmarca la cinta, ya en reposo, y una línea de luz en el suelo
- * lleva la mirada hacia la invitación. La red sigue ahí, sin protagonismo.
+ * Capítulo 06 · Apertura. La complejidad se retira: el pórtico del
+ * capítulo 02 se recompone, de frente y en calma, la curva de cromo lo
+ * vuelve a cruzar despacio y una línea de luz en el suelo lleva la mirada
+ * hacia la invitación. Cierra el recorrido donde empezó.
  * La invitación lleva a destinos reales: el formulario de contacto y el
  * correo de config/sitio.ts (marcados como ejemplo mientras lo sean).
  */
@@ -13,7 +14,7 @@ import { contacto } from '@/config/sitio';
 
 <section class="llamada" id="llamada" aria-labelledby="titulo-llamada" data-escena="Contacto">
   <div class="contenido" data-zona-lectura>
-    <p class="rotulo">09 · Hagámoslo real</p>
+    <p class="rotulo">06 · Hagámoslo real</p>
     <h2 id="titulo-llamada">
       ¿Qué podemos <em>construir juntos?</em>
     </h2>
@@ -41,6 +42,21 @@ import { contacto } from '@/config/sitio';
     min-height: 100svh;
     padding-top: 52svh;
     text-align: center;
+  }
+
+  /* Apaisado y bajo: menos escena encima para que la invitación se vea entera. */
+  @media (max-height: 34rem) {
+    .llamada {
+      padding-top: 30svh;
+    }
+  }
+
+  /* Móvil o vertical: el pórtico arriba, la invitación debajo. */
+  @media (max-aspect-ratio: 85/100), (max-width: 47.99rem) {
+    .llamada {
+      min-height: 0;
+      padding-top: 46svh;
+    }
   }
 
   .contenido {

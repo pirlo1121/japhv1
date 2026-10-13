@@ -1,11 +1,11 @@
 ---
 /**
  * Índice de la portada: una regla vertical en el borde derecho, como la
- * escala de un plano de arquitectura: una marca por escena ([data-escena]).
- * Son enlaces normales a cada sección, así que funcionan sin JavaScript; el
- * script solo marca la escena actual (su marca se alarga y recoge luz). Al
- * saltar a una escena, la historia sincroniza la cámara con el scroll. En
- * pantallas estrechas no aparece: allí basta el scroll.
+ * escala de un plano de arquitectura: una marca por capítulo
+ * ([data-escena]). Son enlaces normales a cada sección, así que funcionan
+ * sin JavaScript; el script solo marca el capítulo actual (su marca se
+ * alarga y recoge luz). Al saltar a uno, la historia sincroniza la cámara
+ * con el scroll. En pantallas estrechas no aparece: allí basta el scroll.
  */
 interface Props {
   escenas: { id: string; nombre: string }[];
@@ -14,7 +14,7 @@ interface Props {
 const { escenas } = Astro.props;
 ---
 
-<nav class="recorrido" aria-label="Escenas de la portada" data-recorrido>
+<nav class="recorrido" aria-label="Capítulos de la portada" data-recorrido>
   <ol>
     {escenas.map(({ id, nombre }, i) => (
       <li>
@@ -22,7 +22,7 @@ const { escenas } = Astro.props;
           <span class="nombre">
             {nombre}
             <span class="solo-lectores">
-              , escena {i + 1} de {escenas.length}
+              , capítulo {i + 1} de {escenas.length}
             </span>
           </span>
           <span class="nodo" aria-hidden="true" />
@@ -157,8 +157,7 @@ const { escenas } = Astro.props;
 
   a[aria-current='location'] .nodo::before {
     width: 1.5rem;
-    background: linear-gradient(90deg, var(--cian), var(--metal-luz));
-    box-shadow: 0 0 10px rgb(var(--cian-rgb) / 0.6);
+    background: linear-gradient(90deg, var(--frio), var(--metal-luz));
   }
 
   a:focus-visible {
@@ -166,7 +165,7 @@ const { escenas } = Astro.props;
   }
 
   a:focus-visible .nodo {
-    outline: 2px solid var(--cian);
+    outline: 2px solid var(--frio);
     outline-offset: 4px;
   }
 

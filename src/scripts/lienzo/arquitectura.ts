@@ -1,27 +1,29 @@
 /**
  * arquitectura.ts
- * The Digital Monolith: la estructura oscura que se recorre con el scroll.
- * Un juego fijo de piezas (monolitos, un dintel, losas suspendidas, tiras
- * de luz y cuatro marcos con hueco) y un plano por escena que dice dónde
- * está cada una, cuánto se ve y cuánta luz recogen sus aristas.
+ * La arquitectura monumental: el lenguaje visual dominante de la portada.
+ * Un juego fijo de piezas (monolitos, un dintel, losas, tiras de luz y
+ * cuatro marcos con hueco) y un plano por capítulo que dice dónde está
+ * cada una, cuánto se ve y cuánta luz recogen sus aristas. No aparece nada
+ * sin causa: cada capítulo reutiliza y transforma las piezas del anterior.
  *
- * El scroll solo mueve un número (estado.escena, 0..8). Entre dos planos
+ * El scroll solo mueve un número (estado.escena, 0..5). Entre dos planos
  * las piezas se desplazan, giran y aparecen o se funden en la oscuridad:
- * el monolito se abre, forma un pórtico, una cámara interior, siete
- * módulos, cuatro puertas, una galería, el ecosistema y un pórtico final.
+ * el monolito se abre en pórtico (transformación), sus piezas forman siete
+ * módulos (capacidades), cuatro puertas (método), los nichos de una
+ * galería (evidencia) y, al final, el pórtico se recompone (apertura).
  * Es determinista y reversible: al subir, la estructura se recompone igual.
  *
  * Cada plano se escribe en el marco de su cámara (x a la derecha de la
  * pantalla, z hacia el espectador) y se lleva al mundo girándolo con `az`.
  * El sombreador interseca las piezas analíticamente (sin marchar rayos):
  * bordes nítidos y barato también en móvil, donde las piezas secundarias
- * no se envían.
+ * sin función en su capítulo no se envían.
  */
 import type { Cinta, Vec3 } from './escultura';
 
 /** Piezas que el sombreador puede recibir a la vez. */
 export const MAX_CAJAS = 14;
-/** vec4 por pieza: A (centro, giro), B (semiejes, tipo), C (aristas, emisión, presencia, pulido), D (hueco). */
+/** vec4 por pieza: A (centro, giro), B (semiejes, tipo), C (aristas, emisión, presencia, pulido), D (hueco, luz fría). */
 export const VEC4_POR_CAJA = 4;
 
 export const TIPO = { mate: 0, emisivo: 1, marco: 2 } as const;
@@ -113,22 +115,26 @@ function monolito(
 }
 
 /**
- * Los nueve planos, uno por escena de la portada. Las piezas que un plano
+ * Los seis planos, uno por capítulo de la portada. Las piezas que un plano
  * no nombra se quedan donde las deja el plano más cercano que sí las
- * nombra, fundidas en la oscuridad (presencia 0).
+ * nombra, fundidas en la oscuridad (presencia 0). Cada paso entre planos
+ * conecta dos estados reconocibles con las mismas piezas: el monolito se
+ * abre en pórtico; sus mitades y su dintel se vuelven columnas; las
+ * puertas del método se vuelven los nichos de la galería; y al final el
+ * dintel vuelve a su sitio y el pórtico del principio se recompone.
  */
 const PLANOS: Plano[] = [
-  // 01 · El vacío: un monolito enorme en la penumbra, girado para mostrar su
-  // esquina: dos caras, una arista que recoge la luz. Delante, la gota.
+  // 01 · Presencia: un monolito enorme en la penumbra, girado para mostrar
+  // su esquina: dos caras, una arista que recoge la luz. Delante, la gota.
+  // Un solo gesto: nada más que el suelo y una pieza lejana que da escala.
   {
     az: 0.5,
     luz: { p: [-7, 9, 5], i: 1.1 },
     piezas: {
       ...monolito([1.4, -2.6, -9], [1.35, 5.2, 1.2], 0.62, 0, { aristas: 0.85, pulido: 0.25 }),
-      tira1: { c: [-1.25, -2.6, -6.5], h: [0.012, 5.0, 0.012], emision: 0.5, presencia: 0.8 },
-      losa: { c: [-5.5, -4.4, -5], h: [3.6, 0.16, 2.4], giro: -0.25, aristas: 0.6, presencia: 0.6 },
-      lejana: { c: [-11, 2.5, -19], h: [1.3, 11, 1.3], giro: 0.3, aristas: 0.5, presencia: 0.55 },
-      lejana2: { c: [12, -1, -22], h: [2.2, 9, 1.4], giro: -0.4, aristas: 0.4, presencia: 0.4 }
+      tira1: { c: [-1.25, -2.6, -6.5], h: [0.012, 5.0, 0.012], emision: 0.45, presencia: 0.8 },
+      losa: { c: [-5.5, -4.4, -5], h: [3.6, 0.16, 2.4], giro: -0.25, aristas: 0.5, presencia: 0.6 },
+      lejana: { c: [-11, 2.5, -19], h: [1.3, 11, 1.3], giro: 0.3, aristas: 0.45, presencia: 0.5 }
     },
     cinta: {
       puntos: [
@@ -141,204 +147,163 @@ const PLANOS: Plano[] = [
       radios: [0.07, 0.34, 0.42, 0.3, 0.08]
     }
   },
-  // 02 · La transformación: el monolito se abre en un pórtico y la cinta lo atraviesa.
+  // 02 · Transformación: el monolito se abre en un pórtico y la gota,
+  // estirada en curva, lo atraviesa: nace delante, a la izquierda, y se
+  // pierde por la abertura hacia la luz del fondo.
   {
     az: 0.95,
     luz: { p: [-6, 7, 3], i: 1.1 },
     piezas: {
-      ...monolito([1.15, -1.5, -6.2], [1.2, 3.0, 1.0], 0, 3.6, { aristas: 0.9, pulido: 0.25 }),
-      dintel: { c: [1.15, 1.95, -6.2], h: [4.2, 0.45, 1.05], aristas: 0.95, pulido: 0.3 },
-      tira1: { c: [1.15, -1.5, -8.2], h: [0.012, 2.9, 0.012], emision: 1 },
-      tira2: { c: [1.15, 1.48, -5.2], h: [1.75, 0.01, 0.01], emision: 0.6 },
-      losa: { c: [-4.2, -4.2, -2.6], h: [3.2, 0.16, 2.0], aristas: 0.5, presencia: 0.5 },
-      fondo: { c: [1.2, 0, -16], h: [11, 11, 0.4], aristas: 0.2, presencia: 0.45 },
-      lejana: { c: [-10, 2, -16], h: [1.3, 11, 1.3], aristas: 0.4, presencia: 0.45 }
+      ...monolito([1.15, -1.5, -6.2], [1.0, 2.8, 0.9], 0, 3.2, { aristas: 0.9, pulido: 0.25 }),
+      dintel: { c: [1.15, 1.7, -6.2], h: [3.6, 0.4, 0.95], aristas: 0.95, pulido: 0.3 },
+      tira1: { c: [1.15, -1.5, -9.4], h: [0.012, 2.7, 0.012], emision: 0.9 },
+      losa: { c: [1.15, -4.46, -4.6], h: [4.0, 0.16, 3.2], aristas: 0.45, presencia: 0.7 },
+      fondo: { c: [1.2, 0, -16], h: [11, 11, 0.4], aristas: 0.15, presencia: 0.4 }
     },
     cinta: {
+      // Escrita para cruzar la abertura (x de -0.45 a 2.75, y bajo el
+      // dintel) con la escala y el desvío de CINTA: nace a la derecha del
+      // texto, se arquea y se pierde por el pórtico hacia la luz del fondo.
       puntos: [
-        [-2.4, -1.4, 0.6],
-        [-1.0, 1.9, 0.2],
-        [0.5, 0.0, -0.4],
-        [1.8, -1.8, -1.0],
-        [2.5, 0.5, -1.6]
+        [-2.64, 0.86, -1.43],
+        [-1.07, 2.57, -3.57],
+        [0.36, -0.43, -6.0],
+        [1.14, -1.71, -8.86],
+        [1.14, -1.29, -12.86]
       ],
-      radios: [0.06, 0.36, 0.44, 0.34, 0.08]
+      radios: [0.08, 0.4, 0.46, 0.34, 0.14]
     }
   },
-  // 03 · La red viva: el espacio se ensancha; losas a distintas profundidades.
-  {
-    az: 1.25,
-    luz: { p: [-4, 9, 2], i: 1 },
-    piezas: {
-      izquierda: { c: [-5.4, 1.2, -8], h: [1.1, 6.5, 1.1], aristas: 0.7 },
-      derecha: { c: [5.5, -0.6, -10], h: [1.6, 7.5, 1.2], aristas: 0.6 },
-      dintel: { c: [0.8, 5.4, -12], h: [5, 0.4, 1.4], aristas: 0.7 },
-      losa: { c: [0, -3.4, -2.8], h: [5.2, 0.16, 2.6], aristas: 0.6, presencia: 0.7 },
-      tira1: { c: [0, -3.22, -0.2], h: [5.1, 0.01, 0.01], emision: 0.7 },
-      tira2: { c: [3.88, -0.6, -8.8], h: [0.012, 7.2, 0.012], emision: 0.7 },
-      lejana: { c: [-11, 3, -19], h: [1.4, 11, 1.4], aristas: 0.4, presencia: 0.6 },
-      lejana2: { c: [11, 0, -20], h: [2.2, 9, 1.4], aristas: 0.35, presencia: 0.5 },
-      fondo: { c: [0, 0, -24], h: [16, 12, 0.4], aristas: 0.15, presencia: 0.3 }
-    },
-    cinta: {
-      puntos: [
-        [-3.0, 0.5, 0.6],
-        [-1.2, -1.7, 1.4],
-        [0.4, 0.1, 0.0],
-        [2.0, 2.0, -1.4],
-        [3.1, 0.2, -3.0]
-      ],
-      radios: [0.06, 0.3, 0.4, 0.3, 0.06]
-    }
-  },
-  // 04 · El núcleo: una cámara profunda; la cinta entra en ella.
-  {
-    az: 0.75,
-    luz: { p: [-3, 8, 5], i: 0.85 },
-    piezas: {
-      puerta1: {
-        c: [0.6, 0.2, -6.5],
-        h: [3.4, 3.4, 2.2],
-        hueco: [1.7, 2.1],
-        aristas: 1,
-        emision: 0.9,
-        pulido: 0.35
-      },
-      fondo: { c: [0.6, 0.2, -9.0], h: [3.0, 3.0, 0.3], aristas: 0.2, presencia: 1 },
-      tira1: { c: [0.6, -1.85, -8.6], h: [1.5, 0.012, 0.012], emision: 1 },
-      tira2: { c: [-1.05, 0.2, -8.2], h: [0.012, 1.9, 0.012], emision: 0.7 },
-      izquierda: { c: [-5.4, 0, -6.5], h: [1.0, 6.5, 2.0], aristas: 0.55 },
-      derecha: { c: [6.6, 0, -6.5], h: [1.0, 6.5, 2.0], aristas: 0.55 },
-      dintel: { c: [0.6, 5.2, -6.5], h: [6.2, 0.7, 2.0], aristas: 0.6 }
-    },
-    cinta: {
-      puntos: [
-        [-2.0, 1.4, 1.2],
-        [-0.6, -0.8, 0.6],
-        [0.4, 0.2, -1.5],
-        [0.6, 0.4, -4.0],
-        [0.6, -0.2, -7.0]
-      ],
-      radios: [0.06, 0.32, 0.36, 0.24, 0.06]
-    }
-  },
-  // 05 · Servicios: siete módulos en fila, uno por servicio (se ilumina el activo).
+  // 03 · Capacidades: una columnata de siete losas, una por servicio (se
+  // ilumina la del activo). Las mitades del pórtico y su dintel son tres
+  // de ellas.
   {
     az: 0.3,
     luz: { p: [-6, 9, 4], i: 0.95 },
     piezas: {
-      // Una columnata: losas altas que salen del cuadro, a dos profundidades.
+      // Losas altas que salen del cuadro, a dos profundidades, juntas a la
+      // derecha de la lista: ninguna queda detrás del texto.
       lejana: {
-        c: [-6.9, 1.2, -9.2],
-        h: [0.75, 6.5, 0.75],
-        giro: 0.12,
+        c: [-2.85, 1.2, -9.0],
+        h: [0.42, 6.5, 0.42],
+        giro: 0.06,
         aristas: 0.55,
         presencia: 1
       },
-      izquierda: { c: [-4.6, 1.2, -7.6], h: [0.75, 6.5, 0.75], giro: 0.08, aristas: 0.55 },
+      izquierda: { c: [-1.8, 1.2, -7.8], h: [0.42, 6.5, 0.42], giro: 0.04, aristas: 0.55 },
       columna: {
-        c: [-2.3, 1.2, -9.2],
-        h: [0.75, 6.5, 0.75],
-        giro: 0.04,
+        c: [-0.75, 1.2, -9.0],
+        h: [0.42, 6.5, 0.42],
+        giro: 0.02,
         aristas: 0.55,
         presencia: 1
       },
-      derecha: { c: [0, 1.2, -7.6], h: [0.75, 6.5, 0.75], aristas: 0.55 },
+      derecha: { c: [0.3, 1.2, -7.8], h: [0.42, 6.5, 0.42], aristas: 0.55 },
       lejana2: {
-        c: [2.3, 1.2, -9.2],
-        h: [0.75, 6.5, 0.75],
-        giro: -0.04,
+        c: [1.35, 1.2, -9.0],
+        h: [0.42, 6.5, 0.42],
+        giro: -0.02,
         aristas: 0.55,
         presencia: 1
       },
-      losa: { c: [4.6, 1.2, -7.6], h: [0.75, 6.5, 0.75], giro: -0.08, aristas: 0.55, presencia: 1 },
-      dintel: { c: [6.9, 1.2, -9.2], h: [0.75, 6.5, 0.75], giro: -0.12, aristas: 0.55 },
-      fondo: { c: [0, 0, -18], h: [14, 10, 0.4], aristas: 0.15, presencia: 0.35 },
-      tira1: { c: [0, -3.6, -6.4], h: [8.4, 0.01, 0.01], emision: 0.35 }
+      losa: { c: [2.4, 1.2, -7.8], h: [0.42, 6.5, 0.42], giro: -0.04, aristas: 0.55, presencia: 1 },
+      dintel: { c: [3.45, 1.2, -9.0], h: [0.42, 6.5, 0.42], giro: -0.06, aristas: 0.55 },
+      fondo: { c: [0, 0, -18], h: [14, 10, 0.4], aristas: 0.12, presencia: 0.3 },
+      tira1: { c: [0.3, -3.6, -6.8], h: [4.2, 0.01, 0.01], emision: 0.3 }
     },
     cinta: {
-      // A la derecha de la lista: la escultura acompaña, no cruza el texto.
+      // Baja y en horizontal, delante de la base de la columnata: la curva
+      // pasa por los siete módulos, los conecta y no compite con ellos.
       puntos: [
-        [-0.6, 0.8, 0.4],
-        [0.5, -1.2, 0.8],
-        [1.5, 0.4, -0.2],
-        [2.4, 1.4, -1.2],
-        [3.1, -0.2, -2.2]
+        [-4.79, -3.43, -7.14],
+        [-2.5, -4.57, -6.29],
+        [-0.07, -3.71, -7.43],
+        [2.21, -2.86, -8.57],
+        [4.07, -3.86, -7.71]
       ],
-      radios: [0.05, 0.26, 0.32, 0.24, 0.05]
+      radios: [0.05, 0.2, 0.24, 0.2, 0.06]
     }
   },
-  // 06 · El proceso: cuatro puertas en un camino que se adentra; se enciende la de la fase actual.
+  // 04 · Método: cuatro puertas en un camino que se adentra, una por fase;
+  // se enciende la de la fase actual. La curva (el proyecto) las cruza en
+  // orden.
   {
     az: 0.25,
     luz: { p: [-4, 8, 4], i: 0.9 },
     piezas: {
-      puerta1: { c: [-3.2, -0.2, -3.5], h: [1.5, 2.3, 0.35], hueco: [1.05, 1.85], aristas: 0.45 },
+      puerta1: {
+        c: [-2.6, -0.2, -4.0],
+        h: [0.9, 1.4, 0.28],
+        hueco: [0.6, 1.1],
+        aristas: 0.45
+      },
       puerta2: {
-        c: [-0.6, -0.2, -6.5],
-        h: [1.5, 2.3, 0.35],
-        hueco: [1.05, 1.85],
+        c: [-0.4, -0.2, -6.6],
+        h: [0.9, 1.4, 0.28],
+        hueco: [0.6, 1.1],
         aristas: 0.45,
         presencia: 1
       },
       puerta3: {
-        c: [2.0, -0.2, -9.5],
-        h: [1.5, 2.3, 0.35],
-        hueco: [1.05, 1.85],
+        c: [1.8, -0.2, -9.2],
+        h: [0.9, 1.4, 0.28],
+        hueco: [0.6, 1.1],
         aristas: 0.45,
         presencia: 1
       },
       puerta4: {
-        c: [4.6, -0.2, -12.5],
-        h: [1.5, 2.3, 0.35],
-        hueco: [1.05, 1.85],
+        c: [4.0, -0.2, -11.8],
+        h: [0.9, 1.4, 0.28],
+        hueco: [0.6, 1.1],
         aristas: 0.45,
         presencia: 1
       },
-      losa: { c: [0.6, -2.7, -8], h: [6.5, 0.12, 6.5], giro: 0.4, aristas: 0.35, presencia: 0.6 },
-      tira1: { c: [0.6, -2.56, -8], h: [0.01, 0.01, 6.2], giro: 0.71, emision: 0.6 },
-      fondo: { c: [2, 0, -22], h: [16, 11, 0.4], aristas: 0.15, presencia: 0.3 }
+      losa: { c: [0.7, -1.72, -8], h: [5.5, 0.12, 5.5], giro: 0.4, aristas: 0.3, presencia: 0.6 },
+      tira1: { c: [0.7, -1.59, -8], h: [0.01, 0.01, 5.2], giro: 0.7, emision: 0.45 },
+      fondo: { c: [2, 0, -22], h: [16, 11, 0.4], aristas: 0.12, presencia: 0.3 }
     },
     cinta: {
+      // Por los huecos de las tres primeras puertas, camino de la cuarta.
       puntos: [
-        [-1.6, 1.0, 0.8],
-        [-0.6, -0.8, 0.6],
-        [0.6, 0.6, -0.4],
-        [1.4, 1.0, -1.4],
-        [2.2, 0.0, -2.0]
+        [-5.64, -0.14, -3.71],
+        [-5.07, -0.71, -4.86],
+        [-1.07, -0.14, -9.43],
+        [2.21, 0.57, -13.43],
+        [4.21, -0.29, -15.71]
       ],
-      radios: [0.05, 0.24, 0.3, 0.22, 0.05]
+      radios: [0.06, 0.24, 0.28, 0.24, 0.1]
     }
   },
-  // 07 · Proyectos: una galería de nichos; la cinta queda a un lado.
+  // 05 · Evidencia: las puertas se vuelven los nichos de una galería en un
+  // muro oscuro. La escena se calla para que hablen los proyectos.
   {
     az: 0.55,
-    luz: { p: [-2, 8, 5], i: 0.95 },
+    luz: { p: [-2, 8, 5], i: 0.9 },
     piezas: {
       puerta1: {
         c: [-5.4, 0, -7.5],
         h: [2.0, 2.7, 0.8],
         hueco: [1.65, 2.3],
-        aristas: 0.7,
-        emision: 0.25
+        aristas: 0.6,
+        emision: 0.2
       },
       puerta2: {
         c: [0, 0, -7.5],
         h: [2.0, 2.7, 0.8],
         hueco: [1.65, 2.3],
-        aristas: 0.7,
-        emision: 0.25
+        aristas: 0.6,
+        emision: 0.2
       },
       puerta3: {
         c: [5.4, 0, -7.5],
         h: [2.0, 2.7, 0.8],
         hueco: [1.65, 2.3],
-        aristas: 0.7,
-        emision: 0.25
+        aristas: 0.6,
+        emision: 0.2
       },
-      fondo: { c: [0, 0, -8.6], h: [9, 4.2, 0.3], aristas: 0.3, presencia: 1, pulido: 0.4 },
-      dintel: { c: [0, 3.6, -7.5], h: [8.5, 0.35, 1.0], aristas: 0.6 },
-      losa: { c: [0, -3.2, -6], h: [8.5, 0.16, 2.6], aristas: 0.45, presencia: 0.8 }
+      fondo: { c: [0, 0, -8.6], h: [9, 4.2, 0.3], aristas: 0.25, presencia: 1, pulido: 0.4 },
+      dintel: { c: [0, 3.6, -7.5], h: [8.5, 0.35, 1.0], aristas: 0.5 },
+      losa: { c: [0, -3.2, -6], h: [8.5, 0.16, 2.6], aristas: 0.4, presencia: 0.8 }
     },
     cinta: {
       puntos: [
@@ -351,91 +316,34 @@ const PLANOS: Plano[] = [
       radios: [0.05, 0.22, 0.28, 0.2, 0.05]
     }
   },
-  // 08 · Ecosistema: todas las piezas se ordenan en un anillo alrededor de la escultura.
-  {
-    az: 0.35,
-    luz: { p: [-3, 10, 6], i: 1.15 },
-    piezas: {
-      puerta1: {
-        c: [-7.5, 0, -4],
-        h: [1.3, 2.4, 0.35],
-        hueco: [0.85, 1.9],
-        giro: 0.9,
-        aristas: 0.8,
-        emision: 0.4
-      },
-      izquierda: { c: [-5.2, 0.6, -8.5], h: [0.8, 4.2, 0.8], giro: 0.5, aristas: 0.8 },
-      puerta2: {
-        c: [-1.8, 0, -10.5],
-        h: [1.3, 2.4, 0.35],
-        hueco: [0.85, 1.9],
-        giro: 0.15,
-        aristas: 0.8,
-        emision: 0.4
-      },
-      derecha: { c: [1.8, 0.8, -10.5], h: [0.8, 4.4, 0.8], giro: -0.15, aristas: 0.8 },
-      puerta3: {
-        c: [5.2, 0, -8.5],
-        h: [1.3, 2.4, 0.35],
-        hueco: [0.85, 1.9],
-        giro: -0.5,
-        aristas: 0.8,
-        emision: 0.4
-      },
-      columna: { c: [7.5, 0.4, -4], h: [0.8, 4.0, 0.8], giro: -0.9, aristas: 0.8, presencia: 1 },
-      losa: { c: [0, -3.0, -6], h: [9, 0.14, 9], giro: 0.785, aristas: 0.5, presencia: 0.9 },
-      tira1: { c: [0, -2.86, -6], h: [8.6, 0.01, 0.01], emision: 0.7 },
-      tira2: { c: [0, -2.86, -6], h: [0.01, 0.01, 8.6], emision: 0.7 },
-      dintel: { c: [0, 5.6, -9], h: [9, 0.3, 0.8], aristas: 0.6 },
-      lejana: { c: [-13, 3, -20], h: [1.4, 11, 1.4], aristas: 0.35, presencia: 0.5 },
-      lejana2: { c: [13, 0, -21], h: [2.2, 9, 1.4], aristas: 0.35, presencia: 0.5 }
-    },
-    cinta: {
-      // Un anillo abierto e inclinado: la red entera gira alrededor de él.
-      // Alrededor del objetivo de la cámara (en el centro del anillo de piezas), no delante de ella.
-      puntos: [
-        [-1.0, -0.4, -2.0],
-        [-0.4, 1.7, -4.1],
-        [1.8, 1.0, -4.6],
-        [2.9, -0.7, -3.0],
-        [0.8, -1.1, -1.7]
-      ],
-      radios: [0.08, 0.3, 0.36, 0.3, 0.1]
-    }
-  },
-  // 09 · Hagámoslo real: un último pórtico enmarca la escultura, en calma; una tira de luz lleva a la llamada.
+  // 06 · Apertura: la complejidad se retira. El dintel vuelve a su sitio y
+  // el pórtico del capítulo 02 se recompone, de frente y en calma; la curva
+  // vuelve a cruzarlo, despacio, y una línea de luz en el suelo lleva a la
+  // invitación.
   {
     az: 0.3,
     luz: { p: [-3, 7, 6], i: 0.9 },
     piezas: {
-      puerta1: {
-        c: [0, 0.6, -5.5],
-        h: [3.6, 4.2, 0.9],
-        hueco: [2.4, 3.2],
-        aristas: 0.9,
-        emision: 0.35,
-        pulido: 0.35
-      },
-      fondo: { c: [0, 0, -18], h: [14, 10, 0.4], aristas: 0.1, presencia: 0.35 },
-      tira1: { c: [0, -2.62, -1.5], h: [0.012, 0.012, 4.0], emision: 0.8 },
-      losa: { c: [0, -2.8, -3.5], h: [4.6, 0.14, 4.0], aristas: 0.5, presencia: 0.8 },
-      lejana: { c: [-12, 2, -18], h: [1.3, 11, 1.3], aristas: 0.3, presencia: 0.4 },
-      lejana2: { c: [12, -1, -19], h: [2.2, 9, 1.4], aristas: 0.3, presencia: 0.35 }
+      ...monolito([0, -1.6, -7], [0.8, 2.6, 0.8], 0, 3.4, { aristas: 0.8, pulido: 0.25 }),
+      dintel: { c: [0, 1.35, -7], h: [3.3, 0.35, 0.85], aristas: 0.85, pulido: 0.3 },
+      tira1: { c: [0, -4.19, -3.2], h: [0.012, 0.012, 3.6], emision: 0.7 },
+      losa: { c: [0, -4.34, -4.5], h: [4.0, 0.14, 4.2], aristas: 0.4, presencia: 0.8 },
+      fondo: { c: [0, 0, -18], h: [14, 10, 0.4], aristas: 0.1, presencia: 0.3 }
     },
     cinta: {
       puntos: [
-        [-1.6, -0.4, -0.6],
-        [-0.6, 1.0, -0.2],
-        [0.3, 0.0, 0.0],
-        [1.2, -0.9, 0.2],
-        [1.7, 0.3, 0.4]
+        [-3.93, 0.29, 0.0],
+        [-2.5, 1.29, -4.29],
+        [-0.79, -0.57, -8.57],
+        [0.07, -1.43, -12.14],
+        [-0.36, -0.86, -15.71]
       ],
-      radios: [0.05, 0.26, 0.32, 0.24, 0.05]
+      radios: [0.05, 0.26, 0.3, 0.24, 0.1]
     }
   }
 ];
 
-/** Orden de los módulos de servicios (de izquierda a derecha en la escena 05). */
+/** Orden de los módulos de servicios (de izquierda a derecha en el capítulo 03). */
 const MODULOS_DE_SERVICIOS: Nombre[] = [
   'lejana',
   'izquierda',
@@ -445,10 +353,10 @@ const MODULOS_DE_SERVICIOS: Nombre[] = [
   'losa',
   'dintel'
 ];
-/** Las cuatro puertas del proceso (escena 06), en orden. */
+/** Las cuatro puertas del método (capítulo 04), en orden. */
 const PUERTAS: Nombre[] = ['puerta1', 'puerta2', 'puerta3', 'puerta4'];
-/** Índices de escena de servicios y proceso. */
-const ESCENA = { servicios: 4, proceso: 5 } as const;
+/** Índices de plano de capacidades (servicios) y método (proceso). */
+const ESCENA = { servicios: 2, proceso: 3 } as const;
 
 /** Cada plano con todas sus piezas: las que no nombra, desde el plano más cercano, sin presencia. */
 const COMPLETOS: Record<Nombre, Required<Pieza>>[] = PLANOS.map((_, i) => {
@@ -511,16 +419,16 @@ const lerp3 = (a: Vec3, b: Vec3, t: number): Vec3 => [
 ];
 
 export interface EstadoDeArquitectura {
-  /** Plano continuo (0..8). */
+  /** Plano continuo (0..5). */
   escena: number;
   /** Servicio activo (−1 ninguno) y su brillo suavizado. */
   foco: number;
   brilloFoco: number;
-  /** Fase del proceso (0..4). */
+  /** Fase del método (0..4). */
   etapa: number;
   /** 0..1: cuánto ha emergido la estructura (al cargar sale de la oscuridad). */
   revelado: number;
-  /** Composición simplificada (móvil): sin piezas secundarias. */
+  /** Composición simplificada (móvil): sin piezas secundarias que no tengan función. */
   ligera: boolean;
 }
 
@@ -564,7 +472,7 @@ export function arquitectura(e: EstadoDeArquitectura, destino?: Arquitectura): A
   const peso = (k: number) => 1 - Math.min(1, Math.abs(escena - k));
 
   let n = 0;
-  RANURAS.forEach((ranura, k) => {
+  RANURAS.forEach((ranura) => {
     if (n >= MAX_CAJAS) return;
     const pa = piezasA[ranura.nombre];
     const pb = piezasB[ranura.nombre];
@@ -573,26 +481,39 @@ export function arquitectura(e: EstadoDeArquitectura, destino?: Arquitectura): A
     const cb = alMundo(pb.c, b.az);
     const centro = lerp3(ca, cb, t);
     const giro = lerp(pa.giro + a.az, pb.giro + b.az, t);
+    const modulo = MODULOS_DE_SERVICIOS.indexOf(ranura.nombre);
+    const puerta = PUERTAS.indexOf(ranura.nombre);
     let presencia = lerp(pa.presencia, pb.presencia, t) * e.revelado;
-    if (e.ligera && 'secundaria' in ranura && ranura.secundaria) presencia = 0;
+    // En la composición ligera las piezas secundarias se van, salvo cuando
+    // son un módulo o una puerta en su capítulo: siete servicios son siete
+    // losas y cuatro fases, cuatro puertas, también en móvil.
+    if (e.ligera && 'secundaria' in ranura && ranura.secundaria) {
+      const funcion = Math.max(
+        modulo >= 0 ? peso(ESCENA.servicios) : 0,
+        puerta >= 0 ? peso(ESCENA.proceso) : 0
+      );
+      presencia *= funcion;
+    }
     if (presencia < 0.01) return;
     let aristas = lerp(pa.aristas, pb.aristas, t);
     let emision = lerp(pa.emision, pb.emision, t);
+    /** Cuánto de su luz es azul frío: solo lo que señala un estado activo. */
+    let frio = 0;
 
-    // Servicios: el módulo del servicio activo recoge luz.
-    const modulo = MODULOS_DE_SERVICIOS.indexOf(ranura.nombre);
+    // Capacidades: el módulo del servicio activo recoge luz fría.
     if (modulo >= 0 && modulo === e.foco) {
       const w = peso(ESCENA.servicios) * e.brilloFoco;
       aristas = lerp(aristas, 1, w);
       emision = lerp(emision, 1, w);
+      frio = w;
     }
-    // Proceso: la puerta de la fase actual se enciende; las ya recorridas quedan a media luz.
-    const puerta = PUERTAS.indexOf(ranura.nombre);
+    // Método: la puerta de la fase actual se enciende; las ya recorridas quedan a media luz.
     if (puerta >= 0) {
       const w = peso(ESCENA.proceso);
       const encendida = suave(e.etapa - puerta) * (1 - 0.6 * suave(e.etapa - puerta - 1));
       aristas = lerp(aristas, 0.35 + 0.65 * encendida, w);
       emision = lerp(emision, encendida, w);
+      frio = w * encendida;
     }
 
     const base = n * VEC4_POR_CAJA * 4;
@@ -608,13 +529,12 @@ export function arquitectura(e: EstadoDeArquitectura, destino?: Arquitectura): A
         lerp(pa.pulido, pb.pulido, t),
         lerp(pa.hueco[0], pb.hueco[0], t),
         lerp(pa.hueco[1], pb.hueco[1], t),
-        0,
+        frio,
         0
       ],
       base
     );
     n += 1;
-    void k;
   });
   salida.numCajas = n;
 

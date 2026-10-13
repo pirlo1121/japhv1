@@ -8,10 +8,11 @@ escultura.
 
 Front de JAPH (agencia de ecosistemas digitales, Bogotá). Sitio estático con Astro 7 +
 TypeScript. Es una copia de `front-japh` (carpeta hermana, con su propio git) en la que se
-está explorando la dirección visual "The Digital Monolith × Liquid Technology": una
-estructura de monolitos de grafito (dominante) que recorre una cinta de cromo líquido. El
-backend
-vive en `../server` (todavía no conectado).
+está explorando la dirección visual "Monumental Architecture + Editorial Storytelling":
+seis capítulos en los que una arquitectura de monolitos de grafito (dominante) se
+transforma y una gota de cromo (la intención, secundaria) toma forma y la cruza. Un
+protagonista visual por capítulo; luz blanca y plateada con un solo acento azul frío. El
+backend vive en `../server` (todavía no conectado).
 
 **El diseño sigue en evolución.** El usuario itera sección a sección. Ante un cambio de
 dirección, revisa "Direcciones probadas y descartadas" y "Pendiente de diseño" en el
@@ -22,15 +23,15 @@ Capas visuales (detalle en el README):
 | Capa         | Código                                                     | Lo mueve                                 |
 | ------------ | ---------------------------------------------------------- | ---------------------------------------- |
 | Arquitectura | `scripts/lienzo/arquitectura.ts` (`PLANOS`) + `sombreador` | `estado.escena`, `foco`, `etapa`         |
-| Escultura    | `scripts/lienzo/escultura.ts` + `sombreador`               | `estado.forma` (gota → cinta)            |
-| Red viva     | `scripts/lienzo/red.ts`                                    | `estado.red`/`orden`, `data-rama`        |
+| Escultura    | `scripts/lienzo/escultura.ts` + `sombreador`               | `estado.forma` (gota → curva)            |
 | Interfaz     | `styles/tokens.css`, `styles/base.css`, componentes        | `data-zona-lectura`, `data-paso` (`--p`) |
 
-Las tres primeras comparten un bucle y una cámara (`escena.ts`, `camara.ts`) en el lienzo
+Las dos primeras comparten un bucle y una cámara (`escena.ts`, `camara.ts`) en el lienzo
 fijo de la portada. Las páginas interiores no cargan WebGL (`PortadaDePagina.astro`).
 
-La historia de la portada: `src/pages/index.astro` (orden de escenas),
-`scripts/historia/escenarios.ts` (cámara y plano de cada escena) e `iniciar.ts` (GSAP
+La historia de la portada: `src/pages/index.astro` (orden de los seis capítulos:
+Presencia, Transformación, Capacidades, Método, Evidencia, Apertura),
+`scripts/historia/escenarios.ts` (cámara y plano de cada capítulo) e `iniciar.ts` (GSAP
 ScrollTrigger + Lenis, el único que escribe el estado narrativo).
 
 ## Comandos
@@ -56,15 +57,21 @@ Antes de dar algo por terminado: `npm run check` y `npm run format:check` sin er
 - Contenido de ejemplo marcado con `ejemplo: true` (muestra `[Ejemplo editable]`). No
   inventar proyectos, clientes, cifras ni testimonios.
 - Sin scripts en línea, salvo el de `Base.astro` que decide la clase `movimiento`.
-- Estilos: tokens en `src/styles/tokens.css` (azul medianoche; cian, azul y violeta para
-  la luz; `--verde` escaso, solo estados activos; una sola fuente, Instrument Sans). Nada
-  de colores sueltos: las transparencias usan los canales `-rgb`
-  (`rgb(var(--fondo-rgb) / 0.8)`). `--texto-apagado` no llega a AA: solo decorativo.
+- Estilos: tokens en `src/styles/tokens.css` (negro, grafito, plata; un solo acento,
+  `--frio`, para estados significativos y nunca como neón permanente; `--verde` solo para
+  el envío correcto; una sola fuente, Instrument Sans). Nada de colores sueltos: las
+  transparencias usan los canales `-rgb` (`rgb(var(--fondo-rgb) / 0.8)`).
+  `--texto-apagado` no llega a AA: solo decorativo.
 - Las decisiones visuales van en constantes con nombre (`MUELLE_POSICION`, `PANEL`,
   `TEJIDO`…), no en números sueltos. La tabla "Cómo ajustar el diseño" del README dice
   cuál toca cada cosa; si añades una perilla, añádela ahí.
 - Accesibilidad y degradación son requisitos: debe funcionar sin WebGL, sin JS y con
   "reducir movimiento". Cada capa nueva necesita las tres salidas.
+- Narrativa: un protagonista visual por capítulo y nada que aparezca sin causa. Antes de
+  crear una pieza o un efecto, reutiliza o transforma uno existente. Nada de partículas
+  decorativas.
+- Móvil es una presentación propia, no un recorte: la escena solo ocupa pantalla donde es
+  protagonista; en los capítulos de lectura queda detrás, apagada y en reposo.
 - Rendimiento: un solo bucle por lienzo; lecturas del DOM antes que escrituras en cada
   fotograma; nada costoso por fotograma que pueda calcularse una vez. Móvil y escritorio
   son igual de importantes.
@@ -75,8 +82,8 @@ Antes de dar algo por terminado: `npm run check` y `npm run format:check` sin er
   zoom en pantallas estrechas); cambia las dos a la vez.
 - **Arquitectura:** las piezas son ranuras fijas (`RANURAS`); un plano solo dice dónde está
   cada una. Para añadir una pieza, añade su ranura (hasta `MAX_CAJAS`). Se escriben en el
-  marco de la cámara de su escena. Nada de marchar rayos para la arquitectura: es
-  intersección analítica.
+  marco de la cámara de su capítulo, y el objetivo de la cámara también (`objetivo()` en
+  `escenarios.ts`). Nada de marchar rayos para la arquitectura: es intersección analítica.
 - **Escultura:** la gota del sombreador (`gota`) es la del póster; si la cambias,
   regenera el póster.
 - **Una sola fuente del estado:** solo los tramos de `iniciar.ts` animan la cámara y la
@@ -85,10 +92,12 @@ Antes de dar algo por terminado: `npm run check` y `npm run format:check` sin er
 
 ## Verificar
 
-El Chrome headless con SwiftShader pinta el robot en segundos por fotograma: sirve para
-capturas y errores, no para juzgar la fluidez. Para medir el resto (seda, red, hilo
-principal) desactiva WebGL en la prueba. En desarrollo, `window.__estado` y
-`window.__escena` dejan inspeccionar el estado desde la consola.
+El Chrome headless con SwiftShader pinta la escena en segundos por fotograma: sirve para
+capturas y errores, no para juzgar la fluidez (las capturas pueden pillar una transición a
+medias). Para probar sin WebGL, anula `getContext('webgl2')` y
+`transferControlToOffscreen` con un script de inicio: el flag `--disable-webgl` no basta.
+En desarrollo, `window.__estado` y `window.__escena` dejan inspeccionar el estado desde la
+consola.
 
 ## Cuidado
 

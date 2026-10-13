@@ -3,8 +3,7 @@
  * Lienzo.astro
  * La escena compartida de toda la portada, fija detrás de la historia: la
  * arquitectura de monolitos y la escultura de cromo líquido (WebGL2,
- * scripts/lienzo), y, encima, la red viva (Canvas 2D) proyectada con la
- * misma cámara. La arranca pages/index.astro.
+ * scripts/lienzo). La arranca pages/index.astro.
  *
  * La gota se ve real desde el primer instante: mientras WebGL compila (o
  * si no puede, o sin JavaScript) se ve su póster, el primer fotograma del
@@ -17,6 +16,10 @@
  * unidad del mundo mide FOCAL / distancia · alto / 2 (o, en pantallas más
  * estrechas que ASPECTO_MINIMO, · ancho / 2 / ASPECTO_MINIMO). Sin WebGL la
  * escena mueve el póster a donde iría la escultura (--x, --y, --s).
+ *
+ * Sin WebGL o sin JavaScript, detrás del póster aparece un monolito en CSS
+ * (el mismo de las páginas interiores, .monolito-css en base.css): la
+ * identidad se conserva aunque la arquitectura no se pinte.
  */
 import { Picture } from 'astro:assets';
 import gotaInicial from '@/assets/gota-inicial.webp';
@@ -38,6 +41,7 @@ const camara = {
 
 <div class="lienzo" data-lienzo>
   <div class="respaldo" data-respaldo aria-hidden="true">
+    <span class="monolito-css monolito-respaldo"></span>
     <Picture
       src={gotaInicial}
       formats={['avif', 'webp']}
@@ -50,8 +54,14 @@ const camara = {
     />
   </div>
   <canvas class="escultura" data-escultura aria-hidden="true"></canvas>
-  <canvas class="red" data-red aria-hidden="true"></canvas>
 </div>
+<noscript>
+  <style is:global>
+    .monolito-respaldo {
+      display: block !important;
+    }
+  </style>
+</noscript>
 
 <style define:vars={camara}>
   /* Alto "lvh": no cambia cuando la barra del navegador móvil aparece o se esconde. */
@@ -93,8 +103,8 @@ const camara = {
   /*
    * Póster y fondo de la escena hasta que WebGL pinta. --x, --y: centro de
    * la gota; --s: px por unidad del mundo. El fondo es el del sombreador
-   * (main en sombreador.ts): un halo azul gaussiano centrado en la gota,
-   * exp(-0.9·r²) con r en medios altos, y un resto violeta lejano.
+   * (fondo() en sombreador.ts): un halo de grafito gaussiano centrado en la
+   * gota, exp(-0.9·r²) con r en medios altos.
    */
   .respaldo {
     --x: calc((1 + var(--dx)) * 50%);
@@ -103,15 +113,6 @@ const camara = {
     position: absolute;
     inset: 0;
     background:
-      radial-gradient(
-        circle at calc(var(--x) - 60cqh) calc(var(--y) + 45cqh),
-        rgb(var(--violeta-escena-rgb) / 1) 0,
-        rgb(var(--violeta-escena-rgb) / 0.86) 25cqh,
-        rgb(var(--violeta-escena-rgb) / 0.55) 50cqh,
-        rgb(var(--violeta-escena-rgb) / 0.26) 75cqh,
-        rgb(var(--violeta-escena-rgb) / 0.09) 100cqh,
-        transparent 150cqh
-      ),
       radial-gradient(
         circle at var(--x) var(--y),
         rgb(var(--halo-escena-rgb) / 1) 0,
@@ -143,6 +144,30 @@ const camara = {
     }
   }
 
+  /* Sin WebGL: el monolito detrás de la gota (sin JavaScript, ver <noscript>). */
+  .monolito-respaldo {
+    display: none;
+    right: clamp(6%, 12vw, 16%);
+    top: 12%;
+    bottom: -4%;
+    width: clamp(8rem, 15vw, 14rem);
+    opacity: 0.85;
+  }
+
+  .lienzo[data-sin-webgl] .monolito-respaldo {
+    display: block;
+  }
+
+  @container (max-aspect-ratio: 85/100) or (max-width: 47.99rem) {
+    .monolito-respaldo {
+      right: 14%;
+      top: 5.5rem;
+      bottom: auto;
+      height: 38cqh;
+      width: 6.5rem;
+    }
+  }
+
   /* El póster, con el borde fundido en el fondo. */
   .respaldo :global(img) {
     position: absolute;
@@ -155,7 +180,8 @@ const camara = {
     aspect-ratio: 1;
     translate: -50% -50%;
     mask-image: radial-gradient(closest-side, rgb(0 0 0) 78%, transparent);
-    opacity: calc(1 - var(--apagado, 0) * 0.75);
+    /* Sin WebGL, en los capítulos de lectura la gota casi desaparece: manda el texto. */
+    opacity: calc(1 - var(--apagado, 0) * 0.95);
   }
 
   /* Al recargar a media página la escena ya no es la gota: no se muestra su póster. */

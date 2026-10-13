@@ -1,13 +1,15 @@
 ---
 /**
- * Escena 05 · Servicios. Aquí manda la claridad: qué hace JAPH, en una
- * lista editorial con los siete servicios reales (datos/servicios.ts).
+ * Capítulo 03 · Capacidades. Aquí manda la claridad: qué hace JAPH, en una
+ * lista editorial con los siete servicios reales (datos/servicios.ts), cada
+ * uno con su nombre, su descripción y su enlace.
  *
- * Detrás, la arquitectura forma una columnata de siete losas, una por
- * servicio. Al pasar el puntero, enfocarlo con el teclado o cruzar el
- * centro de la pantalla, el servicio se activa: su losa recoge luz cian en
- * las aristas y su rama de la red se enciende (scripts/historia/servicios.ts).
- * La escultura queda a la derecha, atenuada: acompaña, no compite.
+ * Detrás, las piezas del pórtico se reordenan en una columnata de siete
+ * losas, una por servicio. Al pasar el puntero, enfocarlo con el teclado o
+ * cruzar el centro de la pantalla, el servicio se activa y su losa recoge
+ * luz fría en las aristas (scripts/historia/servicios.ts). La escultura
+ * queda a la derecha, atenuada: acompaña, no compite. En móvil la lista
+ * empieza arriba y la escena queda quieta y apagada detrás.
  */
 import IconoServicio from '@/components/ui/IconoServicio.astro';
 import { servicios } from '@/datos/servicios';
@@ -23,19 +25,19 @@ const dos = (n: number) => String(n).padStart(2, '0');
   data-escena="Servicios"
 >
   <header class="cabecera" data-revelar data-zona-lectura>
-    <p class="rotulo">05 · Servicios</p>
+    <p class="rotulo">03 · Servicios</p>
     <h2 id="titulo-servicios">
       Tecnología que conecta <em>las piezas.</em>
     </h2>
     <p>
-      Siete capacidades que funcionan por separado y rinden más juntas. Cada una es una rama del
-      mismo sistema.
+      Conectamos productos, datos y procesos para crear sistemas que trabajan juntos. Siete
+      capacidades que funcionan por separado y rinden más juntas.
     </p>
   </header>
 
   <ol class="lista" data-zona-lectura>
     {servicios.map((servicio, i) => (
-      <li class="servicio" id={`servicio-${servicio.id}`} data-rama>
+      <li class="servicio" id={`servicio-${servicio.id}`} data-servicio>
         <span class="icono">
           <IconoServicio id={servicio.id} />
         </span>
@@ -59,9 +61,10 @@ const dos = (n: number) => String(n).padStart(2, '0');
     gap: 1rem;
   }
 
+  /* La columnata ocupa la derecha: la lista no pasa del 58 % del ancho. */
   .cabecera,
   .lista {
-    max-width: 40rem;
+    max-width: min(40rem, 58vw);
   }
 
   .lista {
@@ -97,8 +100,7 @@ const dos = (n: number) => String(n).padStart(2, '0');
     top: 0.75rem;
     bottom: 0.75rem;
     width: 1px;
-    background: linear-gradient(180deg, var(--metal-luz), var(--cian));
-    box-shadow: 0 0 12px rgb(var(--cian-rgb) / 0.6);
+    background: linear-gradient(180deg, var(--metal-luz), var(--frio));
     opacity: 0;
     transition: opacity var(--rapido);
   }
@@ -168,7 +170,7 @@ const dos = (n: number) => String(n).padStart(2, '0');
   }
 
   .servicio[data-activa] a span[aria-hidden] {
-    color: var(--cian);
+    color: var(--frio);
   }
 
   /* Todo el servicio es clicable sin anidar enlaces: el enlace se estira. */
@@ -183,8 +185,16 @@ const dos = (n: number) => String(n).padStart(2, '0');
   }
 
   .servicio:has(a:focus-visible) {
-    outline: 2px solid var(--cian);
+    outline: 2px solid var(--frio);
     outline-offset: -2px;
+  }
+
+  /* Móvil o vertical: la escena queda detrás, quieta y apagada: todo el ancho. */
+  @media (max-aspect-ratio: 85/100), (max-width: 47.99rem) {
+    .cabecera,
+    .lista {
+      max-width: 40rem;
+    }
   }
 
   @media (max-width: 40rem) {

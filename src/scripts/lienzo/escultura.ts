@@ -1,24 +1,20 @@
 /**
  * escultura.ts
- * La materia viva de la escena: una gota de cromo líquido que flota y, al
- * bajar a la segunda escena, se estira en una cinta curva que recorre la
- * arquitectura. Es el contrapunto orgánico de los monolitos.
+ * El elemento secundario de la escena: una gota de cromo líquido (la
+ * intención) que flota y, al bajar al capítulo 02, se estira en una curva
+ * que atraviesa la abertura del monolito (la intención toma forma). Es el
+ * contrapunto orgánico de la arquitectura, nunca su protagonista.
  *
- * La cinta son dos curvas de Bézier cuadráticas encadenadas (cinco puntos
- * de control, con su grosor en cada uno): el sombreador mide la distancia a
- * ellas y la página sabe dónde está cada tramo (las ramas de la red nacen
- * a lo largo de la cinta). Su trazado cambia con cada escena
- * (arquitectura.ts); aquí se le suma lo que la hace líquida: flota,
- * ondula y respira.
+ * La curva son dos Bézier cuadráticas encadenadas (cinco puntos de
+ * control, con su grosor en cada uno): el sombreador mide la distancia a
+ * ellas. Su trazado cambia con cada capítulo (arquitectura.ts); aquí se le
+ * suma lo que la hace líquida: flota, ondula y respira.
  *
  * Todo viaja al sombreador como uniforms (LIQUIDO): la cuenta se hace una
  * vez por fotograma.
  */
 
 export type Vec3 = [number, number, number];
-
-/** Una rama de la red por servicio: siete anclas a lo largo de la escultura. */
-export const RAMAS = 7;
 
 /** La cinta: cinco puntos de control (dos Bézier cuadráticas) y su grosor en cada uno. */
 export interface Cinta {
@@ -39,7 +35,7 @@ export const MAX_LIQUIDO = LIQUIDO.esfera + 1;
 const FLOTACION = { gota: 0.16, cinta: 0.07 };
 /** Ondulación de la cinta: amplitud de cada punto de control y rapidez. */
 const ONDULACION = { amplitud: 0.09, rapidez: 0.7 };
-/** Radio de la gota (el mismo que en el sombreador): de su superficie salen las ramas mientras es gota. */
+/** Radio de la gota (el mismo que en el sombreador). */
 const RADIO_GOTA = 1.05;
 
 const suave = (x: number) => {
@@ -104,42 +100,5 @@ export function liquido(pose: Pose, destino = new Float32Array(MAX_LIQUIDO * 4))
     radio = Math.max(radio, r + (pose.cinta.radios[i] ?? 0.2) + 0.35);
   });
   destino.set([...centro, radio], LIQUIDO.esfera * 4);
-  return destino;
-}
-
-/** Punto de una Bézier cuadrática. */
-function bezier(a: Vec3, b: Vec3, c: Vec3, t: number): Vec3 {
-  return mezcla(mezcla(a, b, t), mezcla(b, c, t), t);
-}
-
-/** Direcciones de las anclas sobre la gota (repartidas en espiral, hacia la cámara). */
-const DIRECCIONES: Vec3[] = Array.from({ length: RAMAS }, (_, i) => {
-  const y = 0.78 - (i / (RAMAS - 1)) * 1.56;
-  const r = Math.sqrt(1 - y * y);
-  const a = i * 2.39996 + 0.6;
-  const v: Vec3 = [Math.cos(a) * r, y, Math.sin(a) * r * 0.7 + 0.3];
-  const l = Math.hypot(...v) || 1;
-  return [v[0] / l, v[1] / l, v[2] / l];
-});
-
-/**
- * Las siete anclas de la red, una por servicio: sobre la superficie de la
- * gota mientras es gota; repartidas a lo largo de la cinta cuando se estira.
- */
-export function anclas(piezas: Float32Array, destino: Vec3[] = []): Vec3[] {
-  const forma = suave(piezas[LIQUIDO.gota * 4 + 3] ?? 0);
-  const flotacion = piezas[LIQUIDO.gota * 4 + 1] ?? 0;
-  const p = (i: number): Vec3 => {
-    const k = (LIQUIDO.cinta + i) * 4;
-    return [piezas[k] ?? 0, piezas[k + 1] ?? 0, piezas[k + 2] ?? 0];
-  };
-  for (let i = 0; i < RAMAS; i++) {
-    const d = DIRECCIONES[i] ?? [0, 1, 0];
-    const enGota: Vec3 = [d[0] * RADIO_GOTA, d[1] * RADIO_GOTA + flotacion, d[2] * RADIO_GOTA];
-    // A lo largo de la cinta, sin sus extremos (allí es casi un hilo).
-    const u = 0.12 + (i / (RAMAS - 1)) * 0.76;
-    const enCinta = u < 0.5 ? bezier(p(0), p(1), p(2), u * 2) : bezier(p(2), p(3), p(4), u * 2 - 1);
-    destino[i] = mezcla(enGota, enCinta, forma);
-  }
   return destino;
 }

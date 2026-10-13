@@ -1,9 +1,8 @@
 /**
  * servicios.ts
- * Escena 05 · Servicios. Cada servicio es un módulo de la arquitectura y
- * una rama de la red: al activarlo, su módulo recoge luz en las aristas,
- * su nodo se enciende y la energía fluye por su filamento hacia la cinta
- * (escena.ts, arquitectura.ts y red.ts leen `estado.foco`).
+ * Capítulo 03 · Capacidades. Cada servicio es un módulo de la
+ * arquitectura: al activarlo, su losa recoge luz fría en las aristas
+ * (escena.ts y arquitectura.ts leen `estado.foco`).
  *
  * Se activa con el puntero, con el foco del teclado o, al desplazarse, el
  * servicio que cruza el centro de la pantalla: en táctil no hace falta
@@ -15,7 +14,7 @@ import type { EstadoNarrativo } from '@/scripts/lienzo/narrativa';
 export function iniciarServicios(estado: EstadoNarrativo): () => void {
   const seccion = document.querySelector<HTMLElement>('[data-servicios]');
   if (!seccion) return () => {};
-  const ramas = [...seccion.querySelectorAll<HTMLElement>('[data-rama]')];
+  const modulos = [...seccion.querySelectorAll<HTMLElement>('[data-servicio]')];
   const limpieza = new AbortController();
   const { signal } = limpieza;
 
@@ -24,13 +23,13 @@ export function iniciarServicios(estado: EstadoNarrativo): () => void {
   const pintar = () => {
     const activa = porPuntero >= 0 ? porPuntero : porScroll;
     estado.foco = activa;
-    ramas.forEach((rama, i) => {
-      if (i === activa) rama.dataset.activa = '';
-      else delete rama.dataset.activa;
+    modulos.forEach((modulo, i) => {
+      if (i === activa) modulo.dataset.activa = '';
+      else delete modulo.dataset.activa;
     });
   };
 
-  ramas.forEach((rama, i) => {
+  modulos.forEach((modulo, i) => {
     const entrar = () => {
       porPuntero = i;
       pintar();
@@ -39,15 +38,15 @@ export function iniciarServicios(estado: EstadoNarrativo): () => void {
       if (porPuntero === i) porPuntero = -1;
       pintar();
     };
-    rama.addEventListener('pointerenter', entrar, { signal });
-    rama.addEventListener('pointerleave', salir, { signal });
-    rama.addEventListener('focusin', entrar, { signal });
-    rama.addEventListener('focusout', salir, { signal });
+    modulo.addEventListener('pointerenter', entrar, { signal });
+    modulo.addEventListener('pointerleave', salir, { signal });
+    modulo.addEventListener('focusin', entrar, { signal });
+    modulo.addEventListener('focusout', salir, { signal });
   });
 
-  const disparadores = ramas.map((rama, i) =>
+  const disparadores = modulos.map((modulo, i) =>
     ScrollTrigger.create({
-      trigger: rama,
+      trigger: modulo,
       start: 'top 58%',
       end: 'bottom 58%',
       onToggle: (self) => {

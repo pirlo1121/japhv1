@@ -3,7 +3,7 @@
   "type": "module",
   "version": "0.1.0",
   "private": true,
-  "description": "Front de JAPH: Liquid Technology × The Living Network. Escultura de metal líquido (WebGL2) y red viva, contada con el scroll. Construido con Astro.",
+  "description": "Front de JAPH: Monumental Architecture + Editorial Storytelling. Arquitectura de monolitos y una gota de cromo (WebGL2) en seis capítulos contados con el scroll. Construido con Astro.",
   "engines": {
     "node": ">=22.12.0"
   },

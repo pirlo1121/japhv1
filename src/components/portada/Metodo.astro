@@ -1,18 +1,20 @@
 ---
 /**
- * Escena 06 · El proceso. Las cuatro fases reales de trabajo
+ * Capítulo 04 · Método. Las cuatro fases reales de trabajo
  * (datos/proceso.ts) son cuatro puertas en un camino: detrás, la
- * arquitectura levanta cuatro marcos que se adentran en el espacio y
- * enciende el de la fase actual; aquí, un camino de luz pasa por cuatro
- * umbrales cuadrados. Se curva, se divide un momento y vuelve a unirse,
- * pero el orden de lectura siempre es obvio.
+ * arquitectura levanta cuatro marcos que se adentran en el espacio, la
+ * curva de cromo (el proyecto) los cruza en orden y se enciende el de la
+ * fase actual; aquí, un camino de luz pasa por cuatro umbrales.
  *
  * Con movimiento en escritorio las fases van en fila sobre el camino, que
- * se ilumina mientras la escena sube por la pantalla hasta la fase actual
- * y una partícula viaja hacia la siguiente (scripts/historia/proceso.ts).
- * En móvil es una lista vertical con una arista que se llena. Las fases son
- * HTML: el dibujo solo acompaña.
+ * se ilumina hasta la fase actual mientras el capítulo sube por la
+ * pantalla (scripts/historia/proceso.ts). En móvil es una lista vertical
+ * con una arista que se llena. Las fases son HTML: el dibujo solo acompaña.
+ *
+ * Debajo, los principios de trabajo reales de JAPH (datos/nosotros.ts): lo
+ * que no cambia de una fase a otra.
  */
+import { principios } from '@/datos/nosotros';
 import { fases } from '@/datos/proceso';
 
 const dos = (n: number) => String(n).padStart(2, '0');
@@ -30,11 +32,8 @@ const camino = nodos
     return `C${medio} ${a.y} ${medio} ${n.y} ${n.x} ${n.y}`;
   })
   .join(' ');
-// Entre la segunda y la tercera fase, el camino se divide y vuelve a unirse.
-const b = nodos[1];
-const c = nodos[2];
-const desvio =
-  b && c ? `M${b.x} ${b.y} C${b.x + 90} ${b.y - 60} ${c.x - 90} ${c.y + 40} ${c.x} ${c.y}` : '';
+/** En la portada basta la primera frase de cada principio. */
+const primeraFrase = (texto: string) => texto.split(/(?<=\.)\s/)[0] ?? texto;
 ---
 
 <section
@@ -47,7 +46,7 @@ const desvio =
 >
   <div class="marco">
     <header class="cabecera" data-zona-lectura>
-      <p class="rotulo">06 · El proceso</p>
+      <p class="rotulo">04 · Método</p>
       <h2 id="titulo-proceso">
         De la idea <em>al ecosistema.</em>
       </h2>
@@ -61,14 +60,12 @@ const desvio =
       <svg viewBox="0 0 1000 200" preserveAspectRatio="none">
         <defs>
           <linearGradient id="degradado-camino" x1="0" x2="1" y1="0" y2="0">
-            <stop offset="0" style="stop-color: var(--metal-luz)" />
-            <stop offset="0.45" style="stop-color: var(--cian)" />
-            <stop offset="1" style="stop-color: var(--azul)" />
+            <stop offset="0" style="stop-color: var(--metal)" />
+            <stop offset="1" style="stop-color: var(--frio)" />
           </linearGradient>
         </defs>
         <path class="base" d={camino} />
-        <path class="desvio" d={desvio} />
-        <path class="luz" d={camino} pathLength="1" data-camino />
+        <path class="luz" d={camino} pathLength="1" />
       </svg>
       {nodos.map((n, i) => (
         <span
@@ -77,7 +74,6 @@ const desvio =
           style={{ left: `${n.x / 10}%`, top: `${(n.y / 200) * 100}%`, '--i': i }}
         />
       ))}
-      <span class="energia" data-energia />
     </div>
 
     <ol class="fases" data-zona-lectura>
@@ -90,6 +86,18 @@ const desvio =
         </li>
       ))}
     </ol>
+
+    <div class="principios" data-revelar data-zona-lectura>
+      <h3 class="titulo-principios">Lo que no cambia en ninguna fase</h3>
+      <ul aria-label="Principios de trabajo">
+        {principios.map(({ titulo, descripcion }) => (
+          <li>
+            <h4>{titulo}</h4>
+            <p>{primeraFrase(descripcion)}</p>
+          </li>
+        ))}
+      </ul>
+    </div>
   </div>
 </section>
 
@@ -135,8 +143,7 @@ const desvio =
   .fases::after {
     bottom: auto;
     height: calc((100% - 1rem) * var(--avance, 1));
-    background: linear-gradient(to bottom, var(--metal-luz), var(--cian), var(--azul));
-    box-shadow: 0 0 8px rgb(var(--cian-rgb) / 0.5);
+    background: linear-gradient(to bottom, var(--metal), var(--frio));
   }
 
   .fase {
@@ -154,7 +161,6 @@ const desvio =
     aspect-ratio: 1;
     border-radius: 1px;
     background: var(--metal);
-    box-shadow: 0 0 8px rgb(var(--cian-rgb) / 0.45);
     transition:
       background-color 0.4s var(--suave),
       box-shadow 0.4s var(--suave),
@@ -195,8 +201,7 @@ const desvio =
   }
 
   .en-escena .fase.activa .nodo {
-    background: var(--cian);
-    box-shadow: 0 0 14px rgb(var(--cian-rgb) / 0.9);
+    background: var(--frio);
     scale: 1.4;
   }
 
@@ -234,34 +239,12 @@ const desvio =
     stroke-width: 1;
   }
 
-  .desvio {
-    stroke: rgb(var(--violeta-rgb) / 0.35);
-    stroke-width: 1;
-    stroke-dasharray: 2 6;
-  }
-
   .luz {
     stroke: url(#degradado-camino);
     stroke-width: 2;
     stroke-dasharray: 1;
     /* La luz llega a la fase actual: avance × fases / tramos entre fases. */
     stroke-dashoffset: calc(1 - min(1, var(--avance, 0) * var(--fases) / (var(--fases) - 1)));
-    filter: drop-shadow(0 0 4px rgb(var(--cian-rgb) / 0.6));
-  }
-
-  /* La partícula que viaja hacia la siguiente fase (proceso.ts la coloca). */
-  .energia {
-    position: absolute;
-    width: 7px;
-    aspect-ratio: 1;
-    border-radius: 50%;
-    background: var(--texto);
-    box-shadow:
-      0 0 6px var(--cian),
-      0 0 14px rgb(var(--cian-rgb) / 0.6);
-    translate: -50% -50%;
-    opacity: 0;
-    pointer-events: none;
   }
 
   /* Cada fase es un umbral: un marco mínimo, como las puertas de la escena. */
@@ -282,8 +265,7 @@ const desvio =
     position: absolute;
     inset: 3px;
     border-radius: 0;
-    background: linear-gradient(180deg, var(--metal-luz), var(--cian));
-    box-shadow: 0 0 12px var(--cian);
+    background: linear-gradient(180deg, var(--metal-luz), var(--frio));
     opacity: clamp(0, (var(--avance, 0) * var(--fases) - var(--i)) * 8, 1);
   }
 
@@ -309,6 +291,53 @@ const desvio =
   }
 
   .horizontal .descripcion {
+    font-size: var(--t--1);
+  }
+
+  /* Los principios: una placa de cuatro celdas separadas por aristas. */
+  .principios {
+    display: grid;
+    gap: 1.25rem;
+    margin-top: clamp(3rem, 8vh, 5rem);
+  }
+
+  .titulo-principios {
+    font-size: var(--t-1);
+    letter-spacing: -0.01em;
+    color: var(--texto-suave);
+  }
+
+  .principios ul {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+    gap: 1px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    border: 1px solid var(--linea);
+    border-radius: var(--radio);
+    overflow: hidden;
+    background: var(--linea);
+  }
+
+  .principios li {
+    display: grid;
+    gap: 0.4rem;
+    align-content: start;
+    padding: 1.2rem 1.25rem 1.3rem;
+    background: rgb(var(--monolito-rgb) / 0.94);
+  }
+
+  h4 {
+    margin: 0;
+    font-size: var(--t-0);
+    font-weight: 500;
+    line-height: 1.3;
+    letter-spacing: -0.01em;
+  }
+
+  .principios li p {
+    margin: 0;
     font-size: var(--t--1);
   }
 

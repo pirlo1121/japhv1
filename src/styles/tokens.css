@@ -1,56 +1,56 @@
 /**
  * tokens.css
- * The Digital Monolith × Liquid Technology. Negro, azul medianoche y
- * grafito para la arquitectura (la mayor parte de lo que se ve), plata fría
- * para el metal y el texto, y la luz como acento controlado: cian y azul
- * en reflejos y aristas, violeta muy de vez en cuando, verde casi nunca
- * (solo estados activos pequeños).
+ * Monumental Architecture + Editorial Storytelling. Negro profundo y
+ * grafito para la arquitectura (la mayor parte de lo que se ve), plata y
+ * blanco suave para el metal y el texto, y un solo acento: un azul frío
+ * (--frio) muy puntual, para conexiones y estados significativos (el
+ * servicio activo, la fase actual, el foco del teclado). Nada de neón
+ * permanente. El verde, solo en el envío correcto del formulario.
  *
- * Contraste sobre --fondo: --texto 18.4:1, --texto-suave 8.8:1,
- * --metadato 4.7:1 (AA justo: solo metadatos y texto pequeño de apoyo).
+ * Contraste sobre --fondo: --texto 18.9:1, --texto-suave 8.9:1,
+ * --metadato 4.8:1 (AA justo: solo metadatos y texto pequeño de apoyo).
  * --texto-apagado (3:1) solo para piezas decorativas.
  * Los canales "-rgb" permiten transparencias sin colores sueltos:
  * rgb(var(--fondo-rgb) / 0.8).
  */
 
 :root {
-  /* El vacío y el espacio */
-  --vacio: #03050a;
-  --fondo: #050914;
-  --fondo-elevado: #080d18;
-  --vacio-rgb: 3 5 10;
-  --fondo-rgb: 5 9 20;
+  /* El vacío y el espacio: negro profundo, apenas frío */
+  --vacio: #040506;
+  --fondo: #07080a;
+  --fondo-elevado: #0c0d10;
+  --vacio-rgb: 4 5 6;
+  --fondo-rgb: 7 8 10;
 
   /* La arquitectura: grafito que absorbe la luz */
-  --monolito: #0b0e14;
-  --monolito-luz: #171d27;
-  --grafito: #252c37;
-  --monolito-rgb: 11 14 20;
-  --grafito-rgb: 37 44 55;
+  --monolito: #0e0f12;
+  --monolito-luz: #1a1c21;
+  --grafito: #2a2d33;
+  --monolito-rgb: 14 15 18;
+  --grafito-rgb: 42 45 51;
 
-  /* El metal */
-  --metal: #bfc6d1;
-  --metal-luz: #f2f5fa;
-  --metal-sombra: #596474;
-  --metal-rgb: 191 198 209;
+  /* El metal: plata */
+  --metal: #c3c7ce;
+  --metal-luz: #f2f3f5;
+  --metal-sombra: #5c616b;
+  --metal-rgb: 195 199 206;
 
-  /* La luz: acentos, nunca grandes superficies */
-  --cian: #55ddf5;
-  --azul: #276bff;
-  --violeta: #8067e8;
+  /* La luz: un azul frío como único acento, nunca en grandes superficies.
+     --frio para líneas y estados; --frio-hondo para su caída en sombra. */
+  --frio: #9ec4ec;
+  --frio-hondo: #46668f;
   --verde: #39e6a3;
-  --cian-rgb: 85 221 245;
-  --azul-rgb: 39 107 255;
-  --violeta-rgb: 128 103 232;
+  --frio-rgb: 158 196 236;
+  --frio-hondo-rgb: 70 102 143;
   --verde-rgb: 57 230 163;
 
   /* Texto */
-  --texto: #f4f6fa;
-  --texto-suave: #a4adbd;
-  --metadato: #707b8e;
-  --texto-apagado: #596474;
-  --texto-rgb: 244 246 250;
-  --metadato-rgb: 112 123 142;
+  --texto: #f3f4f6;
+  --texto-suave: #a8adb6;
+  --metadato: #757b86;
+  --texto-apagado: #5a5f68;
+  --texto-rgb: 243 244 246;
+  --metadato-rgb: 117 123 134;
 
   /* Estados del formulario */
   --error: #ff8593;
@@ -58,21 +58,11 @@
   --error-rgb: 255 133 147;
   --exito-claro: #c6f6e4;
 
-  --linea: rgb(185 198 220 / 0.14);
-  --linea-fuerte: rgb(185 198 220 / 0.28);
-  --linea-rgb: 185 198 220;
-
-  /* Alias de nombres anteriores (los componentes los irán dejando). */
-  --fondo-2: var(--fondo-elevado);
-  --superficie: var(--monolito);
-  --superficie-2: var(--monolito-luz);
-  --superficie-rgb: var(--monolito-rgb);
-  --turquesa: var(--cian);
-  --purpura: var(--violeta);
-  --purpura-rgb: var(--violeta-rgb);
+  --linea: rgb(200 204 212 / 0.13);
+  --linea-fuerte: rgb(200 204 212 / 0.26);
+  --linea-rgb: 200 204 212;
 
   /* Degradados: solo luz que recorre el metal y fragmentos cortos. */
-  --degradado-cian: linear-gradient(100deg, var(--cian), var(--azul));
   /* Cromo para textos: bandas de luz fría, como los reflejos de la escultura. */
   --cromo: linear-gradient(
     100deg,
@@ -83,12 +73,12 @@
     var(--metal-sombra) 82%,
     var(--metal) 100%
   );
-  /* El fragmento clave del titular principal: cromo que recoge un poco de luz cian. */
+  /* El fragmento clave del titular principal: plata con un reflejo frío. */
   --cromo-luz: linear-gradient(
     100deg,
     var(--metal-luz) 0%,
-    var(--metal) 30%,
-    var(--cian) 62%,
+    var(--metal) 34%,
+    var(--frio) 62%,
     var(--metal-luz) 100%
   );
   /* Arista de monolito: una línea de metal que se enciende en el centro. */
@@ -96,7 +86,7 @@
     90deg,
     transparent,
     rgb(var(--metal-rgb) / 0.55) 30%,
-    rgb(var(--cian-rgb) / 0.7) 50%,
+    rgb(var(--texto-rgb) / 0.85) 50%,
     rgb(var(--metal-rgb) / 0.55) 70%,
     transparent
   );
@@ -105,18 +95,19 @@
     circle at 35% 30%,
     var(--metal-luz) 0 16%,
     var(--metal) 38%,
-    var(--monolito) 70%,
-    var(--cian) 100%
+    var(--monolito) 72%,
+    var(--metal-sombra) 100%
   );
-  /* Fondo de la escena WebGL (main en sombreador.ts): halo azul detrás del
-     objetivo (FONDO + su luz) y resto violeta lejano. Lienzo.astro los
+  /* Fondo de la escena WebGL (fondo() en sombreador.ts): un halo de grafito
+     muy contenido detrás del objetivo (FONDO + su luz). Lienzo.astro lo
      reproduce en CSS mientras WebGL carga, para que el relevo no se note. */
-  --halo-escena-rgb: 8 18 42;
-  --violeta-escena-rgb: 7 10 24;
-  /* Atmósfera de las páginas interiores: luz azul muy contenida desde arriba. */
-  --atmosfera:
-    radial-gradient(ellipse 80% 60% at 70% 0%, rgb(var(--azul-rgb) / 0.08), transparent 70%),
-    radial-gradient(ellipse 60% 45% at 10% 100%, rgb(var(--violeta-rgb) / 0.05), transparent 70%);
+  --halo-escena-rgb: 13 14 17;
+  /* Atmósfera de las páginas interiores: luz plateada muy contenida desde arriba. */
+  --atmosfera: radial-gradient(
+    ellipse 80% 60% at 70% 0%,
+    rgb(var(--metal-rgb) / 0.05),
+    transparent 70%
+  );
 
   /* Tipografía: una sola familia, editorial y precisa. */
   --fuente-display: var(--fuente-texto);

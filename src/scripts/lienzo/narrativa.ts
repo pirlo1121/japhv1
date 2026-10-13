@@ -1,28 +1,27 @@
 /**
  * narrativa.ts
  * El estado que cuenta la historia: desde dónde mira la cámara, dónde cae
- * la escultura en pantalla, en qué plano está la arquitectura, cuánto se
- * ha estirado la gota en cinta y cuánto ha crecido la red.
+ * la escultura en pantalla, en qué plano está la arquitectura y cuánto se
+ * ha estirado la gota en curva.
  *
  * La historia (scripts/historia) lo anima con el scroll; la escena
  * (escena.ts) lo lee en cada fotograma. Ninguna de las dos conoce a la otra:
- * si WebGL falla, la historia sigue moviendo el texto y la red igual.
+ * si WebGL falla, la historia sigue moviendo el texto igual.
  */
 import type { Orbita } from './camara';
 
 export interface Escenario extends Readonly<Orbita> {
-  /** Velocidad del movimiento interno del líquido (y de la energía de la red). */
+  /** Velocidad del movimiento interno del líquido. */
   readonly flujo: number;
-  /** 0..1: apaga la escultura para que mande el contenido. */
+  /**
+   * 0..1: apaga la escultura para que mande el contenido. Desde
+   * REPOSO.atenuacion (escena.ts) la escena solo se pinta cuando cambia.
+   */
   readonly atenuacion: number;
-  /** 0..1: cuánto de la red está despierto (de unos filamentos lejanos al sistema entero). */
-  readonly red: number;
-  /** 0..1: de ramas orgánicas a una estructura ordenada (proyectos, ecosistema). */
-  readonly orden: number;
-  /** 0..1: de gota flotante a cinta de cromo. La gota se estira al bajar a la segunda escena. */
+  /** 0..1: de gota flotante a curva de cromo. La gota se estira al bajar al capítulo 02. */
   readonly forma: number;
   /**
-   * Plano de la arquitectura (arquitectura.ts): 0 = vacío … 8 = llamada.
+   * Plano de la arquitectura (arquitectura.ts): 0 = presencia … 5 = apertura.
    * Continuo: entre dos planos, los monolitos se desplazan y se funden.
    */
   readonly escena: number;
@@ -34,11 +33,11 @@ export type EstadoNarrativo = { -readonly [K in keyof Escenario]: Escenario[K] }
    * golpe y la escena suaviza la luz de su módulo y su rama.
    */
   foco: number;
-  /** 0..4: fase del proceso que se recorre (la pone proceso.ts); enciende sus puertas. */
+  /** 0..4: fase del método que se recorre (la pone proceso.ts); enciende sus puertas. */
   etapa: number;
 };
 
-/** Escena 01 · El vacío: la gota flota delante del monolito, a la derecha del titular. */
+/** Capítulo 01 · Presencia: la gota flota delante del monolito, a la derecha del titular. */
 export const ESCENARIO_INICIAL: Escenario = {
   azimut: 0.5,
   elevacion: 0.14,
@@ -50,8 +49,6 @@ export const ESCENARIO_INICIAL: Escenario = {
   desplazamientoY: 0.02,
   flujo: 0.6,
   atenuacion: 0,
-  red: 0.06,
-  orden: 0,
   forma: 0,
   escena: 0
 };

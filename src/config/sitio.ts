@@ -17,7 +17,7 @@ export const sitio = {
   resumen:
     'Agencia de ecosistemas digitales. Convertimos ideas en sistemas que funcionan: web, aplicaciones, automatización, marketing, video y marca.',
   ciudad: 'Bogotá, Colombia',
-  colorTema: '#050505'
+  colorTema: '#070b14'
 } as const;
 
 /** Navegación principal: cabecera, menú móvil y pie de página. */

@@ -61,7 +61,7 @@ const primeraFrase = (texto: string) => texto.split(/(?<=\.)\s/)[0] ?? texto;
         <defs>
           <linearGradient id="degradado-camino" x1="0" x2="1" y1="0" y2="0">
             <stop offset="0" style="stop-color: var(--metal)" />
-            <stop offset="1" style="stop-color: var(--frio)" />
+            <stop offset="1" style="stop-color: var(--azul)" />
           </linearGradient>
         </defs>
         <path class="base" d={camino} />
@@ -143,7 +143,7 @@ const primeraFrase = (texto: string) => texto.split(/(?<=\.)\s/)[0] ?? texto;
   .fases::after {
     bottom: auto;
     height: calc((100% - 1rem) * var(--avance, 1));
-    background: linear-gradient(to bottom, var(--metal), var(--frio));
+    background: linear-gradient(to bottom, var(--metal), var(--azul));
   }
 
   .fase {
@@ -200,8 +200,9 @@ const primeraFrase = (texto: string) => texto.split(/(?<=\.)\s/)[0] ?? texto;
     opacity: 1;
   }
 
+  /* La fase actual es un punto de luz: cian, lo único que brilla en el camino. */
   .en-escena .fase.activa .nodo {
-    background: var(--frio);
+    background: var(--cian);
     scale: 1.4;
   }
 
@@ -265,7 +266,7 @@ const primeraFrase = (texto: string) => texto.split(/(?<=\.)\s/)[0] ?? texto;
     position: absolute;
     inset: 3px;
     border-radius: 0;
-    background: linear-gradient(180deg, var(--metal-luz), var(--frio));
+    background: linear-gradient(180deg, var(--metal-luz), var(--azul));
     opacity: clamp(0, (var(--avance, 0) * var(--fases) - var(--i)) * 8, 1);
   }
 

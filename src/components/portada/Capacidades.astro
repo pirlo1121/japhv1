@@ -100,7 +100,7 @@ const dos = (n: number) => String(n).padStart(2, '0');
     top: 0.75rem;
     bottom: 0.75rem;
     width: 1px;
-    background: linear-gradient(180deg, var(--metal-luz), var(--frio));
+    background: linear-gradient(180deg, var(--metal-luz), var(--azul));
     opacity: 0;
     transition: opacity var(--rapido);
   }
@@ -170,7 +170,7 @@ const dos = (n: number) => String(n).padStart(2, '0');
   }
 
   .servicio[data-activa] a span[aria-hidden] {
-    color: var(--frio);
+    color: var(--azul);
   }
 
   /* Todo el servicio es clicable sin anidar enlaces: el enlace se estira. */
@@ -185,7 +185,7 @@ const dos = (n: number) => String(n).padStart(2, '0');
   }
 
   .servicio:has(a:focus-visible) {
-    outline: 2px solid var(--frio);
+    outline: 2px solid var(--azul);
     outline-offset: -2px;
   }
 

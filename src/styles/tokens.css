@@ -1,56 +1,75 @@
 /**
  * tokens.css
- * Monumental Architecture + Editorial Storytelling. Negro profundo y
- * grafito para la arquitectura (la mayor parte de lo que se ve), plata y
- * blanco suave para el metal y el texto, y un solo acento: un azul frío
- * (--frio) muy puntual, para conexiones y estados significativos (el
- * servicio activo, la fase actual, el foco del teclado). Nada de neón
- * permanente. El verde, solo en el envío correcto del formulario.
+ * Monumental Architecture + Editorial Storytelling, con una firma azul.
  *
- * Contraste sobre --fondo: --texto 18.9:1, --texto-suave 8.9:1,
- * --metadato 4.8:1 (AA justo: solo metadatos y texto pequeño de apoyo).
+ * Jerarquía cromática (proporciones visuales aproximadas):
+ * - 70–80 %: negros y grafitos apenas azulados (vacío, fondo, superficies).
+ * - 15–20 %: blanco suave, grises azulados y plata (texto, metal).
+ * - 5–10 %: la identidad azul, solo en detalles y momentos importantes:
+ *   --azul (marca: CTA, estado activo, foco, indicadores),
+ *   --azul-electrico (alto impacto: el CTA principal),
+ *   --cian (luz: reflejos y señales; nunca como texto largo),
+ *   --azul-hondo (profundidad: sombras y caídas de luz),
+ *   --violeta (reservado, ocasional; nunca junto al cian).
+ * El azul nunca es el fondo dominante ni un neón permanente. El verde, solo
+ * en el envío correcto del formulario.
+ *
+ * Contraste (WCAG) sobre --fondo: --texto 18.3:1, --texto-suave 8.8:1,
+ * --metadato 5.1:1 (4.8:1 sobre --superficie; no
+ * usarlo sobre --superficie-elevada), --azul 4.8:1 (texto e
+ * indicadores), --cian 12.2:1; texto blanco sobre el CTA azul ≥ 4.9:1.
  * --texto-apagado (3:1) solo para piezas decorativas.
  * Los canales "-rgb" permiten transparencias sin colores sueltos:
  * rgb(var(--fondo-rgb) / 0.8).
  */
 
 :root {
-  /* El vacío y el espacio: negro profundo, apenas frío */
-  --vacio: #040506;
-  --fondo: #07080a;
-  --fondo-elevado: #0c0d10;
-  --vacio-rgb: 4 5 6;
-  --fondo-rgb: 7 8 10;
+  /* El vacío y el espacio: negro profundo con una caída azul. */
+  --vacio: #03050a;
+  --fondo: #070b14;
+  --superficie: #0c1220;
+  --superficie-elevada: #121b2b;
+  --borde: #202b3d;
+  --vacio-rgb: 3 5 10;
+  --fondo-rgb: 7 11 20;
+  --superficie-rgb: 12 18 32;
 
   /* La arquitectura: grafito que absorbe la luz */
-  --monolito: #0e0f12;
-  --monolito-luz: #1a1c21;
-  --grafito: #2a2d33;
-  --monolito-rgb: 14 15 18;
-  --grafito-rgb: 42 45 51;
+  --monolito: #0c111c;
+  --monolito-luz: #182131;
+  --grafito: #252e3d;
+  --monolito-rgb: 12 17 28;
+  --grafito-rgb: 37 46 61;
 
-  /* El metal: plata */
-  --metal: #c3c7ce;
-  --metal-luz: #f2f3f5;
-  --metal-sombra: #5c616b;
-  --metal-rgb: 195 199 206;
+  /* El metal: plata, con su sombra azulada */
+  --metal: #c5ceda;
+  --metal-luz: #f2f5fa;
+  --metal-sombra: #59677a;
+  --metal-rgb: 197 206 218;
 
-  /* La luz: un azul frío como único acento, nunca en grandes superficies.
-     --frio para líneas y estados; --frio-hondo para su caída en sombra. */
-  --frio: #9ec4ec;
-  --frio-hondo: #46668f;
+  /* La identidad azul: acentos, nunca grandes superficies. */
+  --azul: #3478f6;
+  --azul-electrico: #2563ff;
+  /* Fondo del CTA donde lleva texto blanco (5.7:1): el azul eléctrico, un punto más hondo. */
+  --azul-placa: #1f5ae8;
+  --cian: #55ddf5;
+  --azul-hondo: #142c62;
+  --violeta: #7867d9;
+  --azul-rgb: 52 120 246;
+  --azul-electrico-rgb: 37 99 255;
+  --cian-rgb: 85 221 245;
+  --azul-hondo-rgb: 20 44 98;
   --verde: #39e6a3;
-  --frio-rgb: 158 196 236;
-  --frio-hondo-rgb: 70 102 143;
   --verde-rgb: 57 230 163;
 
   /* Texto */
-  --texto: #f3f4f6;
-  --texto-suave: #a8adb6;
-  --metadato: #757b86;
-  --texto-apagado: #5a5f68;
-  --texto-rgb: 243 244 246;
-  --metadato-rgb: 117 123 134;
+  --texto: #f4f7fc;
+  --texto-suave: #a3aec0;
+  --metadato: #75829a;
+  --texto-apagado: #535e71;
+  --texto-sobre-azul: #ffffff;
+  --texto-rgb: 244 247 252;
+  --metadato-rgb: 117 130 154;
 
   /* Estados del formulario */
   --error: #ff8593;
@@ -58,12 +77,13 @@
   --error-rgb: 255 133 147;
   --exito-claro: #c6f6e4;
 
-  --linea: rgb(200 204 212 / 0.13);
-  --linea-fuerte: rgb(200 204 212 / 0.26);
-  --linea-rgb: 200 204 212;
+  /* Bordes discretos: sobre --fondo, --linea es --borde; se transparentan sobre la escena. */
+  --linea: rgb(var(--linea-rgb) / 0.2);
+  --linea-fuerte: rgb(var(--linea-rgb) / 0.34);
+  --linea-rgb: 132 171 225;
 
   /* Degradados: solo luz que recorre el metal y fragmentos cortos. */
-  /* Cromo para textos: bandas de luz fría, como los reflejos de la escultura. */
+  /* Cromo para textos: bandas de luz plateada, como los reflejos de la escultura. */
   --cromo: linear-gradient(
     100deg,
     var(--metal-sombra) 0%,
@@ -73,14 +93,18 @@
     var(--metal-sombra) 82%,
     var(--metal) 100%
   );
-  /* El fragmento clave del titular principal: plata con un reflejo frío. */
+  /* El fragmento clave del h1 de cada página: plata que se vuelve azul de
+     marca. Sin cian: el cian es luz de la escena, no tinta (en un énfasis
+     corto, plata, azul y cian juntos se leían como un arcoíris). */
   --cromo-luz: linear-gradient(
     100deg,
     var(--metal-luz) 0%,
-    var(--metal) 34%,
-    var(--frio) 62%,
-    var(--metal-luz) 100%
+    var(--metal) 30%,
+    var(--azul) 72%,
+    var(--azul) 100%
   );
+  /* El CTA principal: azul eléctrico con su caída. */
+  --placa-azul: linear-gradient(135deg, var(--azul-electrico) 0%, var(--azul-placa) 100%);
   /* Arista de monolito: una línea de metal que se enciende en el centro. */
   --arista: linear-gradient(
     90deg,
@@ -99,15 +123,19 @@
     var(--metal-sombra) 100%
   );
   /* Fondo de la escena WebGL (fondo() en sombreador.ts): un halo de grafito
-     muy contenido detrás del objetivo (FONDO + su luz). Lienzo.astro lo
-     reproduce en CSS mientras WebGL carga, para que el relevo no se note. */
-  --halo-escena-rgb: 13 14 17;
-  /* Atmósfera de las páginas interiores: luz plateada muy contenida desde arriba. */
-  --atmosfera: radial-gradient(
-    ellipse 80% 60% at 70% 0%,
-    rgb(var(--metal-rgb) / 0.05),
-    transparent 70%
-  );
+     muy contenido detrás del objetivo (FONDO + HALO): profundidad azul.
+     Lienzo.astro lo reproduce en CSS mientras WebGL carga, para que el
+     relevo no se note. */
+  --halo-escena-rgb: 11 17 32;
+  /* Atmósfera de las páginas interiores: un resplandor azul muy contenido
+     desde arriba y un velo de plata. */
+  --atmosfera:
+    radial-gradient(
+      ellipse 70% 55% at 70% 0%,
+      rgb(var(--azul-electrico-rgb) / 0.12),
+      transparent 70%
+    ),
+    radial-gradient(ellipse 80% 60% at 70% 0%, rgb(var(--metal-rgb) / 0.04), transparent 70%);
 
   /* Tipografía: una sola familia, editorial y precisa. */
   --fuente-display: var(--fuente-texto);

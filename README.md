@@ -28,10 +28,37 @@ colección de demos 3D. Reglas que se aplican en todo el sitio:
   vuelven los nichos de la galería y el pórtico del principio vuelve al final.
 - **El texto manda.** Titular, CTA y navegación se ven desde la primera pintura; ningún
   texto queda oculto esperando una animación.
-- **Luz:** blanca y plateada. Un solo acento de color, un azul frío (`--frio`), muy puntual:
-  el servicio activo, la fase actual, el foco del teclado, el enlace actual. Nada de neón
-  permanente. El verde, solo en el envío correcto del formulario.
-- **Paleta:** negro profundo, grafito, plata y blanco suave (`tokens.css`).
+- **Luz:** blanca y plateada, con una firma azul que se descubre en los detalles (ver
+  "Sistema cromático"). Nada de neón permanente. El verde, solo en el envío correcto del
+  formulario.
+- **Paleta:** negro profundo apenas azulado, grafito, plata, blanco suave y la identidad
+  azul (`tokens.css`).
+
+## Sistema cromático
+
+Todo sale de `tokens.css` (y, en la escena, de las constantes de `sombreador.ts`, que lo
+reproducen). Proporciones visuales aproximadas: 70–80 % negros y grafitos, 15–20 % blanco,
+grises y plata, 5–10 % azul.
+
+| Token                                    | Valor                           | Para qué                                                                                          |
+| ---------------------------------------- | ------------------------------- | ------------------------------------------------------------------------------------------------- |
+| `--vacio`, `--fondo`                     | `#03050A`, `#070B14`            | Escenas y fondo general. `FONDO` del sombreador es `--fondo`.                                     |
+| `--superficie`, `--superficie-elevada`   | `#0C1220`, `#121B2B`            | Tarjetas y superficies elevadas.                                                                  |
+| `--borde`, `--linea`                     | `#202B3D`                       | Bordes discretos; `--linea` es ese color sobre `--fondo`, translúcido sobre la escena.            |
+| `--azul`                                 | `#3478F6`                       | La marca: estado activo, enlace actual, foco, indicadores, el fragmento clave del h1. 4.8:1.      |
+| `--azul-electrico`, `--azul-placa`       | `#2563FF`, `#1F5AE8`            | Solo el CTA principal (`--placa-azul`), con texto blanco ≥ 4.9:1. Uno por pantalla.               |
+| `--cian`                                 | `#55DDF5`                       | Luz: el punto de la fase actual, el halo de las tiras, el reflejo en el cromo. Nunca texto.       |
+| `--azul-hondo`                           | `#142C62`                       | Profundidad: sombras de las tarjetas destacadas, caras de la arquitectura que no ven la luz.      |
+| `--violeta`                              | `#7867D9`                       | Reservado y ocasional; hoy sin uso. Nunca junto al cian.                                          |
+| `--texto`, `--texto-suave`, `--metadato` | `#F4F7FC`, `#A3AEC0`, `#75829A` | 18.3:1, 8.8:1 y 5.1:1 sobre `--fondo` (metadato 4.8:1 sobre `--superficie`; no sobre la elevada). |
+| `--metal`, `--metal-sombra`              | `#C5CEDA`, `#59677A`            | Cromo, aristas y reflejos plateados.                                                              |
+
+En la escena: `AZUL` en el módulo del servicio activo y la puerta de la fase actual,
+`CIAN` en el halo de las tiras de luz (`HALO_CIAN`) y en una tira del estudio que refleja
+el cromo, `AZUL_HONDO` en las caras en sombra (`SOMBRA_AZUL`), en la parte baja del
+estudio y en el halo del fondo (`HALO`, que es `--halo-escena-rgb`). El núcleo de las
+tiras, las aristas y los brillos del cromo siguen siendo blancos y plateados: el contraste
+entre lo neutro y lo azul es lo que da profundidad.
 
 ## Las capas visuales
 
@@ -39,7 +66,7 @@ colección de demos 3D. Reglas que se aplican en todo el sitio:
 | ---------------- | -------------------------------------------------------------------------------------- | --------------------------------------------- |
 | **Arquitectura** | Monolitos, losas, tiras de luz y marcos con hueco (WebGL2, intersección analítica).    | `lienzo/arquitectura.ts`, `sombreador.ts`     |
 | **Escultura**    | Gota de cromo que se estira en una curva (dos Bézier), por _raymarching_ en su esfera. | `lienzo/escultura.ts`, `sombreador.ts`        |
-| **Interfaz**     | Grafito, aristas de metal, placas de metal claro para la acción principal.             | `styles/tokens.css`, `styles/base.css`, comp. |
+| **Interfaz**     | Grafito, aristas de metal, una placa azul para la acción principal.                    | `styles/tokens.css`, `styles/base.css`, comp. |
 
 Arquitectura y escultura comparten un solo bucle y una sola cámara (`escena.ts`) en un
 lienzo fijo detrás de la portada. Las páginas interiores no cargan WebGL: su encabezado
@@ -86,28 +113,28 @@ En pantallas verticales o estrechas (proporción menor que `ASPECTO_VERTICAL` o 
 
 Las decisiones visuales están en constantes con nombre, no repartidas por el código:
 
-| Quiero cambiar…                                      | Dónde                                                                                                        |
-| ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| Colores, degradados, tipografía, espacios            | `styles/tokens.css` (nunca colores sueltos fuera de ahí)                                                     |
-| Dónde está cada pieza en cada capítulo               | `PLANOS` en `lienzo/arquitectura.ts` (un plano por capítulo, en el marco de su cámara)                       |
-| Un monolito que se abre                              | `monolito()` en `arquitectura.ts` (dos mitades y su `abertura`)                                              |
-| Trazado de la curva en cada capítulo                 | `cinta` de cada plano; tamaño y puntas: `CINTA` en `arquitectura.ts`                                         |
-| Cómo flota y ondula el líquido                       | `FLOTACION`, `ONDULACION` en `lienzo/escultura.ts`                                                           |
-| Cámara de cada capítulo (encuadre, objetivo)         | `crearEscenarios` en `historia/escenarios.ts`; el objetivo se escribe con `objetivo()` en el marco del plano |
-| Móvil: dónde va la escena y cuánto se apaga          | `vertical()`, `ALTO_VERTICAL`, `ATENUACION_DE_LECTURA` en `escenarios.ts`                                    |
-| Qué tramo de scroll lleva de un capítulo a otro      | `crearTramos` en `escenarios.ts`; inercia del scroll: `INERCIA` en `iniciar.ts`                              |
-| Material del grafito, aristas, niebla                | `GRAFITO`, `GRAFITO_LUZ`, `METAL`, `sombrearPieza` y `main` en `sombreador.ts`                               |
-| Luz de la arquitectura y acento frío                 | `PLATA`, `FRIO` en `sombreador.ts`; cuánto de una pieza es frío: `frio` en `arquitectura()`                  |
-| Luz y reflejos del cromo                             | `estudio()` y `cromo()` en `sombreador.ts`                                                                   |
-| Cómo emerge la arquitectura al cargar                | `REVELADO` en `lienzo/escena.ts`                                                                             |
-| Cuándo deja de pintar la escena (reposo)             | `REPOSO` en `escena.ts`                                                                                      |
-| Módulos de servicios y puertas del método            | `MODULOS_DE_SERVICIOS`, `PUERTAS` en `arquitectura.ts`                                                       |
-| Fases en fila o en lista                             | `ANCHO_FASES_EN_FILA` en `iniciar.ts`; tramo del camino: `CAMINO` en `historia/proceso.ts`                   |
-| Dónde y cómo se ve la gota al abrir                  | `Lienzo.astro` (póster); regenerarlo: `herramientas/poster-de-la-gota.mjs`                                   |
-| Monolito de respaldo (sin WebGL, sin JS, interiores) | `.monolito-css` en `base.css`; su sitio: `Lienzo.astro`, `PortadaDePagina.astro`                             |
-| Encabezado de las páginas interiores                 | `components/estructura/PortadaDePagina.astro`                                                                |
-| Calidad en equipos lentos, nitidez del lienzo        | `calidad.ts` (`TOPE_DPR`, topes de píxeles, `UMBRALES`, `CALENTAMIENTO`)                                     |
-| Alto mínimo de los objetivos táctiles                | `--toque` en `styles/tokens.css` (enlaces de lista y controles con `pointer: coarse`)                        |
+| Quiero cambiar…                                      | Dónde                                                                                                                                         |
+| ---------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| Colores, degradados, tipografía, espacios            | `styles/tokens.css` (nunca colores sueltos fuera de ahí)                                                                                      |
+| Dónde está cada pieza en cada capítulo               | `PLANOS` en `lienzo/arquitectura.ts` (un plano por capítulo, en el marco de su cámara)                                                        |
+| Un monolito que se abre                              | `monolito()` en `arquitectura.ts` (dos mitades y su `abertura`)                                                                               |
+| Trazado de la curva en cada capítulo                 | `cinta` de cada plano; tamaño y puntas: `CINTA` en `arquitectura.ts`                                                                          |
+| Cómo flota y ondula el líquido                       | `FLOTACION`, `ONDULACION` en `lienzo/escultura.ts`                                                                                            |
+| Cámara de cada capítulo (encuadre, objetivo)         | `crearEscenarios` en `historia/escenarios.ts`; el objetivo se escribe con `objetivo()` en el marco del plano                                  |
+| Móvil: dónde va la escena y cuánto se apaga          | `vertical()`, `ALTO_VERTICAL`, `ATENUACION_DE_LECTURA` en `escenarios.ts`                                                                     |
+| Qué tramo de scroll lleva de un capítulo a otro      | `crearTramos` en `escenarios.ts`; inercia del scroll: `INERCIA` en `iniciar.ts`                                                               |
+| Material del grafito, aristas, niebla                | `GRAFITO`, `GRAFITO_LUZ`, `METAL`, `sombrearPieza` y `main` en `sombreador.ts`                                                                |
+| Luz de la arquitectura y acentos azules              | `PLATA`, `AZUL`, `CIAN`, `AZUL_HONDO`, `SOMBRA_AZUL`, `HALO_CIAN` en `sombreador.ts`; cuánto de una pieza es azul: `frio` en `arquitectura()` |
+| Luz y reflejos del cromo                             | `estudio()` y `cromo()` en `sombreador.ts`                                                                                                    |
+| Cómo emerge la arquitectura al cargar                | `REVELADO` en `lienzo/escena.ts`                                                                                                              |
+| Cuándo deja de pintar la escena (reposo)             | `REPOSO` en `escena.ts`                                                                                                                       |
+| Módulos de servicios y puertas del método            | `MODULOS_DE_SERVICIOS`, `PUERTAS` en `arquitectura.ts`                                                                                        |
+| Fases en fila o en lista                             | `ANCHO_FASES_EN_FILA` en `iniciar.ts`; tramo del camino: `CAMINO` en `historia/proceso.ts`                                                    |
+| Dónde y cómo se ve la gota al abrir                  | `Lienzo.astro` (póster); regenerarlo: `herramientas/poster-de-la-gota.mjs`                                                                    |
+| Monolito de respaldo (sin WebGL, sin JS, interiores) | `.monolito-css` en `base.css`; su sitio: `Lienzo.astro`, `PortadaDePagina.astro`                                                              |
+| Encabezado de las páginas interiores                 | `components/estructura/PortadaDePagina.astro`                                                                                                 |
+| Calidad en equipos lentos, nitidez del lienzo        | `calidad.ts` (`TOPE_DPR`, topes de píxeles, `UMBRALES`, `CALENTAMIENTO`)                                                                      |
+| Alto mínimo de los objetivos táctiles                | `--toque` en `styles/tokens.css` (enlaces de lista y controles con `pointer: coarse`)                                                         |
 
 Para ver el estado sin hacer scroll, en desarrollo están `window.__estado` (estado
 narrativo) y `window.__escena` (escena) en la consola.
@@ -146,7 +173,8 @@ renderizar el póster:
 - **Sombreado:** intersección analítica rayo-caja (y marco con túnel), sin marchar rayos:
   bordes exactos y coste fijo por pieza. Grafito modelado por una luz principal con caída
   y un degradado cenital; aristas de metal de grosor constante en píxeles; cromo negro en
-  las piezas pulidas; perspectiva atmosférica. Las tiras de luz son halo de plata.
+  las piezas pulidas; las caras en sombra recogen un azul hondo; perspectiva atmosférica.
+  Las tiras de luz tienen el núcleo blanco y el halo cian.
 - **Interacción:** el módulo del servicio activo y la puerta de la fase actual recogen luz
   fría (`foco`, `etapa`; el cuarto `vec4` de cada pieza lleva cuánto de su luz es fría).
 - **Móvil:** las piezas secundarias no se envían (`ligera`), salvo si son un módulo o una
@@ -166,10 +194,12 @@ límite que calcula la página.
 ### Interfaz
 
 Grafito, esquinas casi rectas (`--radio: 2px`), aristas de metal de 1 px y la luz solo
-donde guía la mirada. La acción principal es una placa de metal claro con texto negro; la
-secundaria, un contorno sobre grafito. Los énfasis de los titulares son de cromo
-(`--cromo`); el del titular principal recoge un reflejo frío (`--cromo-luz`). La marca es
-un monolito en miniatura con su gota.
+donde guía la mirada. La acción principal es una placa de azul eléctrico con texto blanco
+(solo en el cierre de cada página y en el héroe; el pie usa contorno para no repetirla);
+la secundaria, un contorno sobre grafito. Los énfasis de los titulares son de cromo
+(`--cromo`); el del h1 de cada página pasa de plata a azul (`--cromo-luz`). Foco, rango y
+casilla del formulario, enlace actual e indicadores son `--azul`. La marca es un monolito
+en miniatura con su gota.
 
 ## Arquitectura del código
 
@@ -219,7 +249,8 @@ un monolito en miniatura con su gota.
 - **Servicios:** se activan con el puntero, con el foco del teclado o al cruzar el centro de
   la pantalla. Nada depende del hover.
 - **Pasos del texto** (`data-paso`, solo en Transformación): nunca bajan de 0.45 de opacidad.
-- **Contraste sobre `--fondo`:** texto 18.9:1, texto secundario 8.9:1, metadatos 4.8:1.
+- **Contraste sobre `--fondo`:** texto 18.3:1, texto secundario 8.8:1, metadatos 5.1:1,
+  azul 4.8:1; texto blanco sobre el CTA azul ≥ 4.9:1.
 
 ## Validación
 
@@ -269,6 +300,11 @@ Para no volver a recorrerlas sin motivo:
 - **Una escena WebGL completa en el encabezado de cada página interior**: cara y
   repetitiva; ahora es una composición CSS con el póster.
 - **Siete gotas-neurona unidas por sinapsis de luz** en el héroe: se revirtió.
+- **Cian dentro del degradado de los titulares** (plata → azul → cian en `--cromo-luz`): en
+  los énfasis cortos de las páginas interiores ("entre sí") se leía como un arcoíris. El
+  cian queda para la luz de la escena; el texto llega solo hasta el azul.
+- **Tres CTA azules en el cierre de la portada** (Apertura y pie): el azul saturaba; el
+  CTA del pie es de contorno.
 
 ## Pendiente de diseño
 

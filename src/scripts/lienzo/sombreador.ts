@@ -17,9 +17,13 @@
  *   Se marcha solo dentro de su esfera límite. Es cromo: refleja un estudio
  *   procedural (caja cenital blanca, filo blanco, contraluz plateado y una
  *   sola tira de azul frío) y, de verdad, la arquitectura que tiene alrededor.
- * - Luz: blanca y plateada. El azul frío (FRIO) solo aparece donde algo
- *   significa: el módulo del servicio activo y la puerta de la fase actual
- *   (el cuarto vec4 de cada pieza dice cuánto de su luz es fría).
+ * - Luz: blanca y plateada, con la firma azul de la marca en tres dosis:
+ *   AZUL solo donde algo significa (el módulo del servicio activo y la
+ *   puerta de la fase actual; el cuarto vec4 de cada pieza dice cuánto de
+ *   su luz es azul), CIAN en los puntos de luz (el halo de las tiras, una
+ *   tira del estudio que el cromo refleja) y AZUL_HONDO en las sombras (las
+ *   caras que no ven la luz, el halo del fondo). El resto es neutro: el
+ *   contraste entre lo neutro y lo azul es lo que da profundidad.
  * - La gota, el cromo, el estudio y el fondo son los mismos que pintan el
  *   póster de la gota (Lienzo.astro): con la arquitectura aún oculta, el
  *   primer fotograma coincide con él.
@@ -71,17 +75,24 @@ const float PI = 3.14159265;
 const float TAU = 6.28318531;
 
 // Paleta (tokens.css). FONDO es exactamente --fondo: el lienzo y la página
-// son el mismo espacio. FRIO es --frio, el único acento de color.
-const vec3 FONDO = vec3(0.0275, 0.0314, 0.0392);
-const vec3 FRIO = vec3(0.62, 0.77, 0.925);
+// son el mismo espacio. AZUL es --azul (estados), CIAN es --cian (luz) y
+// AZUL_HONDO es --azul-hondo (sombra).
+const vec3 FONDO = vec3(0.0275, 0.0431, 0.0784);
+const vec3 AZUL = vec3(0.204, 0.471, 0.965);
+const vec3 CIAN = vec3(0.333, 0.867, 0.961);
+const vec3 AZUL_HONDO = vec3(0.078, 0.173, 0.384);
 // Arquitectura: grafito que absorbe la luz, su cara iluminada y el metal de sus aristas.
-const vec3 GRAFITO = vec3(0.032, 0.034, 0.04);
-const vec3 GRAFITO_LUZ = vec3(0.115, 0.12, 0.135);
-const vec3 METAL = vec3(0.77, 0.79, 0.82);
+const vec3 GRAFITO = vec3(0.03, 0.036, 0.05);
+const vec3 GRAFITO_LUZ = vec3(0.108, 0.118, 0.142);
+const vec3 METAL = vec3(0.773, 0.808, 0.855);
 // La luz de la arquitectura (tiras, interior de los marcos): plata.
 const vec3 PLATA = vec3(0.84, 0.87, 0.92);
+// Cuánta luz azul honda recogen las caras en sombra (sombrearPieza).
+const float SOMBRA_AZUL = 0.07;
+// Cuánto del halo de las tiras de luz es cian (su núcleo sigue siendo blanco).
+const float HALO_CIAN = 0.45;
 // Halo del fondo detrás del objetivo: FONDO + HALO es --halo-escena-rgb.
-const vec3 HALO = vec3(0.022, 0.023, 0.026);
+const vec3 HALO = vec3(0.0157, 0.0235, 0.0471);
 
 float T; // tiempo del movimiento interno
 float PIXEL; // unidades del mundo por píxel a distancia 1
@@ -215,6 +226,8 @@ vec3 estudio(vec3 d, float a) {
   // Paredes de grafito que se aclaran hacia arriba: el metal necesita algo
   // que reflejar para leerse como metal y no como un agujero.
   vec3 c = mix(vec3(0.014, 0.015, 0.018), vec3(0.09, 0.095, 0.105), smoothstep(-0.05, 0.85, h));
+  // Profundidad: la parte baja de las paredes cae hacia el azul hondo.
+  c += AZUL_HONDO * 0.07 * (1.0 - smoothstep(-0.1, 0.5, h));
 
   // Suelo y una línea de horizonte plateada: la banda que recorre todo el cromo.
   c = mix(c, vec3(0.025, 0.026, 0.03) * (1.0 + h), step(h, 0.0));
@@ -233,10 +246,10 @@ vec3 estudio(vec3 d, float a) {
     c += vec3(0.96, 0.98, 1.0) * 1.9 * caja * mix(0.35, 1.0, barras) * (1.0 - 0.45 * q.x);
   }
 
-  // Filo blanco a la izquierda; al otro lado, una tira estrecha de azul
-  // frío: la única luz de color, y discreta.
+  // Filo blanco a la izquierda; al otro lado, una tira estrecha de cian:
+  // la luz de color que el cromo refleja, y discreta.
   c += vec3(1.0) * 2.4 * tira(az, h, -1.95, 0.03, 0.015 + a);
-  c += mix(vec3(1.0), FRIO, 0.6) * 1.2 * tira(az, h, 2.25, 0.018, 0.012 + a);
+  c += mix(vec3(1.0), CIAN, 0.7) * 1.3 * tira(az, h, 2.25, 0.018, 0.012 + a);
   // Luz blanca que barre despacio la superficie.
   c += vec3(1.0) * 1.6 * tira(az, h, mod(uTiempo * 0.16, TAU) - PI, 0.02, 0.014 + a);
   // Luz amplia y suave a la derecha, plateada.
@@ -363,8 +376,8 @@ vec3 sombrearPieza(Golpe g, vec3 ro, vec3 rd, float ancho, bool enReflejo) {
   vec4 C = uCajas[b + 2];
   vec4 D = uCajas[b + 3];
   vec2 hueco = D.xy;
-  // Su luz: plata, o azul frío si es un estado activo (D.z).
-  vec3 luzPropia = mix(PLATA, FRIO, D.z);
+  // Su luz: plata, o azul si es un estado activo (D.z).
+  vec3 luzPropia = mix(PLATA, AZUL, D.z);
   bool marco = B.w == MARCO;
   vec3 p = ro + rd * g.t;
   vec3 n = alMundo(g.n, A.w);
@@ -382,6 +395,8 @@ vec3 sombrearPieza(Golpe g, vec3 ro, vec3 rd, float ancho, bool enReflejo) {
   float luz = clamp(difusa * caida * 1.35, 0.0, 1.0) * (0.45 + 0.55 * cenital);
   vec3 col = mix(GRAFITO * (0.45 + 0.55 * cenital), GRAFITO_LUZ, luz);
   col += GRAFITO_LUZ * 0.45 * max(n.y, 0.0);
+  // La sombra no es gris: lo que no ve la luz recoge un azul hondo, más abajo.
+  col += AZUL_HONDO * SOMBRA_AZUL * (1.0 - luz) * (1.0 - 0.5 * cenital);
 
   float pulido = C.w;
   vec3 v = -rd;
@@ -398,7 +413,7 @@ vec3 sombrearPieza(Golpe g, vec3 ro, vec3 rd, float ancho, bool enReflejo) {
   float linea = 1.0 - smoothstep(ancho * 0.6, ancho * 1.9, e);
   float bisel = exp(-e / (ancho * 6.0 + 0.02)) * 0.18;
   float recoge = C.x * (0.35 + 0.9 * caida * (0.5 + 0.5 * dot(n, l)));
-  col += mix(METAL, FRIO, 0.5 * D.z) * (linea + bisel) * recoge;
+  col += mix(METAL, AZUL, 0.6 * D.z) * (linea + bisel) * recoge;
 
   // Marcos con luz interior: el túnel se baña de luz hacia el fondo.
   if (tunel && C.y > 0.0) {
@@ -406,7 +421,7 @@ vec3 sombrearPieza(Golpe g, vec3 ro, vec3 rd, float ancho, bool enReflejo) {
     col += luzPropia * C.y * (0.08 + 0.35 * fondo) * (0.6 + 0.4 * linea);
   }
   // Una pieza encendida (el módulo del servicio activo): sus aristas se
-  // vuelven frías y su cara recoge un velo de luz que sube desde abajo.
+  // vuelven azules y su cara recoge un velo de luz que sube desde abajo.
   if (!marco && C.y > 0.0) {
     float velo = smoothstep(B.y, -B.y, g.q.y) * 0.06;
     col += luzPropia * C.y * ((linea + bisel) * 1.4 + velo);
@@ -467,7 +482,10 @@ vec3 tirasDeLuz(vec3 ro, vec3 rd, float tMax, float escala) {
     float ancho = PIXEL * r.y * escala;
     float nucleo = exp(-pow(r.x / (ancho * 1.1), 2.0));
     float halo = exp(-r.x / 0.16) * 0.18 + exp(-r.x / 0.9) * 0.05;
-    luz += mix(PLATA * 0.8, vec3(1.0), 0.35 * nucleo) * (nucleo * 1.6 + halo) * C.y * C.z;
+    // Núcleo blanco y plata; el aire que ilumina, cian.
+    vec3 nucleoCol = mix(PLATA * 0.8, vec3(1.0), 0.35 * nucleo);
+    vec3 haloCol = mix(PLATA * 0.8, CIAN, HALO_CIAN);
+    luz += (nucleoCol * nucleo * 1.6 + haloCol * halo) * C.y * C.z;
   }
   return luz;
 }

@@ -11,7 +11,8 @@ TypeScript. Es una copia de `front-japh` (carpeta hermana, con su propio git) en
 está explorando la dirección visual "Monumental Architecture + Editorial Storytelling":
 seis capítulos en los que una arquitectura de monolitos de grafito (dominante) se
 transforma y una gota de cromo (la intención, secundaria) toma forma y la cruza. Un
-protagonista visual por capítulo; luz blanca y plateada con un solo acento azul frío. El
+protagonista visual por capítulo; luz blanca y plateada con una firma azul en los detalles
+(sistema cromático en `tokens.css` y en el README, "Sistema cromático"). El
 backend vive en `../server` (todavía no conectado).
 
 **El diseño sigue en evolución.** El usuario itera sección a sección. Ante un cambio de
@@ -57,9 +58,11 @@ Antes de dar algo por terminado: `npm run check` y `npm run format:check` sin er
 - Contenido de ejemplo marcado con `ejemplo: true` (muestra `[Ejemplo editable]`). No
   inventar proyectos, clientes, cifras ni testimonios.
 - Sin scripts en línea, salvo el de `Base.astro` que decide la clase `movimiento`.
-- Estilos: tokens en `src/styles/tokens.css` (negro, grafito, plata; un solo acento,
-  `--frio`, para estados significativos y nunca como neón permanente; `--verde` solo para
-  el envío correcto; una sola fuente, Instrument Sans). Nada de colores sueltos: las
+- Estilos: tokens en `src/styles/tokens.css` (negro, grafito, plata y la identidad azul:
+  `--azul` para estados, foco e indicadores, `--azul-electrico` solo en el CTA principal,
+  `--cian` solo como luz y nunca como texto, `--azul-hondo` para sombras; el azul es el
+  5–10 % de lo que se ve, nunca fondo dominante ni neón permanente; `--verde` solo para el
+  envío correcto; una sola fuente, Instrument Sans). Nada de colores sueltos: las
   transparencias usan los canales `-rgb` (`rgb(var(--fondo-rgb) / 0.8)`).
   `--texto-apagado` no llega a AA: solo decorativo.
 - Las decisiones visuales van en constantes con nombre (`MUELLE_POSICION`, `PANEL`,

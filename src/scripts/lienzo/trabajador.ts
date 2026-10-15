@@ -12,7 +12,6 @@ const hilo = self as unknown as {
 };
 
 let renderizador: Renderizador | null = null;
-let ultimo = 0;
 
 function esperarCompilacion(): void {
   if (!renderizador) return;
@@ -37,12 +36,13 @@ hilo.addEventListener('message', ({ data: mensaje }) => {
         break;
       case 'dibujar': {
         if (!renderizador?.enlazado) break;
+        const desde = performance.now();
         renderizador.dibujar(mensaje.estado);
-        // Esperar a la GPU aquí no bloquea la página y evita que se acumulen fotogramas.
+        // Esperar a la GPU aquí no bloquea la página y evita que se acumulen
+        // fotogramas. Lo que tarda es el coste real del fotograma: no cuenta
+        // el tiempo en que la página no pidió pintar (reposo, medio ritmo).
         renderizador.terminar();
-        const ahora = performance.now();
-        hilo.postMessage({ tipo: 'pintado', ms: ultimo ? ahora - ultimo : 16 });
-        ultimo = ahora;
+        hilo.postMessage({ tipo: 'pintado', ms: performance.now() - desde });
         break;
       }
       case 'liberar':

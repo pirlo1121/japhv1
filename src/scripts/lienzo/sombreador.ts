@@ -8,7 +8,8 @@
  *   grafito oscuro o cromo negro. Se intersecan analíticamente (rayo contra
  *   caja, sin marchar): bordes exactos y coste fijo por pieza. Absorben casi
  *   toda la luz; una luz principal con caída los modela y unas aristas
- *   metálicas finas (de grosor constante en píxeles) revelan su escala. Las
+ *   metálicas finas (de grosor constante en píxeles) revelan su escala. Su
+ *   silueta, como la de la gota, se funde con la cobertura del píxel. Las
  *   tiras de luz son líneas de plata con halo. La niebla de profundidad
  *   funde lo lejano en el negro del fondo.
  * - Metal líquido (escultura.ts): una gota que se estira en una cinta curva
@@ -413,6 +414,27 @@ vec3 sombrearPieza(Golpe g, vec3 ro, vec3 rd, float ancho, bool enReflejo) {
   return col;
 }
 
+// Cuánto del píxel cubre la pieza junto a su silueta (0..1). Sin esto el
+// borde contra el fondo es un escalón de un píxel: a la resolución del
+// lienzo, y con la arista de metal justo ahí, se ve dentado. Solo cuentan
+// las aristas de la silueta: las que separan una cara visible de otra que
+// mira hacia atrás; entre dos caras visibles no hay que fundir nada.
+float coberturaDeSilueta(Golpe g, vec3 rd, float pixel) {
+  vec4 A = uCajas[g.i * VEC4_CAJA];
+  vec3 h = uCajas[g.i * VEC4_CAJA + 1].xyz;
+  vec3 d = alLocal(rd, A.w);
+  // Un píxel en pantalla abarca más superficie en las caras oblicuas.
+  float paso = pixel / max(abs(dot(g.n, d)), 0.5);
+  vec3 falta = h - abs(g.q);
+  float cobertura = 1.0;
+  for (int k = 0; k < 3; k++) {
+    if (abs(g.n[k]) > 0.5) continue;
+    // La cara vecina por esta arista mira hacia atrás: es silueta.
+    if (sign(g.q[k]) * d[k] >= 0.0) cobertura = min(cobertura, clamp(falta[k] / paso + 0.5, 0.0, 1.0));
+  }
+  return cobertura;
+}
+
 // Distancia mínima entre el rayo y un segmento: (distancia, t sobre el rayo).
 vec2 rayoSegmento(vec3 ro, vec3 rd, vec3 a, vec3 b) {
   vec3 ba = b - a;
@@ -515,7 +537,8 @@ void main() {
     vec3 aire = cielo * 1.6 + vec3(0.008, 0.009, 0.011);
     // Detrás del texto, las aristas se apagan: manda la lectura.
     pieza = mix(pieza, GRAFITO * 0.35, lectura * 0.55);
-    col = mix(cielo, mix(pieza, aire, niebla), presencia);
+    float cobertura = coberturaDeSilueta(g, rd, PIXEL * g.t);
+    col = mix(cielo, mix(pieza, aire, niebla), presencia * cobertura);
   }
 
   // El líquido: solo se marcha dentro de su esfera límite y antes de la arquitectura.
@@ -530,18 +553,28 @@ void main() {
     int pasos = uDetalle > 0.5 ? 110 : 70;
     bool toca = false;
     float d = 1.0;
+    // El paso en que el rayo pasó más cerca de la superficie, en píxeles:
+    // los rayos que la rozan sin tocarla pintan el borde suavizado.
+    float roce = 1e4;
+    float tRoce = 0.0;
     for (int i = 0; i < 110; i++) {
       if (i >= pasos || t > fin) break;
       d = mapa(ro + rd * t);
       if (d < 0.0008 * t) { toca = true; break; }
+      float enPixeles = d / (PIXEL * t);
+      if (enPixeles < roce) { roce = enPixeles; tRoce = t; }
       // Pasos cortos: las uniones suaves y la cinta no son distancias exactas.
       t += d * 0.65;
     }
     // Los rayos que rozan la silueta pueden quedarse sin pasos justo antes
     // de tocarla: si acabaron pegados a la superficie, cuentan como impacto.
     if (!toca && d < 0.01 && t < fin) toca = true;
-    if (toca) {
-      t += d;
+    // Cobertura del píxel en la silueta: entero si toca; si pasa a menos de
+    // un píxel, en proporción, sombreado en el punto de máximo acercamiento.
+    float cobertura = toca ? 1.0 : 1.0 - smoothstep(0.0, 1.0, roce);
+    if (!toca && cobertura > 0.0) t = tRoce;
+    if (cobertura > 0.0) {
+      if (toca) t += d;
       vec3 p = ro + rd * t;
       vec3 n = normal(p, t);
       float ndv = clamp(dot(n, -rd), 0.0, 1.0);
@@ -554,8 +587,8 @@ void main() {
       // Curva suave: los brillos no se queman.
       metal = metal / (1.0 + metal * 0.55) * 1.2;
       // La atenuación apaga la escultura, no el fondo.
-      col = mix(metal, mix(col, metal, 0.22), uAtenuacion);
-      g.t = t;
+      col = mix(col, mix(metal, mix(col, metal, 0.22), uAtenuacion), cobertura);
+      if (toca) g.t = t;
     }
   }
 

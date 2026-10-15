@@ -106,7 +106,8 @@ Las decisiones visuales están en constantes con nombre, no repartidas por el c�
 | Dónde y cómo se ve la gota al abrir                  | `Lienzo.astro` (póster); regenerarlo: `herramientas/poster-de-la-gota.mjs`                                   |
 | Monolito de respaldo (sin WebGL, sin JS, interiores) | `.monolito-css` en `base.css`; su sitio: `Lienzo.astro`, `PortadaDePagina.astro`                             |
 | Encabezado de las páginas interiores                 | `components/estructura/PortadaDePagina.astro`                                                                |
-| Calidad en equipos lentos                            | `calidad.ts` (topes de píxeles, umbrales)                                                                    |
+| Calidad en equipos lentos, nitidez del lienzo        | `calidad.ts` (`TOPE_DPR`, topes de píxeles, `UMBRALES`, `CALENTAMIENTO`)                                     |
+| Alto mínimo de los objetivos táctiles                | `--toque` en `styles/tokens.css` (enlaces de lista y controles con `pointer: coarse`)                        |
 
 Para ver el estado sin hacer scroll, en desarrollo están `window.__estado` (estado
 narrativo) y `window.__escena` (escena) en la consola.
@@ -193,8 +194,17 @@ un monolito en miniatura con su gota.
   frecuencia con la escena atenuada; en **reposo** (atenuación ≥ `REPOSO.atenuacion`, sin
   WebGL o con "reducir movimiento") solo pinta cuando cambia algo que se ve; se pausa fuera
   de pantalla o con la pestaña oculta.
-- **Calidad adaptativa** (`calidad.ts`): con tres fotogramas seguidos de más de 50 ms baja
-  al momento (primero el detalle, luego la resolución). Nunca vuelve a subir.
+- **Nitidez:** el lienzo se pinta hasta a 2 píxeles reales por píxel CSS (1.5 en equipos
+  modestos), con un tope de píxeles por tipo de pantalla (`TOPE_DPR`, `TOPE_PIXELES_*` en
+  `calidad.ts`). Las siluetas de los monolitos y de la gota se funden con la cobertura del
+  píxel (`coberturaDeSilueta` y el `roce` de la marcha en `sombreador.ts`): sin MSAA, el
+  borde contra el fondo era un escalón de un píxel y se veía dentado.
+- **Calidad adaptativa** (`calidad.ts`): mide lo que cuesta pintar, no lo que tarda la página
+  (con el worker, el tiempo de GPU de cada fotograma; sin él, el intervalo entre fotogramas;
+  umbrales en `UMBRALES`). Los primeros `CALENTAMIENTO` fotogramas no cuentan: así un tirón
+  del hilo principal al cargar no baja la nitidez para siempre. Con tres fotogramas seguidos
+  de más de 50 ms baja al momento (primero el detalle, luego la resolución). Nunca vuelve a
+  subir.
 - **Páginas interiores:** sin WebGL ni bucle: CSS y una imagen de pocos KB.
 - **Build:** la mayor parte del JS es GSAP; Lenis se descarga bajo demanda.
 

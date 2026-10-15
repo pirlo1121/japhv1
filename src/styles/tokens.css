@@ -129,6 +129,8 @@
   --bloque: clamp(5.5rem, 14vh, 10rem);
   /* Arquitectura: esquinas casi rectas. */
   --radio: 2px;
+  /* Alto mínimo de un objetivo táctil (enlaces de lista, controles) con puntero grueso. */
+  --toque: 2.75rem;
 
   /* Movimiento */
   --suave: cubic-bezier(0.22, 1, 0.36, 1);

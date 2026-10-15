@@ -126,6 +126,19 @@ const {
     color: var(--texto);
   }
 
+  /* Táctil: cada entrada del índice es un objetivo de al menos 44 px de alto. */
+  @media (pointer: coarse) {
+    .indice ol {
+      row-gap: 0;
+    }
+
+    .indice a {
+      display: flex;
+      align-items: center;
+      min-height: var(--toque);
+    }
+  }
+
   /* En escritorio: una columna lateral sobre una arista vertical. */
   @media (min-width: 62rem) {
     .indice {

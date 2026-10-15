@@ -225,4 +225,23 @@ const anio = new Date().getFullYear();
     display: flex;
     gap: 1.5rem;
   }
+
+  /* Táctil: cada enlace es un objetivo de al menos 44 px de alto; el hueco lo pone su propia altura. */
+  @media (pointer: coarse) {
+    ul {
+      gap: 0;
+    }
+
+    .base ul {
+      flex-wrap: wrap;
+      column-gap: 1.5rem;
+    }
+
+    .columna a,
+    .base a {
+      display: inline-flex;
+      align-items: center;
+      min-height: var(--toque);
+    }
+  }
 </style>

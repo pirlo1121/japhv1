@@ -178,6 +178,7 @@ export class Escena {
       );
     }
     if (this.pintor) {
+      this.calidad.medida = this.pintor.medida;
       // Cada fotograma pintado informa de su duración; la escena se muestra con el primero.
       this.pintor.alPintar = (ms) => {
         this.contenedor.dataset.listo = 'true';

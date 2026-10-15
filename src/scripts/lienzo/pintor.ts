@@ -7,6 +7,7 @@
  *
  * Ambos pintores tienen la misma forma, así la escena no sabe cuál usa.
  */
+import type { Medida } from './calidad';
 import { Renderizador, type EstadoDeEscena } from './renderizador';
 
 export interface Pintor {
@@ -15,8 +16,13 @@ export interface Pintor {
   configurar(anchoPx: number, altoPx: number): void;
   /** false si el fotograma anterior aún no terminó: este se salta. */
   dibujar(estado: EstadoDeEscena): boolean;
-  /** Se llama con los ms transcurridos desde el fotograma pintado anterior. */
+  /**
+   * Se llama con los ms de cada fotograma pintado: lo que costó en la GPU
+   * (medida "coste", en el worker) o el intervalo desde el anterior
+   * ("intervalo", en la página, donde esperar a la GPU bloquearía).
+   */
   alPintar: (ms: number) => void;
+  readonly medida: Medida;
   liberar(): void;
 }
 
@@ -33,6 +39,7 @@ export type MensajeDelHilo =
 class PintorLocal implements Pintor {
   private readonly renderizador: Renderizador;
   private ultimo = 0;
+  readonly medida = 'intervalo';
   alPintar: (ms: number) => void = () => {};
 
   constructor(lienzo: HTMLCanvasElement) {
@@ -74,6 +81,7 @@ class PintorLocal implements Pintor {
 class PintorEnHilo implements Pintor {
   private readonly hilo: Worker;
   private ocupado = false;
+  readonly medida = 'coste';
   alPintar: (ms: number) => void = () => {};
 
   constructor(lienzo: HTMLCanvasElement) {

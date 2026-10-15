@@ -216,6 +216,13 @@ const opcionesDeServicio = servicios.map(({ id, etiquetaFormulario }) => ({
     accent-color: var(--metal);
   }
 
+  /* Táctil: el control de presupuesto se pulsa con el dedo, no con un puntero fino. */
+  @media (pointer: coarse) {
+    input[type='range'] {
+      height: var(--toque);
+    }
+  }
+
   .sensible {
     margin: 0;
     padding: 0.9rem 1.1rem;
@@ -243,6 +250,8 @@ const opcionesDeServicio = servicios.map(({ id, etiquetaFormulario }) => ({
   }
 
   .consentimiento input {
+    /* No se encoge en pantallas estrechas: el texto es el que se reparte. */
+    flex-shrink: 0;
     width: 1.15rem;
     height: 1.15rem;
     margin-top: 0.15rem;

@@ -7,23 +7,47 @@
  * son muy lentos (un equipo que no puede con la escena), no espera a
  * reunir la muestra: baja enseguida.
  * Nunca vuelve a subir: evita oscilar entre dos calidades.
+ *
+ * Se mide lo que cuesta pintar, no lo que tarda la página: con el worker
+ * (pintor.ts) es el tiempo de GPU de cada fotograma; sin él, el intervalo
+ * entre fotogramas. Así un tirón del hilo principal (al cargar, al montar
+ * el scroll) no se confunde con una GPU lenta y no baja la nitidez para
+ * siempre.
  */
 
-const TOPE_DPR_TACTIL = 1.5;
-const TOPE_DPR_ESCRITORIO = 1.5;
 /**
- * Píxeles máximos del lienzo (ancho × alto en píxeles reales). La escultura
- * se traza rayo a rayo: el cromo es liso y el texto es HTML, así que una
- * resolución algo menor que la de la pantalla no se nota y ahorra mucho.
+ * Densidad máxima: hasta 2 píxeles reales por píxel CSS. Las aristas de
+ * los monolitos y la silueta de la gota son líneas de un píxel: a 1.5 y
+ * estiradas a la pantalla se veían dentadas. Más allá de 2 apenas se nota
+ * y cuesta mucho. Los equipos modestos empiezan en 1.5.
  */
-const TOPE_PIXELES_TACTIL = 0.9e6;
-const TOPE_PIXELES_ESCRITORIO = 2.2e6;
+const TOPE_DPR = 2;
+const TOPE_DPR_MODESTO = 1.5;
+/**
+ * Píxeles máximos del lienzo (ancho × alto en píxeles reales): un móvil
+ * grande a 2× (430 × 932) cabe entero; una tableta o un portátil retina se
+ * quedan cerca de 2×. Si el equipo no puede, la calidad adaptativa baja.
+ */
+const TOPE_PIXELES_TACTIL = 1.8e6;
+const TOPE_PIXELES_ESCRITORIO = 4.5e6;
 
+/**
+ * Fotogramas que no se miden al empezar: los primeros incluyen la
+ * compilación perezosa del controlador y la carga de la página.
+ */
+const CALENTAMIENTO = 20;
 const FOTOGRAMAS_DE_MUESTRA = 45;
-/** Media por encima de la cual la muestra es lenta. */
-const MS_LENTO = 24;
-/** Un fotograma que pierde el refresco de una pantalla de 60 Hz. */
-const MS_TIRON = 22;
+/**
+ * Umbrales según lo que se mida. "coste": ms de GPU por fotograma (con
+ * más de un refresco de 60 Hz de media, la escena va a medio ritmo).
+ * "intervalo": ms entre fotogramas, que ya incluyen el refresco y algo de
+ * ruido del hilo principal.
+ */
+const UMBRALES = {
+  coste: { lento: 17, tiron: 20 },
+  intervalo: { lento: 24, tiron: 22 }
+} as const;
+export type Medida = keyof typeof UMBRALES;
 /** Con esta fracción de tirones la muestra también es lenta, aunque la media aguante. */
 const FRACCION_DE_TIRONES = 0.25;
 const PASO_DE_BAJADA = 0.8;
@@ -43,19 +67,22 @@ function esEquipoModesto(): boolean {
 }
 
 export class Calidad {
+  private readonly modesto = esEquipoModesto();
   /** 1 = detalle completo; 0 = sin capas secundarias (ver uDetalle en el sombreador). */
-  detalle = esEquipoModesto() ? 0 : 1;
+  detalle = this.modesto ? 0 : 1;
+  /** Qué llega a medir(): coste de GPU o intervalo entre fotogramas (pintor.ts). */
+  medida: Medida = 'intervalo';
   private escala = 1;
   private acumulado = 0;
   private muestras = 0;
   private tirones = 0;
   private graves = 0;
-  /** Fotogramas que no se miden: el primero tras una pausa abarca la pausa entera. */
-  private ignorar = 1;
+  /** Fotogramas que no se miden: el calentamiento y el primero tras una pausa. */
+  private ignorar = CALENTAMIENTO;
 
   /** El bucle se detuvo (pestaña oculta, fuera de pantalla): el próximo intervalo no cuenta. */
   pausa(): void {
-    this.ignorar = 1;
+    this.ignorar = Math.max(this.ignorar, 1);
     this.graves = 0;
   }
 
@@ -78,10 +105,7 @@ export class Calidad {
   /** Tamaño en píxeles reales del lienzo para un tamaño CSS dado. */
   tamano(anchoCss: number, altoCss: number): [number, number] {
     const tactil = esTactil();
-    const dpr = Math.min(
-      window.devicePixelRatio || 1,
-      tactil ? TOPE_DPR_TACTIL : TOPE_DPR_ESCRITORIO
-    );
+    const dpr = Math.min(window.devicePixelRatio || 1, this.modesto ? TOPE_DPR_MODESTO : TOPE_DPR);
     const tope = tactil ? TOPE_PIXELES_TACTIL : TOPE_PIXELES_ESCRITORIO;
     let factor = dpr * this.escala;
     const pixeles = anchoCss * altoCss * factor * factor;
@@ -99,7 +123,8 @@ export class Calidad {
     if (this.graves >= GRAVES_SEGUIDOS) return this.bajar(PASO_DE_EMERGENCIA);
     this.acumulado += ms;
     this.muestras += 1;
-    if (ms > MS_TIRON) this.tirones += 1;
+    const umbral = UMBRALES[this.medida];
+    if (ms > umbral.tiron) this.tirones += 1;
     if (this.muestras < FOTOGRAMAS_DE_MUESTRA) return false;
 
     const media = this.acumulado / this.muestras;
@@ -107,7 +132,7 @@ export class Calidad {
     this.acumulado = 0;
     this.muestras = 0;
     this.tirones = 0;
-    if (media <= MS_LENTO && tirones <= FRACCION_DE_TIRONES) return false;
+    if (media <= umbral.lento && tirones <= FRACCION_DE_TIRONES) return false;
     return this.bajar(PASO_DE_BAJADA);
   }
 }
